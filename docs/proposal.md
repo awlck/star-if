@@ -865,14 +865,19 @@ Your `match = { "get/take/grab [something]" }` syntax is good and should stay. F
 | `[things]` | One or more objects, supporting `all`, `all except X` |
 | `[something held]` | Object carried by the actor |
 | `[something preferably held]` | Prefers held objects in disambiguation, does not require |
+| `[something preferably weapon]` | Prefers objects of a class or trait in disambiguation, does not require. Generalises the `held` form |
 | `[someone]` | Object with trait `animate` |
 | `[direction]` | A compass/vertical direction |
 | `[text]` | Free text, unresolved (for `ask X about Y`, `consult`) |
 | `[number]` | An integer |
 | `[topic]` | A declared conversation topic (§11) |
-| `[class:weapon]` | Object of a given class or trait — key for RPG grammar like `shoot [class:enemy] with [class:weapon]` |
+| `[class:weapon]` | **Only** objects of a class or trait; anything else fails to parse. Use sparingly — see below |
 | `word/word/word` | Alternative literal words |
 | `word?` | Optional literal word |
+
+**Prefer broad tokens.** A narrow `[class:…]` token means a non-matching noun fails *in the parser*, so `DRINK LAPTOP` yields "you can't see any such thing" about a laptop sitting in plain view. The refusal belongs in the world, not the grammar: match `[something]`, then let a restriction produce a real message. That restriction also narrows the noun's static type for the rest of the action (spec §8.8.3), so nothing is lost by being permissive — and where behaviour genuinely differs by class, that is what rules are for.
+
+Reserve `[class:…]` for cases where a non-match should truly be unparseable rather than refusable: `[direction]`, `[topic]`, and lines distinguished by their own literal words. Where a class matters only for choosing between candidates, `[something preferably weapon]` says so without making anything unparseable.
 
 Grammar lines compile into a **trie over word ids** with actions at the leaves, so matching is O(words typed), independent of the number of grammar lines in the game. Multiple matches produce ranked candidates; ranking prefers (1) more literal words matched, (2) more specific noun tokens, (3) later-declared lines (so a game can override the stdlib).
 

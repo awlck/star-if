@@ -188,7 +188,9 @@ global = { id = seen_endings  type = set<identifier>  initial = { } }
 const = { id = max_reactor_temp  type = int  value = 1200 }
 
 # ...and a use of it, so the never-read warning stays meaningful.
-global = { id = core_temp  type = int  initial = 300 }
+global = { id = core_temp     type = int  initial = 300 }
+global = { id = hydration     type = int  initial = 0 }
+global = { id = intoxication  type = int  initial = 0 }
 
 
 # =============================================================================
@@ -377,6 +379,16 @@ trait = {
 
 trait = {
     id = portable
+}
+
+trait = {
+    id = drinkable
+    prop_def = { volume_ml = int }
+    volume_ml = 250
+}
+
+trait = {
+    id = alcoholic
 }
 
 trait = {
@@ -604,6 +616,17 @@ thing = {
     traits = { portable }
 }
 
+# A collection held as an object PROPERTY rather than as a global — the case
+# that makes the datum-reference rule of spec §6.6 necessary.
+thing = {
+    id       = navcomp
+    in       = control_room
+    name     = $thing_navcomp
+    traits   = { fixed_in_place }
+    prop_def = { waypoints = list<identifier> }
+    waypoints = { docking_gantry antecourt storage }
+}
+
 thing = {
     id      = reactor_console
     in      = control_room
@@ -670,6 +693,10 @@ weapon = {
 }
 
 thing = { id = ration_pack  in = storage  name = $thing_ration  traits = { portable } }
+thing = { id = water_flask  in = storage  name = $thing_flask
+          traits = { portable drinkable }  volume_ml = 500 }
+thing = { id = vex_whisky   in = storage  name = $thing_whisky
+          traits = { portable drinkable alcoholic }  volume_ml = 40 }
 thing = { id = captains_log in = storage  name = $thing_log     traits = { portable } }
 thing = { id = crowbar      in = storage  name = $thing_crowbar traits = { portable } }
 thing = { id = lockpicks    in = ornate_box name = $thing_picks traits = { portable } }
@@ -912,6 +939,36 @@ action = {
     successMsg = $lock_picked
 }
 
+# The broad-token pattern (spec §8.8.1). `drink [something]` parses anything,
+# so DRINK LAPTOP produces a real in-world refusal rather than a parser error
+# about a laptop the player can plainly see. The restriction then NARROWS the
+# noun for everything after it, so `noun.volume_ml` below is statically legal
+# without a second action, a class token, or a runtime check.
+action = {
+    id       = drink
+    match    = { "drink/sip/swallow [something]" }
+    verb     = { base = "drink"  third = "drinks"  past = "drank"
+                 past_participle = "drunk"  present_participle = "drinking" }
+    restrictions = {
+        noun = { has_trait = drinkable
+                 failureMsg = "[The noun] [is noun] not something you can drink." }
+    }
+    effects = {
+        add_global       = { id = hydration  amount = noun.volume_ml }
+        remove_from_play = { obj = noun }
+    }
+    successMsg = "You drink [the noun]."
+}
+
+# Where behaviour genuinely differs by class, that is a rule's job — not a
+# second action with a narrower grammar token.
+rule = {
+    of_action  = drink
+    when       = { noun = { has_trait = alcoholic } }
+    effects    = @after { add_global = { id = intoxication  amount = 1 } }
+    successMsg = @after "It burns pleasantly on the way down."
+}
+
 action = {
     id       = talk_to
     match    = { "talk to [someone]"  "greet [someone]" }
@@ -1034,13 +1091,40 @@ rule = {
     when      = { noun = { is = airlock } }
     conditions = {
         # One reader, then one or more `value` tests, implicitly ANDed.
+        # A BARE name in an argument position is always a global (spec §6.6.1).
         compare = {
             count_of = seen_endings
             value >= 1
             value <= 3
         }
+        # A DOTTED PATH is an object's property. The two forms are
+        # distinguished syntactically, so an argument never changes meaning
+        # depending on which block encloses it.
+        compare = {
+            count_of = navcomp.waypoints
+            value >= 2
+        }
+        compare = {
+            at    = { collection = navcomp.waypoints  index = 0 }
+            value == docking_gantry
+        }
     }
     effects = { set_flag = saw_the_manifest }
+}
+
+# Collection membership: `includes`, not `contains` — §10.4 already has
+# `containing` for PHYSICAL containment, and the two are unrelated.
+rule = {
+    of_action = examine
+    when      = { noun = { is = navcomp } }
+    conditions = {
+        includes = { collection = navcomp.waypoints  value = storage }
+        NOT      = { is_empty = seen_endings }
+    }
+    effects = {
+        list_remove = { collection = navcomp.waypoints  index = 0 }
+        list_add    = { collection = seen_endings       value = navcomp_ending }
+    }
 }
 
 rule = {
@@ -1049,7 +1133,7 @@ rule = {
     restrictions = {
         # A defaulting read: absence is acceptable here and yields 0.
         compare = {
-            prop_or = { obj = noun  prop = damage  default = 0 }
+            value_or = { datum = noun.damage  default = 0 }
             value > 3
             failureMsg = $too_feeble
         }
@@ -1061,7 +1145,7 @@ rule = {
     when       = { noun = { is = reactor_console } }
     conditions = {
         compare = {
-            global_value = core_temp
+            value_of = core_temp
             value >= max_reactor_temp        # operand may be a const
         }
     }
@@ -1487,6 +1571,9 @@ loc = {
     thing_crowbar      = "crowbar"
     thing_picks        = "set of lockpicks"
     thing_plain_box    = "box"
+    thing_navcomp      = "navigation computer"
+    thing_flask        = "water flask"
+    thing_whisky       = "bottle of whisky"
     too_feeble         = "That would barely scratch it."
     g_alert_level_doc  = "Station-wide alert state. Drives NPC schedules and "
                          "the quartermaster's willingness to talk."

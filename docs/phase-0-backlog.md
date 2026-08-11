@@ -348,7 +348,8 @@ The one genuinely novel piece of static analysis in Phase 0. Spec §8.8.
 
 - [ ] Static type for each slot, taken from the action's grammar token where present.
 - [ ] Three-way classification: definitely present / definitely absent / possibly present.
-- [ ] Narrowing through `of_class`, `has_trait`, `is` in a conjunction, and from `when` into later stages.
+- [ ] Narrowing through `of_class`, `has_trait`, `is` in a conjunction.
+- [ ] Narrowing flows forward through pipeline stages: `when` → `conditions` → `restrictions` → `effects` and messages. The last hop is what lets a broad grammar token keep its static knowledge (spec §8.8.1).
 - [ ] Narrowing does not escape `OR` or `NOT`.
 - [ ] `has_prop` and `prop_or` as the explicit escapes.
 - [ ] Error carries the slot's static type, the property, and the classes that do declare it.

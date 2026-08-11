@@ -858,7 +858,34 @@ Every slot has a static type, and most of them are narrower than "some object":
 | `actor` | `person`, or whatever the ruleset narrows it to |
 | `noun`, `second` | determined by the action's grammar token (proposal §6.2) |
 
-Grammar tokens already carry this information: `[something]` yields `thing`, `[someone]` yields the `animate` trait, and `[class:weapon]` yields `weapon`. An action written with a typed token therefore gets its narrowing for free, which is a good reason to prefer `[class:weapon]` over `[something]` where it applies.
+Grammar tokens carry some of this information: `[something]` yields `thing`, `[class:weapon]` yields `weapon`.
+
+**But narrowing is a poor reason to choose a narrow token, and an earlier draft of this section gave the opposite advice.** A token controls three separate things, and conflating them produces bad games:
+
+| A token controls | `[something]` | `[class:drinkable]` | `[something preferably drinkable]` |
+|---|---|---|---|
+| what it **matches** | anything in scope | only drinkables | anything in scope |
+| what it **prefers** when ambiguous | nothing | — | drinkables |
+| what the compiler may **assume** | `thing` | `drinkable` | `thing` |
+
+If `drink` matches only `[class:drinkable]`, then `DRINK LAPTOP` does not fail *in the world* — it fails **in the parser**, and the player gets "you can't see any such thing" about a laptop that is plainly on the desk. Recovering the sensible refusal then means writing a second `drink [something]` action purely to catch the misses, which duplicates the verb and puts the interesting judgement in the wrong place.
+
+**Restrictions are the right place for that judgement, and they narrow just as well** (§8.8.3). One action, a real message, and full static knowledge afterwards:
+
+```stardata
+action = {
+    id    = drink
+    match = { "drink/sip/swallow [something]" }
+    restrictions = {
+        noun = { has_trait = drinkable
+                 failureMsg = "[The noun] [is noun] not something you can drink." }
+    }
+    # Past the restriction, `noun` is statically known to be drinkable.
+    effects = { add_global = { id = hydration  amount = noun.volume_ml } }
+}
+```
+
+**So: prefer the broad token.** A narrow token is right only where a non-match should genuinely be unparseable rather than refusable — `[direction]`, `[topic]`, and grammar lines distinguished by their own literal words. Where a class matters merely for choosing between candidates, `[something preferably drinkable]` expresses that without making anything unparseable.
 
 #### 8.8.2 Three static answers
 
@@ -874,7 +901,17 @@ For a read of property `P` on a slot of static type `T`, the compiler distinguis
 
 A "possibly present" read MUST be justified by one of:
 
-**1. A narrowing condition earlier in the same conjunction.** Because the condition language is ordered and short-circuiting (§10.1), `of_class`, `has_trait` and `is` narrow the slot's static type for everything after them, and a rule's `when` and `conditions` narrow its `restrictions`, `effects` and messages:
+**1. A narrowing condition earlier in the same conjunction.** Because the condition language is ordered and short-circuiting (§10.1), `of_class`, `has_trait` and `is` narrow the slot's static type for everything after them.
+
+Narrowing also flows **forward through the pipeline stages**, because each stage gates the next:
+
+| A narrowing in… | …narrows |
+|---|---|
+| `when` | `conditions`, `restrictions`, `effects`, messages |
+| `conditions` | `restrictions`, `effects`, messages |
+| `restrictions` | `effects`, messages |
+
+The last row is what makes §8.8.1's advice work: a restriction that requires `has_trait = drinkable` either fails and aborts the action, or passes — in which case the noun *is* drinkable by the time effects run, and the compiler knows it. An author gets a good failure message and full static knowledge from the same three lines, with no second action and no runtime check.
 
 ```stardata
 rule = {
@@ -883,6 +920,8 @@ rule = {
     successMsg = "It is rated for [noun.damage] damage."   # now legal
 }
 ```
+
+Rules are the other half of the same idea: where a broad action needs different behaviour per class, that difference belongs in a rule keyed on `when`, not in a second action with a narrower grammar token.
 
 **2. An explicit `has_prop` test**, which is both a runtime check and a narrowing operator:
 
@@ -1673,6 +1712,8 @@ The proposal left the following under-determined. This specification settles the
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |
 | A20 | An absent property raises rather than defaulting (§8.8.4) | A `0` that should have been an error yields a game that is subtly wrong, which is far harder to find than one that is obviously broken |
+| A25 | Broad grammar tokens by default; narrowing comes from restrictions and rules, not from `[class:…]` (§8.8.1) | A narrow token makes a non-match fail *in the parser*, so the player is told they cannot see a laptop that is plainly there. Recovering the sensible refusal would mean a duplicate action per verb |
+| A26 | Narrowing flows forward through pipeline stages, including from `restrictions` into `effects` (§8.8.3) | Without it, A25 would cost the author their static knowledge; with it, one restriction buys both the message and the type |
 | A23 | A bare identifier in an argument position is always a global; object properties use a dotted path (§6.6.1) | Scope-sensitive arguments would mean the same identifier denotes a property in one block and a global in another, and moving a condition between blocks would silently change its meaning |
 | A24 | `includes` rather than `contains` for collection membership (§6.5) | `containing` already means physical containment; two predicates one letter apart with unrelated meanings is a trap |
 | A22 | `compare` as the single home for computed values (§10.6) | `count_of = { … } >= 2` is not merely unusual but ungrammatical — a statement is `Key Op Value`, so a dangling second operator has nowhere to live. One shallow form beats scattering value-producing predicates that cannot express their own result |

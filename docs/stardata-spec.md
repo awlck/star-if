@@ -486,12 +486,14 @@ An implementation MUST reject `set_flag`, `clear_flag` or `flag_set` naming an u
 
 Collection-typed properties and globals (`list<T>`, `set<T>`, `map<K,V>`, `flags<E>`) are mutable during play.
 
-**Conditions** (§10.4). Only the two that are genuinely boolean live here; anything that *computes a value* goes through `compare` (§10.6):
+**Conditions** (§10.4). Only the two that are genuinely boolean live here; anything that *computes a value* goes through `compare` (§10.6). The `<datum>` in each is a data reference as defined in §6.6:
 
 | Predicate | Form |
 |---|---|
-| `contains` | `{ contains = { collection = seen_endings  value = good_end } }` |
-| `is_empty` | `{ is_empty = seen_endings }` |
+| `includes` | `{ includes = { collection = <datum>  value = good_end } }` |
+| `is_empty` | `{ is_empty = <datum> }` |
+
+`includes` is deliberately not called `contains`: §10.4 already has `containing`, which is about *physical* containment, and two predicates a letter apart meaning entirely different things is a trap.
 
 **Effects** (§11.1):
 
@@ -504,9 +506,11 @@ Collection-typed properties and globals (`list<T>`, `set<T>`, `map<K,V>`, `flags
 
 ```stardata
 effects = {
-    list_add    = { collection = seen_endings  value = good_end }
-    map_put     = { collection = npc_moods  key = quartermaster_vex  value = hostile }
-    list_remove = { collection = waypoints  index = 0 }
+    # a bare name is a global; a dotted path is an object's property (§6.6)
+    list_add    = { collection = seen_endings         value = good_end }
+    map_put     = { collection = npc_moods            key = quartermaster_vex
+                    value = hostile }
+    list_remove = { collection = navcomp.waypoints    index = 0 }
 }
 ```
 
@@ -517,6 +521,53 @@ Three constraints follow from decisions already made:
 3. **Mutated collections are save state.** A collection whose contents differ from the compiled initial value is stored as a property override (proposal §5.2), which is the same mechanism as any other changed property.
 
 An out-of-range `index` is a runtime error, not a silent no-op, for the reasons in §8.8.4.
+
+### 6.6 Referring to data
+
+A collection can be a global or an object's property, and `collection = waypoints` does not say which. Left unstated, the natural guess is that a bare name resolves against whatever object scope encloses it — so the same identifier would mean a property in one place and a global three lines later, and moving a condition into or out of an object block would silently change its meaning. That is not a hazard worth having.
+
+**A `<datum>` is a reference to a value. Two forms, distinguished syntactically:**
+
+| Form | Refers to | Example |
+|---|---|---|
+| bare identifier | a `global` or `const` (§6.4) | `seen_endings` |
+| dotted path | a property of an object | `noun.waypoints`, `airlock_hatch.open` |
+
+A path's first segment is a slot (`actor`, `noun`, `second`, `self`, `speaker`, `player`) or an object id; each later segment is a property name. Intermediate segments MUST be `ref<C>`-typed, so `noun.holder.name` is legal and `noun.weight.name` is not.
+
+Dots inside identifiers are already lexical (§3.3), so a path is one token and no grammar change is needed. It is also the same notation templates use — `[noun.damage]`, `[self.range]` (§9.2) — so authors write one form of property reference throughout.
+
+#### 6.6.1 The rule that resolves the ambiguity
+
+> **A bare identifier in an *argument* position is always a global or const. It never resolves against an enclosing object scope.**
+
+So in your example, the second line is a global and the first must say what it means:
+
+```stardata
+conditions = {
+    noun = { includes = { collection = noun.waypoints  value = foo } }
+    includes = { collection = seen_endings  value = good_end }
+}
+```
+
+The `noun.` looks redundant inside `noun = { … }`, and that redundancy is the price of the guarantee. It buys: the meaning of an argument never depends on where the statement sits, moving a condition between blocks cannot change what it does, and a reader can resolve any reference without scanning outward.
+
+This is distinct from — and does not disturb — the existing rule for **key** positions:
+
+| Position | Bare identifier means |
+|---|---|
+| **Key**, inside a namespace block (`noun = { open == yes }`, `global = { alert_level == high }`) | a member of that namespace |
+| **Argument** (`collection = …`, `value_of = …`, `default = …`) | a `global` or `const` |
+
+The two are always distinguishable, because a key is followed by an operator and an argument is not.
+
+#### 6.6.2 Namespaced ids
+
+Libraries prefix their globals (`starscape.combat_round`, §6.4), which looks exactly like a path. Resolution is therefore ordered and deterministic:
+
+1. Try the whole identifier as a `global` or `const` id.
+2. Failing that, split at the last dot and resolve as `<object-or-slot>.<property>`.
+3. If **both** would resolve, that is an error naming both candidates. It requires a rename, and it should be vanishingly rare — an author would need a global literally called `noun.waypoints`.
 
 ---
 
@@ -848,7 +899,7 @@ restrictions = {
 ```stardata
 conditions = {
     compare = {
-        prop_or = { obj = noun  prop = damage  default = 0 }
+        value_or = { datum = noun.damage  default = 0 }
         value > 3
     }
 }
@@ -1153,8 +1204,8 @@ Inside such a block, a key naming a property of that object with a comparison op
 | `global` | `{ global = { alert_level == high } }` |
 | `has_prop` | `{ has_prop = damage }` — runtime test **and** static narrowing (§8.8.3) |
 | `compare` | computes a value and tests it — §10.6 |
-| `contains` | `{ contains = { collection = seen_endings  value = good_end } }` |
-| `is_empty` | `{ is_empty = seen_endings }` |
+| `includes` | `{ includes = { collection = <datum>  value = good_end } }` (§6.5) |
+| `is_empty` | `{ is_empty = <datum> }` |
 | `quest_state` | `{ quest = … state = unstarted\|active\|complete\|failed }` |
 | `quest_flag` | `{ quest_flag = captain_confronted }` |
 | `said_before` | `{ said_before = kira_i_station }` |
@@ -1265,15 +1316,18 @@ compare = {
 
 #### 10.6.1 Readers
 
+Every reader takes a `<datum>` (§6.6), so one reference notation serves globals and object properties alike.
+
 | Reader | Produces |
 |---|---|
-| `count_of = <collection>` | element count, as `int` |
-| `at = { collection = C  index = N }` | the element at `N`; the collection's element type |
-| `map_get = { collection = C  key = K }` | the value stored under `K` |
-| `prop_of = { obj = O  prop = P }` | a property of a named object — the only way to read a property of something that is not a slot |
-| `prop_or = { obj = O  prop = P  default = D }` | as above, yielding `D` when `P` is absent (§8.8.3) |
-| `global_value = <id>` | a global's current value |
+| `value_of = <datum>` | the datum's value |
+| `value_or = { datum = <datum>  default = D }` | as above, yielding `D` when the property is absent (§8.8.3) |
+| `count_of = <datum>` | element count of a collection, as `int` |
+| `at = { collection = <datum>  index = N }` | the element at `N`; the collection's element type |
+| `map_get = { collection = <datum>  key = K }` | the value stored under `K` |
 | `script_value = { fn = F }` | a script's return value, for anything the declarative readers cannot express |
+
+`value_of` replaces what earlier drafts split into `global_value` and `prop_of`. Globals had accumulated three unrelated access syntaxes — a `global = { … }` namespace block, a `global_value` reader, and the `flag_set` sugar — and collapsing the value-reading cases onto one datum-taking reader removes two of them.
 
 Note that `script_value` is distinct from the `script` predicate (§10.4): `script` returns a boolean and is a condition in its own right; `script_value` returns a value to be compared.
 
@@ -1284,22 +1338,25 @@ The right-hand side of a `value` statement may be a literal scalar, a `const` id
 ```stardata
 restrictions = {
     compare = {
-        prop_or = { obj = noun  prop = damage  default = 0 }
+        value_or = { datum = noun.damage  default = 0 }
         value > 3
         failureMsg = $too_feeble
     }
 }
 
 conditions = {
+    # a collection held as a property of an object
     compare = {
-        at = { collection = waypoints  index = 0 }
+        at = { collection = navcomp.waypoints  index = 0 }
         value == docking_gantry
     }
-}
-
-conditions = {
+    # ...and one held as a global
     compare = {
-        global_value = core_temp
+        count_of = seen_endings
+        value >= 1
+    }
+    compare = {
+        value_of = core_temp
         value >= max_reactor_temp        # a const
     }
 }
@@ -1330,8 +1387,8 @@ An effect block contains no conditionals and no loops. This restriction is delib
 | `set_flag` / `clear_flag` | `{ set_flag = captain_found }` — the global MUST be declared `bool` (§6.4.1) |
 | `set_global` | `{ id = alert_level  value = high }` |
 | `add_global` | `{ id = times_caught  amount = 1 }` — numeric |
-| `list_add` / `list_remove` / `list_clear` | `{ collection = …  value = … }` or `index = …` (§6.5) |
-| `map_put` / `map_remove` | `{ collection = …  key = …  value = … }` |
+| `list_add` / `list_remove` / `list_clear` | `{ collection = <datum>  value = … }` or `index = …` (§6.5, §6.6) |
+| `map_put` / `map_remove` | `{ collection = <datum>  key = …  value = … }` |
 | `start_quest` | `{ quest = … }` |
 | `advance_quest` | `{ quest = … stage = … }` |
 | `fail_quest` | `{ quest = … }` |
@@ -1557,6 +1614,9 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | Trait property conflict without `resolve` (§8.3) | error |
 | Undeclared global named by `set_flag` / `clear_flag` / `flag_set`, or one not of type `bool` (§6.4.1) | error |
 | Reference to an undeclared `global` or `const` (§6.4) | error |
+| A `<datum>` resolving neither as a global/const id nor as an object path (§6.6) | error |
+| A `<datum>` resolving **both** ways (§6.6.2) | error, naming both candidates |
+| A path segment whose intermediate is not `ref<C>`-typed (§6.6) | error |
 | Property read that is definitely absent for the slot's static type (§8.8.2) | error |
 | Property read that is possibly absent and not narrowed (§8.8.3), with a `has_prop` fix-it | error |
 | Local `prop_def` redeclaring an inherited name with a different type (§8.7) | error |
@@ -1613,6 +1673,8 @@ The proposal left the following under-determined. This specification settles the
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |
 | A20 | An absent property raises rather than defaulting (§8.8.4) | A `0` that should have been an error yields a game that is subtly wrong, which is far harder to find than one that is obviously broken |
+| A23 | A bare identifier in an argument position is always a global; object properties use a dotted path (§6.6.1) | Scope-sensitive arguments would mean the same identifier denotes a property in one block and a global in another, and moving a condition between blocks would silently change its meaning |
+| A24 | `includes` rather than `contains` for collection membership (§6.5) | `containing` already means physical containment; two predicates one letter apart with unrelated meanings is a trap |
 | A22 | `compare` as the single home for computed values (§10.6) | `count_of = { … } >= 2` is not merely unusual but ungrammatical — a statement is `Key Op Value`, so a dangling second operator has nowhere to live. One shallow form beats scattering value-producing predicates that cannot express their own result |
 | A21 | Replication is specified but unscheduled; its parser constraint is not (§8.9) | Indistinguishable candidates arise from hand-declared objects too, so the parser needs the rule regardless |
 | A16 | Naming builtins `the` / `a` / `name` rather than `theName` / `aName` / `PrintName` | The original notes used the longer forms; they read poorly under juxtaposition, and nothing has shipped, so the rename is free |

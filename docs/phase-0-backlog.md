@@ -30,37 +30,37 @@ Cheap, unblocks everything, and gets much more expensive after the first outside
 
 Per proposal §14.5.
 
-- [ ] `LICENSE` at root — Apache 2.0.
-- [ ] `stdlib/LICENSE` — MIT-0.
-- [ ] `docs/LICENSE` — CC-BY-4.0.
-- [ ] SPDX headers in a source file template; a script or clang-format hook to keep them.
-- [ ] `NOTICE` file, as Apache 2.0 expects.
+- [x] `LICENSE` at root — Apache 2.0.
+- [x] `stdlib/LICENSE` — MIT-0.
+- [x] `docs/LICENSE` — CC-BY-4.0.
+- [x] SPDX headers in a source file template; a script or clang-format hook to keep them.
+- [x] `NOTICE` file, as Apache 2.0 expects.
 
 ### A2 · `TRADEMARKS.md`
 **Size:** S · **Depends on:** nothing
 
 Apache 2.0 §6 withholds trademark rights, so the names need a usage guideline rather than a licence term.
 
-- [ ] Covers STAR IF, Starbase, Starforge, Starhelm, Stardata, Starpak, Starscape.
-- [ ] States the "Built on STAR IF technology" convention for third-party games.
-- [ ] Explicitly a courtesy guideline, not a licence obligation.
+- [x] Covers STAR IF, Starbase, Starforge, Starhelm, Stardata, Starpak, Starscape.
+- [x] States the "Built on STAR IF technology" convention for third-party games.
+- [x] Explicitly a courtesy guideline, not a licence obligation.
 
 ### A3 · Repository scaffolding
 **Size:** S · **Depends on:** nothing
 
-- [ ] `README.md` — what the project is, what works today, how to build.
-- [ ] `CONTRIBUTING.md` — build, test, style, and the "spec + corpus + fixture" rule from the Definition of Done.
-- [ ] `.gitignore`, `.editorconfig`.
-- [ ] `docs/` index linking proposal, spec, backlog.
+- [x] `README.md` — what the project is, what works today, how to build.
+- [x] `CONTRIBUTING.md` — build, test, style, and the "spec + corpus + fixture" rule from the Definition of Done.
+- [x] `.gitignore`, `.editorconfig`.
+- [x] `docs/` index linking proposal, spec, backlog.
 
 ### A4 · Line-ending policy — **do this before any `.star` file is committed by a Windows contributor**
 **Size:** S · **Depends on:** nothing
 
 Spec §2 requires that CRLF and LF both round-trip **unchanged**. Git's `core.autocrlf` will silently rewrite line endings on checkout, which means the round-trip test (E6) passes on Linux and fails on Windows for reasons that have nothing to do with the parser. This has cost other projects days.
 
-- [ ] `.gitattributes` marks `*.star` as `-text` so Git never normalises them.
-- [ ] Corpus contains at least one deliberately CRLF file and one LF file, and CI asserts both survive.
-- [ ] Documented in `CONTRIBUTING.md` so nobody "helpfully" fixes it.
+- [x] `.gitattributes` marks `*.star` as `-text` so Git never normalises them.
+- [x] Corpus contains at least one deliberately CRLF file and one LF file, and CI asserts both survive.
+- [x] Documented in `CONTRIBUTING.md` so nobody "helpfully" fixes it.
 
 ---
 
@@ -69,45 +69,45 @@ Spec §2 requires that CRLF and LF both round-trip **unchanged**. Git's `core.au
 ### B1 · CMake skeleton and presets
 **Size:** M · **Depends on:** A3
 
-- [ ] Top-level `CMakeLists.txt` with the `libs/` and `apps/` layout of proposal §2.1.
-- [ ] `CMakePresets.json` for `windows-msvc`, `macos-clang`, `linux-gcc`, `linux-clang`, each in Debug and Release.
-- [ ] One-command build from a clean checkout on each platform.
-- [ ] C++20 enforced; the build fails clearly on an inadequate compiler.
+- [x] Top-level `CMakeLists.txt` with the `libs/` and `apps/` layout of proposal §2.1.
+- [x] `CMakePresets.json` for `windows-msvc`, `macos-clang`, `linux-gcc`, `linux-clang`, each in Debug and Release.
+- [x] One-command build from a clean checkout on each platform.
+- [x] C++20 enforced; the build fails clearly on an inadequate compiler.
 
 ### B2 · Dependency manifest
 **Size:** S · **Depends on:** B1
 
-- [ ] `vcpkg.json` pinning Catch2 and the archive library chosen in G3.
-- [ ] Dependencies resolve offline after one warm cache, so CI is not hostage to a registry.
-- [ ] No Qt dependency anywhere in `libs/` — that boundary is load-bearing (proposal §2.1) and should be asserted, not assumed.
+- [x] `vcpkg.json` pinning Catch2 and the archive library chosen in G3.
+- [x] Dependencies resolve offline after one warm cache, so CI is not hostage to a registry.
+- [x] No Qt dependency anywhere in `libs/` — that boundary is load-bearing (proposal §2.1) and should be asserted, not assumed.
 
 ### B3 · Test harness
 **Size:** S · **Depends on:** B1, B2
 
-- [ ] Catch2 wired to `ctest`.
-- [ ] `tests/unit/` builds and runs one trivial passing test.
-- [ ] A corpus-driven test helper that discovers `.star` files rather than listing them, so adding a fixture needs no build-file edit.
+- [x] Catch2 wired to `ctest`.
+- [x] `tests/unit/` builds and runs one trivial passing test.
+- [x] A corpus-driven test helper that discovers `.star` files rather than listing them, so adding a fixture needs no build-file edit.
 
 ### B4 · Compiler hygiene
 **Size:** S · **Depends on:** B1
 
-- [ ] `-Wall -Wextra -Werror` / `/W4 /WX`.
-- [ ] ASan + UBSan in Debug on Linux and macOS.
-- [ ] `.clang-format` and `.clang-tidy`, with a format check in CI.
+- [x] `-Wall -Wextra -Werror` / `/W4 /WX`.
+- [x] ASan + UBSan in Debug on Linux and macOS.
+- [x] `.clang-format` and `.clang-tidy`, with a format check in CI.
 
 ### B5 · CI matrix
 **Size:** M · **Depends on:** B1–B4
 
-- [ ] GitHub Actions: {Windows, macOS, Linux} × {Debug, Release}.
-- [ ] Runs `ctest`, the format check, and the sanitiser build.
-- [ ] Build + test under 10 minutes, or the loop stops being used.
+- [x] GitHub Actions: {Windows, macOS, Linux} × {Debug, Release}.
+- [x] Runs `ctest`, the format check, and the sanitiser build.
+- [x] Build + test under 10 minutes, or the loop stops being used.
 
 ### B6 · Wire the Python checker into CI — **can land today, before any C++ exists**
 **Size:** S · **Depends on:** nothing
 
-- [ ] `python3 tests/check_stardata.py --check-docs --self-test --strict` runs on every push.
-- [ ] `--check-docs` parses every fenced example in `docs/*.md`; it has already caught two real spec bugs that the corpus could not.
-- [ ] Gives the spec-versus-corpus guarantee immediately rather than at the end of Phase 0.
+- [x] `python3 tests/check_stardata.py --check-docs --self-test --strict` runs on every push.
+- [x] `--check-docs` parses every fenced example in `docs/*.md`; it has already caught two real spec bugs that the corpus could not.
+- [x] Gives the spec-versus-corpus guarantee immediately rather than at the end of Phase 0.
 
 ---
 
@@ -118,27 +118,27 @@ Build this **first** of the `stardata` work. Everything downstream reports throu
 ### C1 · Source manager and spans
 **Size:** M · **Depends on:** B3
 
-- [ ] `SourceId`, `Span { SourceId, byte offset, length }`.
-- [ ] Registry mapping `SourceId` → path and contents.
-- [ ] Byte offset → line/column, with a lazily-built line table.
-- [ ] Correct columns for tabs and for non-ASCII (offset in bytes, column in characters).
+- [x] `SourceId`, `Span { SourceId, byte offset, length }`.
+- [x] Registry mapping `SourceId` → path and contents.
+- [x] Byte offset → line/column, with a lazily-built line table.
+- [x] Correct columns for tabs and for non-ASCII (offset in bytes, column in characters).
 
 ### C2 · Diagnostic model
 **Size:** M · **Depends on:** C1
 
 Spec §15 lists the required diagnostics; `tests/check_stardata.py` already defines stable codes worth reusing.
 
-- [ ] `Diagnostic { code, severity, primary span, notes[], fix-its[] }`.
-- [ ] Code enum covering every row of spec §15.
-- [ ] Multi-span diagnostics — the duplicate-key case (§5.3) must cite *both* spans, so this is required, not optional.
-- [ ] Sink interface: collecting, counting, limiting.
+- [x] `Diagnostic { code, severity, primary span, notes[], fix-its[] }`.
+- [x] Code enum covering every row of spec §15.
+- [x] Multi-span diagnostics — the duplicate-key case (§5.3) must cite *both* spans, so this is required, not optional.
+- [x] Sink interface: collecting, counting, limiting.
 
 ### C3 · Diagnostic rendering
 **Size:** S · **Depends on:** C2
 
-- [ ] Human renderer: source line, caret, underline, note, suggestion.
-- [ ] Machine renderer: one line per diagnostic, stable and greppable, for CI.
-- [ ] Colour when a TTY, never when piped.
+- [x] Human renderer: source line, caret, underline, note, suggestion.
+- [x] Machine renderer: one line per diagnostic, stable and greppable, for CI.
+- [x] Colour when a TTY, never when piped.
 
 ### C4 · Diagnostic snapshot tests
 **Size:** M · **Depends on:** C3, B3
@@ -432,7 +432,7 @@ Proposal §17 item 2: build it **before** engine code, so the Phase 2 go/no-go g
 - [ ] Deterministic from a seed.
 - [ ] Phase 0 use: a parse-throughput baseline, recorded so later regressions are visible.
 
-### H4 · Retire or keep `check_stardata.py`
+### H4 · Retire `check_stardata.py`
 **Size:** S · **Depends on:** H2
 
 - [ ] Once C++ covers everything, **delete it** — its own docstring says so, and two validators that disagree are worse than one.

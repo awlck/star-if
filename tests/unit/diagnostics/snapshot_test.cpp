@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2026 Adrian Welcker
+//
+// Exercises the snapshot harness end to end (backlog C4). This does not run
+// against tests/corpus/invalid/ yet -- producing real diagnostics from
+// those files needs the lexer (workstream D), which does not exist yet.
+// Until then, this proves the harness itself: render a diagnostic, compare
+// it to a checked-in snapshot file, and fail loudly on drift. D3's lexical
+// diagnostics are expected to wire the real corpus through this same
+// check_snapshot() once they exist, one fixture at a time.
+#include <catch2/catch_test_macros.hpp>
+
+#include <filesystem>
+#include <sstream>
+
+#include "stardata/diag/diagnostic.hpp"
+#include "stardata/diag/render.hpp"
+#include "stardata/diag/source_manager.hpp"
+
+#include "support/snapshot.hpp"
+
+using namespace stardata::diag;
+
+namespace {
+
+std::filesystem::path snapshot_dir() {
+    return std::filesystem::path(STARIF_UNIT_TEST_DIR) / "diagnostics" / "snapshots";
+}
+
+// The fixture both snapshot tests below render: two colliding `title` keys,
+// the running example for spec §5.3's "cite both spans" requirement.
+struct DuplicateKeyFixture {
+    SourceManager sources;
+    SourceId id;
+    Diagnostic diag;
+
+    DuplicateKeyFixture()
+        : id(sources.add_file("tests/corpus/invalid/duplicate-key.star", "title = \"A\"\n"
+                                                                         "title = \"B\"\n")),
+          diag(Code::DuplicateKey, Span{id, 12, 5}, "duplicate key 'title' (arity = one)") {
+        diag.with_note("first occurrence here", Span{id, 0, 5});
+        diag.with_fix_it(Span{id, 12, 5}, "", "remove one of the duplicate keys");
+    }
+};
+
+} // namespace
+
+TEST_CASE("a duplicate-key diagnostic's human rendering matches its checked-in snapshot",
+          "[diag][snapshot]") {
+    DuplicateKeyFixture fixture;
+
+    std::ostringstream out;
+    render_human(out, fixture.diag, fixture.sources, /*use_color=*/false);
+
+    CHECK(stardata::test::check_snapshot(snapshot_dir() / "duplicate-key.human.txt", out.str()));
+}
+
+TEST_CASE("the same diagnostic's machine rendering matches its checked-in snapshot",
+          "[diag][snapshot]") {
+    DuplicateKeyFixture fixture;
+
+    std::ostringstream out;
+    render_machine(out, fixture.diag, fixture.sources);
+
+    CHECK(stardata::test::check_snapshot(snapshot_dir() / "duplicate-key.machine.txt", out.str()));
+}

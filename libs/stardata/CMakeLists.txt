@@ -3,6 +3,11 @@
 
 add_library(stardata STATIC
     src/version.cpp
+    src/diag/source_manager.cpp
+    src/diag/codes.cpp
+    src/diag/diagnostic.cpp
+    src/diag/sink.cpp
+    src/diag/render.cpp
 )
 add_library(stardata::stardata ALIAS stardata)
 

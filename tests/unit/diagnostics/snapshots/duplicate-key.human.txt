@@ -1,0 +1,12 @@
+error: E-DUP-KEY: duplicate key 'title' (arity = one)
+  --> tests/corpus/invalid/duplicate-key.star:2:1
+  |
+2 | title = "B"
+  | ^^^^^
+note: first occurrence here
+  --> tests/corpus/invalid/duplicate-key.star:1:1
+  |
+1 | title = "A"
+  | ^^^^^
+fix-it: remove one of the duplicate keys
+  replace tests/corpus/invalid/duplicate-key.star:2:1 with ``

@@ -9,10 +9,16 @@ add_executable(stardata_unit_tests
     skeleton_test.cpp
     corpus_discovery_test.cpp
     support/snapshot.cpp
+    support/token_dump.cpp
     diagnostics/source_manager_test.cpp
     diagnostics/diagnostic_test.cpp
     diagnostics/render_test.cpp
     diagnostics/snapshot_test.cpp
+    lex/token_test.cpp
+    lex/lexer_test.cpp
+    lex/lexer_diagnostics_test.cpp
+    lex/lexer_corpus_test.cpp
+    lex/lexer_fuzz_test.cpp
 )
 
 target_link_libraries(stardata_unit_tests

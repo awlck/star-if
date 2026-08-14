@@ -1,0 +1,76 @@
+# tokens: 58, trivia: 91 (whitespace elided)
+0+79 comment # ==============================================...
+80+68 comment #  lf.star — line-ending round-trip fixture (s...
+149+79 comment # ==============================================...
+229+1 comment #
+231+79 comment #  Deliberately checked in with LF (Unix) line e...
+311+77 comment #  requires that CRLF and LF both survive UNCHAN...
+389+73 comment #  implementation must not normalise them. .gita...
+463+68 comment #  -text specifically so Git never rewrites this...
+532+28 comment #  checkin, on any platform.
+561+1 comment #
+563+72 comment #  See crlf.star for the CRLF twin of this file ...
+636+73 comment #  line ending), and CONTRIBUTING.md ("Line endi...
+710+1 comment #
+712+76 comment #  Byte-for-byte round-trip through the real par...
+789+71 comment #  file's job today is just to exist as an LF fi...
+861+65 comment #  corrupt, and to keep validating under tests/c...
+927+79 comment # ==============================================...
+1008+4 identifier room
+1013+1 operator =
+1015+1 punctuation {
+1021+2 identifier id
+1028+1 operator =
+1030+12 identifier fixture_room
+1047+6 identifier sector
+1054+1 operator =
+1056+14 identifier fixture_sector
+1075+4 identifier name
+1082+1 operator =
+1084+13 lockey $room_fixture
+1102+11 identifier description
+1114+1 operator =
+1116+55 string "A small room that exists only to prove a line e...
+1190+20 string "survived the trip."
+1215+5 identifier exits
+1222+1 operator =
+1224+1 punctuation {
+1226+5 identifier north
+1232+1 operator =
+1234+16 identifier fixture_room_two
+1251+1 punctuation }
+1253+1 punctuation }
+1256+4 identifier room
+1261+1 operator =
+1263+1 punctuation {
+1269+2 identifier id
+1276+1 operator =
+1278+16 identifier fixture_room_two
+1299+6 identifier sector
+1306+1 operator =
+1308+14 identifier fixture_sector
+1327+4 identifier name
+1334+1 operator =
+1336+17 lockey $room_fixture_two
+1358+5 identifier exits
+1365+1 operator =
+1367+1 punctuation {
+1369+5 identifier south
+1375+1 operator =
+1377+12 identifier fixture_room
+1390+1 punctuation }
+1392+1 punctuation }
+1395+3 identifier loc
+1399+1 operator =
+1401+1 punctuation {
+1407+4 identifier lang
+1412+1 operator =
+1414+2 identifier en
+1422+12 identifier room_fixture
+1439+1 operator =
+1441+14 string "Fixture Room"
+1460+16 identifier room_fixture_two
+1477+1 operator =
+1479+21 string "Second Fixture Room"
+1501+1 punctuation }
+1503+0 eof 

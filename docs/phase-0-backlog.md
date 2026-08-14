@@ -154,40 +154,83 @@ Spec §15 lists the required diagnostics; `tests/check_stardata.py` already defi
 ### D1 · Token and trivia model
 **Size:** S · **Depends on:** C1
 
-- [ ] Token kinds for spec §3: identifier, integer, decimal, string, lockey, annotation, operator, punctuation, angle.
-- [ ] Trivia kinds: whitespace, comment. Trivia is **retained**, not discarded (spec §14.2).
-- [ ] Tokens carry spans, not copied text.
+- [x] Token kinds for spec §3: identifier, integer, decimal, string, lockey, annotation, operator, punctuation, angle.
+- [x] Trivia kinds: whitespace, comment. Trivia is **retained**, not discarded (spec §14.2).
+- [x] Tokens carry spans, not copied text.
+
+Two additions beyond the list, both forced by requirements elsewhere: an
+`error` token kind, so that the spans still tile the whole input when a byte
+begins no token (E4 needs a tree covering every byte, error text included),
+and a `bom` trivia kind, because §2.2 requires a leading U+FEFF to survive a
+round-trip while explicitly not being content.
+
+Annotation arguments are ordinary tokens rather than part of the annotation
+token, since trivia may appear between them and §14.2 requires it survive.
 
 ### D2 · Lexer core
 **Size:** M · **Depends on:** D1, C2
 
-- [ ] Implements spec §3.1–§3.9.
-- [ ] `<` and `>` emitted as an ambiguous `angle` kind, resolved by the parser (spec §4.2) — the lexer must **not** guess, and must not use whitespace to decide.
-- [ ] Multi-character operators matched before single-character punctuation (`>=` is not `>` then `=`).
-- [ ] UTF-8 validation with a useful error, not a crash.
+- [x] Implements spec §3.1–§3.9.
+- [x] `<` and `>` emitted as an ambiguous `angle` kind, resolved by the parser (spec §4.2) — the lexer must **not** guess, and must not use whitespace to decide.
+- [x] Multi-character operators matched before single-character punctuation (`>=` is not `>` then `=`).
+- [x] UTF-8 validation with a useful error, not a crash.
+
+`<=` and `>=` lex as operators, not as an angle plus an equals: neither can
+open a type argument list, so neither is ambiguous.
+
+The §15 reserved operators `*=`, `/=`, `::` and `->` are rejected with a note
+naming §15. `=>` is not, and cannot be: it lexes as `=` followed by `>`, and
+telling it from `= >` would mean reading the spacing that §3.1 makes
+insignificant. The grammar rejects it instead, in E4.
 
 ### D3 · Lexical diagnostics
 **Size:** M · **Depends on:** D2, C2
 
 Every one of these has a fixture in `tests/corpus/invalid/`:
 
-- [ ] `E-STR-MULTILINE`, `E-STR-ESCAPE`, `E-STR-UNTERMINATED`
-- [ ] `E-DEC-PRECISION`, `E-DEC-LEADING-DOT`, `E-NUM-TRAILING-DOT`
-- [ ] `E-BRACKET-OUTSIDE`, `E-RESERVED-WORD`, `E-UNICODE-WS`, `E-BAD-CHAR`
-- [ ] Recovery: one bad token does not abandon the file.
+- [x] `E-STR-MULTILINE`, `E-STR-ESCAPE`, `E-STR-UNTERMINATED`
+- [x] `E-DEC-PRECISION`, `E-DEC-LEADING-DOT`, `E-NUM-TRAILING-DOT`
+- [x] `E-BRACKET-OUTSIDE`, `E-RESERVED-WORD`, `E-UNICODE-WS`, `E-BAD-CHAR`
+- [x] Recovery: one bad token does not abandon the file.
+
+Two codes beyond the list, each stating a §3 or §2 MUST that had no code:
+`E-INT-RANGE` (§3.4's signed-64-bit range, also added to
+`tests/check_stardata.py` so the two implementations still agree) and
+`E-UTF8-INVALID` (§2.1). `E-UTF8-INVALID` is the one lexical code with no
+corpus fixture: the corpus is shared with the Python checker, which reads
+every file as UTF-8 text, so a fixture of malformed bytes would break that
+checker rather than exercise it. It is covered by unit tests built from
+bytes, and the "every lexical code has a fixture" test names the exemption
+so it cannot quietly grow.
+
+Neither code appears in spec §14.3's table, which begins at §5.2 and lists
+none of §3's diagnostics. **Worth deciding separately:** whether that table
+should grow the §3 rows, or whether its scope should be stated as semantic
+diagnostics only.
 
 ### D4 · Adjacent string concatenation
 **Size:** S · **Depends on:** D2
 
-- [ ] Spec §3.5.1 — adjacent literals form one scalar.
-- [ ] **Split points preserved in the CST**, so E6's round-trip reproduces the author's line breaks.
+- [x] Spec §3.5.1 — adjacent literals form one scalar.
+- [x] **Split points preserved in the CST**, so E6's round-trip reproduces the author's line breaks.
+
+The lexer emits one token per literal and reports the run
+(`TokenStream::string_run_at`) rather than merging, which is what leaves the
+split points for the CST to keep. `decode_string_escapes` turns a run into
+the scalar's value.
 
 ### D5 · Lexer conformance tests
 **Size:** M · **Depends on:** D3, D4
 
-- [ ] Token-stream golden test over `tour.star`.
-- [ ] A table-driven test per spec §3 rule.
-- [ ] Fuzz the lexer on random bytes: no crash, no hang, no unbounded memory.
+- [x] Token-stream golden test over `tour.star`.
+- [x] A table-driven test per spec §3 rule.
+- [x] Fuzz the lexer on random bytes: no crash, no hang, no unbounded memory.
+
+The golden runs over every file in `tests/corpus/`, not `tour.star` alone,
+so the CRLF and LF fixtures of A4 are pinned too; `--update-snapshots`
+regenerates. The fuzzer is in-process and deterministic so that it runs in
+the ordinary `ctest` invocation under the Debug sanitisers, and it is
+exhaustive over all one- and two-byte inputs on top of the random ones.
 
 ---
 

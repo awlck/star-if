@@ -44,6 +44,16 @@ std::string_view SourceManager::contents(SourceId id) const {
     return entry(id).contents;
 }
 
+std::string_view SourceManager::text(Span span) const {
+    const std::string_view all = contents(span.source);
+    const auto size = static_cast<std::uint32_t>(all.size());
+    const std::uint32_t start = std::min(span.offset, size);
+    // Via std::size_t, since offset + length can wrap a 32-bit sum.
+    const auto end = static_cast<std::uint32_t>(std::min(
+        static_cast<std::size_t>(span.offset) + span.length, static_cast<std::size_t>(size)));
+    return all.substr(start, end - start);
+}
+
 const std::vector<std::uint32_t>& SourceManager::line_starts(const Entry& ent) {
     if (ent.line_starts.empty()) {
         ent.line_starts.push_back(0);

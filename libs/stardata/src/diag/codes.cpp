@@ -21,6 +21,28 @@ std::string_view to_string(Severity severity) noexcept {
 
 std::string_view code_string(Code code) noexcept {
     switch (code) {
+    case Code::StringMultiline:
+        return "E-STR-MULTILINE";
+    case Code::StringEscape:
+        return "E-STR-ESCAPE";
+    case Code::StringUnterminated:
+        return "E-STR-UNTERMINATED";
+    case Code::DecimalPrecision:
+        return "E-DEC-PRECISION";
+    case Code::DecimalLeadingDot:
+        return "E-DEC-LEADING-DOT";
+    case Code::NumberTrailingDot:
+        return "E-NUM-TRAILING-DOT";
+    case Code::IntegerRange:
+        return "E-INT-RANGE";
+    case Code::BracketOutside:
+        return "E-BRACKET-OUTSIDE";
+    case Code::UnicodeWhitespace:
+        return "E-UNICODE-WS";
+    case Code::BadChar:
+        return "E-BAD-CHAR";
+    case Code::Utf8Invalid:
+        return "E-UTF8-INVALID";
     case Code::BlockMixed:
         return "E-BLOCK-MIXED";
     case Code::DuplicateKey:

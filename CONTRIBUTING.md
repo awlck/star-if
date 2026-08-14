@@ -6,10 +6,10 @@ Phase 0 (Foundations) is in progress — see
 [`docs/phase-0-backlog.md`](docs/phase-0-backlog.md) for the task list and
 [`docs/README.md`](docs/README.md) for the rest of the documentation. The
 build skeleton (workstream B) exists: CMake, presets, a dependency manifest,
-compiler warnings and sanitisers, and `libs/stardata` as a placeholder
-library. The actual lexer/CST/parser (workstreams D-F) haven't started —
-`libs/stardata` today only exists to give the build something real to
-compile, link and test.
+compiler warnings and sanitisers. Inside `libs/stardata`, the diagnostics
+layer (workstream C) and the lexer (workstream D) are implemented; the
+lossless CST, the parser and the schema layer (workstreams E and F) have not
+started, so nothing yet turns a token stream into a tree.
 
 ## Build
 

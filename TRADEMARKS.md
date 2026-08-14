@@ -1,4 +1,4 @@
-# Trademarks
+# Trademarks and Naming Rules
 
 This is a courtesy usage guideline, not a licence term. Apache License 2.0
 §6 (see `LICENSE`) already withholds any grant of trademark rights, so
@@ -18,7 +18,7 @@ identify the project and its parts:
 | **Starhelm** | The runtime / interpreter. |
 | **Stardata** | The source data format (`.star`). |
 | **Starpak** | The compiled distributable format (`.spak`). |
-| **Starscape** | Adrian Welcker's first-party RPG ruleset and game series. |
+| **Starscape** | Our first-party RPG ruleset and game series. |
 
 ## How we'd like these used
 
@@ -27,20 +27,21 @@ identify the project and its parts:
   System.
 - If your game or tool is built on this system, we'd appreciate the line
   **"Built on STAR IF technology"** somewhere reasonable — credits, an
-  about box, a store page. This is a request, not a requirement: nothing
-  in the code licence conditions your use of the software on including it.
+  about box, a store page. (This is a request, not a requirement; nothing
+  in the code licence conditions your use of the software on including it.)
 - Please don't name your own tool, fork, or distribution **Starbase**,
   **Starforge**, **Starhelm**, **Stardata**, or **Starpak** in a way that
   could be mistaken for this project's own release of that component. A
   fork called "Starbase" invites confusion about whose editor someone is
   running; "Starbase, modified by <you>" or a name of your own doesn't.
-- **Starscape** is Adrian Welcker's own setting and RPG ruleset, distinct
+- **Starscape** is our RPG ruleset, setting, and game series, distinct
   from the STAR IF System itself, and its name is reserved: please don't
   publish your own game or ruleset under the name Starscape. (Game
   *mechanics* aren't copyrightable, and nothing stops you from writing a
-  compatible or similar ruleset — just under a different name. See
-  `docs/proposal.md` §14.5 for the fuller reasoning, and for how this
-  interacts with the Starscape SRD's own licence once that exists.)
+  compatible or similar ruleset, or even using our reference implementation
+  once that exists — just under a different name. See `docs/proposal.md`
+  §14.5 for the fuller reasoning, and for how this is intended to interact
+  with the Starscape SRD's own licence once that exists.)
 
 ## What this document is not
 

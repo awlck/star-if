@@ -25,7 +25,7 @@ See [`docs/proposal.md`](docs/proposal.md) for the full design rationale, and
 
 ## Status
 
-Pre-alpha, in Phase 0 (Foundations) of the [roadmap](docs/proposal.md#15-roadmap).
+Early development, in Phase 0 (Foundations) of the [roadmap](docs/proposal.md#15-roadmap).
 See [`docs/phase-0-backlog.md`](docs/phase-0-backlog.md) for the current task
 list and [`docs/phase-0-backlog.md#critical-path`](docs/phase-0-backlog.md#critical-path)
 for what's blocking what.

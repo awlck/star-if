@@ -37,19 +37,24 @@ What exists today:
   (`tests/check_stardata.py`) that validates it against the spec — a
   stand-in until the real parser (`libs/stardata`) exists. See
   [`tests/README.md`](tests/README.md).
+- The build skeleton: CMake, presets for all three desktop platforms, a
+  vcpkg manifest, compiler warnings-as-errors, and ASan/UBSan in Debug.
+  `libs/stardata` is currently a placeholder library — enough to prove the
+  build works, not yet the lexer/CST/parser.
 
-Not yet started: the C++ engine (`libs/`, `apps/`), the build, and CI.
-Nothing here builds or runs a game yet.
+Not yet started: the actual engine (the rest of `libs/`, all of `apps/`).
+Nothing here plays a game yet.
 
 ## Building
 
-There is no C++ code yet, so there is nothing to build. Once `libs/` and
-`apps/` exist (backlog workstream B), this section will cover the CMake
-presets and the one-command build from a clean checkout on Windows, macOS
-and Linux.
+```sh
+cmake --workflow --preset linux-gcc-debug   # or macos-clang-*, windows-msvc-*, linux-clang-*, each -debug/-release
+```
 
-In the meantime, the Stardata conformance checker needs only Python 3 and no
-dependencies:
+See [`CONTRIBUTING.md`](CONTRIBUTING.md#build) for the one-time vcpkg setup
+this needs.
+
+The Stardata conformance checker needs only Python 3 and no dependencies:
 
 ```sh
 python3 tests/check_stardata.py --check-docs --self-test --strict

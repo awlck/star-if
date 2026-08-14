@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Cancel superseded runs on the same ref so pushes don't queue behind
+# their own stale predecessors.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  # backlog B6: can run before any C++ exists, and is the thing that
+  # actually keeps docs/stardata-spec.md and tests/corpus/ from silently
+  # diverging in the meantime.
+  stardata-checker:
+    name: Stardata conformance checker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tests/check_stardata.py --check-docs --self-test --strict
+
+  # backlog B2: the libs/knows-nothing-about-Qt boundary, asserted rather
+  # than assumed.
+  no-qt-in-libs:
+    name: libs/ has no Qt dependency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_no_qt_in_libs.py
+
+  # backlog B4/B5: the format check.
+  format-check:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: |
+          files=$(git ls-files -- '*.cpp' '*.cc' '*.cxx' '*.h' '*.hpp' '*.hh')
+          if [ -z "$files" ]; then
+            echo "no C++ files yet"
+            exit 0
+          fi
+          clang-format --dry-run --Werror $files
+
+  # backlog B5: {Windows, macOS, Linux} x {Debug, Release}, each via its
+  # CMakePresets.json workflow preset (backlog B1) so CI runs exactly the
+  # command a contributor would run locally. The Debug legs on Linux and
+  # macOS are also "the sanitiser build" from B5's checklist -- ASan/UBSan
+  # turn on automatically for Debug + non-MSVC (cmake/Sanitizers.cmake), so
+  # there is no separate sanitiser job to keep in sync with this one.
+  build-and-test:
+    name: ${{ matrix.preset }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            preset: linux-gcc-debug
+          - os: ubuntu-latest
+            preset: linux-gcc-release
+          - os: ubuntu-latest
+            preset: linux-clang-debug
+          - os: ubuntu-latest
+            preset: linux-clang-release
+          - os: macos-latest
+            preset: macos-clang-debug
+          - os: macos-latest
+            preset: macos-clang-release
+          - os: windows-latest
+            preset: windows-msvc-debug
+          - os: windows-latest
+            preset: windows-msvc-release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: seanmiddleditch/gha-setup-ninja@v4
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+        with:
+          arch: x64
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: a2b75031b909a2d6b051725c3909230c72d4bd4a
+
+      - name: cmake --workflow
+        run: cmake --workflow --preset ${{ matrix.preset }}

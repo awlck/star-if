@@ -1,0 +1,20 @@
+---
+# backlog B4. Not yet wired into CI (B5 only requires the format check and
+# the sanitiser build) -- this is for local/IDE use until it's proven quiet
+# enough on real code to gate the build on.
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  modernize-*,
+  readability-*,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-special-member-functions,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -bugprone-easily-swappable-parameters
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '(libs|apps)/.*'
+FormatStyle: file

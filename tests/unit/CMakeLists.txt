@@ -5,22 +5,30 @@ find_package(Catch2 3 REQUIRED)
 include(Catch)
 
 add_executable(stardata_unit_tests
+    main.cpp
     skeleton_test.cpp
     corpus_discovery_test.cpp
+    support/snapshot.cpp
+    diagnostics/source_manager_test.cpp
+    diagnostics/diagnostic_test.cpp
+    diagnostics/render_test.cpp
+    diagnostics/snapshot_test.cpp
 )
 
 target_link_libraries(stardata_unit_tests
     PRIVATE
         stardata::stardata
-        Catch2::Catch2WithMain
+        Catch2::Catch2
 )
 
 target_include_directories(stardata_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Used by corpus_discovery_test.cpp so fixture discovery works regardless of
-# where the build directory lives.
+# where the build directory lives; STARIF_UNIT_TEST_DIR does the same for
+# diagnostics/snapshot_test.cpp's checked-in snapshot files.
 target_compile_definitions(stardata_unit_tests PRIVATE
     STARIF_CORPUS_DIR="${CMAKE_SOURCE_DIR}/tests/corpus"
+    STARIF_UNIT_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 starif_set_warnings(stardata_unit_tests)

@@ -4,31 +4,56 @@
 
 Phase 0 (Foundations) is in progress — see
 [`docs/phase-0-backlog.md`](docs/phase-0-backlog.md) for the task list and
-[`docs/README.md`](docs/README.md) for the rest of the documentation. Right
-now that means: a format specification, a conformance corpus, and a Python
-checker standing in for the real parser. There is no C++ yet.
+[`docs/README.md`](docs/README.md) for the rest of the documentation. The
+build skeleton (workstream B) exists: CMake, presets, a dependency manifest,
+compiler warnings and sanitisers, and `libs/stardata` as a placeholder
+library. The actual lexer/CST/parser (workstreams D-F) haven't started —
+`libs/stardata` today only exists to give the build something real to
+compile, link and test.
 
 ## Build
 
-Nothing to build yet. Once the CMake skeleton lands (backlog B1), this
-section will cover the presets for `windows-msvc`, `macos-clang`,
-`linux-gcc` and `linux-clang`, and the one-command build from a clean
-checkout on all three.
+You need a C++20 compiler (GCC ≥ 12, Clang ≥ 14, or MSVC ≥ 19.29), CMake
+≥ 3.25, Ninja, and [vcpkg](https://github.com/microsoft/vcpkg):
+
+```sh
+git clone https://github.com/microsoft/vcpkg.git
+./vcpkg/bootstrap-vcpkg.sh   # or bootstrap-vcpkg.bat on Windows
+export VCPKG_ROOT="$(pwd)/vcpkg"
+```
+
+Then, from a clean checkout, one command builds and tests everything for a
+given platform and configuration (`CMakePresets.json`; backlog B1):
+
+```sh
+cmake --workflow --preset linux-gcc-debug     # or linux-clang-*, macos-clang-*, windows-msvc-*, each in -debug/-release
+```
+
+That runs configure, build and `ctest` in one shot. `vcpkg.json` pins
+Catch2 and miniz; vcpkg resolves both from its own registry cache after the
+first (network-requiring) run, so CI is not hostage to a registry on every
+build (backlog B2). On Windows, run this from a Developer Command Prompt (or
+after `vcvarsall.bat`) so `cl` and Ninja can find each other.
 
 ## Test
 
-Right now, "test" means the Stardata conformance checker:
+Once configured, `ctest` is the primary test runner (backlog B3):
+
+```sh
+ctest --test-dir build/linux-gcc-debug --output-on-failure
+```
+
+Separately, the Stardata format itself still has its own conformance
+checker, standing in for the real parser's own conformance tests until
+workstream D/E lands:
 
 ```sh
 python3 tests/check_stardata.py --check-docs --self-test --strict
 ```
 
-This is the exact invocation CI runs (backlog B6). See
-[`tests/README.md`](tests/README.md) for what it checks and doesn't, and
-for the suppression syntax.
-
-Once `libs/stardata` exists, `ctest` takes over as the primary test runner
-(backlog B3), and this section will be updated accordingly.
+Both run in CI (backlog B5, B6). See [`tests/README.md`](tests/README.md)
+for what the Python checker checks and doesn't, and for the suppression
+syntax.
 
 ## The spec + corpus + fixture rule
 
@@ -87,13 +112,32 @@ mean to edit is almost always this.
 ## Style
 
 - C++20. `-Wall -Wextra -Werror` / `/W4 /WX` — warnings are errors
-  (backlog B4). `.clang-format` and `.clang-tidy` apply once they exist.
+  (backlog B4, `cmake/CompilerWarnings.cmake`). ASan + UBSan run in Debug
+  builds on Linux and macOS (`cmake/Sanitizers.cmake`). `.clang-format` and
+  `.clang-tidy` at the repo root define the formatting and lint rules; run
+  `clang-format -i` before committing, and expect CI to check it (backlog
+  B5).
 - Python (`tests/check_stardata.py`, `scripts/`) is dependency-free by
   design — don't add a `requirements.txt` for tooling that doesn't need
   one.
 - No Qt in `libs/` — that boundary is load-bearing (proposal §2.1): it's
   what keeps the compiler and CLI runtime buildable and testable without
   Qt, and keeps the WASM target tractable.
+
+## Dependencies
+
+`vcpkg.json` (backlog B2) currently pins two things:
+
+- **Catch2** — the test framework (backlog B3).
+- **miniz** — the archive library for `starvfs`'s zip layer (backlog G3).
+  Chosen over libzip for now: it's a small, dependency-free, permissively
+  licensed single-purpose library with no transitive dependencies (libzip
+  pulls in zlib and optionally bzip2/OpenSSL/zstd), which matters more than
+  usual here because the core is also an Emscripten/WASM target (proposal
+  §2) where every linked dependency has an outsized cost. This is a
+  provisional call made to give `vcpkg.json` something real to pin — G3 is
+  where it gets revisited properly, with the read-only zip layer that
+  would actually test the choice.
 
 ## SPDX headers
 

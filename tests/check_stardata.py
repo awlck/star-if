@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 Adrian Welcker
 """
 check_stardata.py — a conformance checker for the Stardata format.
 

@@ -75,7 +75,7 @@ Inform 7's problems are different and also instructive: rule-ordering opacity (a
 | Source data format | **Stardata** (`.star`) | The Clausewitz-derived format. |
 | Compiled distributable | **Starpak** (`.spak`) | |
 | Scripting language surface | **Starscript** | Lua 5.4 plus the STAR API. |
-| First-party RPG ruleset and game series | **Starscape** | Adrian's; name reserved (§14.5). |
+| First-party RPG ruleset and game series | **Starscape** | name reserved (§14.5). |
 
 The system as a whole is the **STAR IF System**; third-party games are encouraged to carry **"Built on STAR IF technology"** (§14.5).
 

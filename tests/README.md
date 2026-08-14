@@ -69,6 +69,7 @@ top of the script. It is the only place library knowledge is baked in.
 | Path | Purpose |
 |---|---|
 | `corpus/tour.star` | The reference corpus. Exercises every construct in the spec. Must validate with zero errors and zero warnings. |
+| `corpus/lf.star`, `corpus/crlf.star` | The same small scenario, checked in with LF and CRLF line endings respectively (spec §2). `.gitattributes` marks `*.star` as `-text` so Git never rewrites either on checkout. Byte-for-byte round-trip verification is backlog task E6; today these two exist to survive Git untouched and to keep validating here. See `CONTRIBUTING.md` ("Line endings"). |
 | `corpus/invalid/` | Negative fixtures — files that are invalid on purpose, each declaring the diagnostic codes it must provoke. |
 
 ### Adding a rule to the specification

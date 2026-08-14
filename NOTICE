@@ -1,0 +1,19 @@
+STAR IF System
+Copyright 2026 Adrian Welcker
+
+This product includes software developed for the STAR IF System
+(https://github.com/awlck/star-if).
+
+Licensing is not uniform across the tree; see the LICENSE file nearest
+the code in question, and CONTRIBUTING.md for the full table:
+
+  libs/, apps/            Apache License, Version 2.0 (LICENSE)
+  stdlib/core             MIT No Attribution (stdlib/LICENSE)
+  stdlib/starscape         Apache License, Version 2.0 (LICENSE) — implementation
+                           only; the Starscape SRD text, when published, carries
+                           its own licence and reserves the Starscape name
+  docs/                    Creative Commons Attribution 4.0 International
+                           (docs/LICENSE)
+
+The names STAR IF, Starbase, Starforge, Starhelm, Stardata, Starpak and
+Starscape are not licensed under any of the above; see TRADEMARKS.md.

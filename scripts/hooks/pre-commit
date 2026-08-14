@@ -1,0 +1,9 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2026 Adrian Welcker
+#
+# Blocks a commit that stages a source file without the right SPDX header.
+# Installed by scripts/install-hooks.sh; see CONTRIBUTING.md.
+
+set -e
+python3 "$(git rev-parse --show-toplevel)/scripts/spdx_header.py" --check --staged

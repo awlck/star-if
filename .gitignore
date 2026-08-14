@@ -1,0 +1,35 @@
+# Build output
+/build/
+/out/
+/cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+
+# vcpkg
+/vcpkg_installed/
+/vcpkg/buildtrees/
+/vcpkg/downloads/
+/vcpkg/packages/
+
+# Editor / IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Local, machine-specific overrides
+CMakeUserPresets.json
+.env

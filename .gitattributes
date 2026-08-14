@@ -1,0 +1,14 @@
+# Default: normalise text files to LF in the repository, let Git convert on
+# checkout per the platform. This does NOT apply to .star, overridden below.
+* text=auto eol=lf
+
+# Stardata files carry their own line-ending policy (spec §2: LF or CRLF are
+# both legal, and an implementation MUST NOT normalise them on round-trip).
+# `-text` tells Git to leave these bytes alone entirely — no line-ending
+# conversion on checkout or checkin, regardless of core.autocrlf, regardless
+# of platform. See A4 / CONTRIBUTING.md#line-endings.
+*.star -text
+
+# Binary-ish or generated formats: no diff noise, no text conversion.
+*.png binary
+*.spak binary

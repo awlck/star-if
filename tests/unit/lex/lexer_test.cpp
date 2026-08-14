@@ -142,7 +142,7 @@ const std::vector<TriviaCase>& trivia_cases() {
 
 } // namespace
 
-TEST_CASE("token kinds follow spec §3", "[lex]") {
+TEST_CASE("token kinds follow spec 3", "[lex]") {
     for (const KindCase& test_case : kind_cases()) {
         INFO(test_case.section << "  source: " << test_case.source);
         Lexed lexed{std::string(test_case.source)};
@@ -152,7 +152,7 @@ TEST_CASE("token kinds follow spec §3", "[lex]") {
     }
 }
 
-TEST_CASE("trivia kinds follow spec §3.1 and §3.2", "[lex]") {
+TEST_CASE("trivia kinds follow spec 3.1 and 3.2", "[lex]") {
     for (const TriviaCase& test_case : trivia_cases()) {
         INFO(test_case.section << "  source: " << test_case.source);
         Lexed lexed{std::string(test_case.source)};
@@ -165,7 +165,7 @@ TEST_CASE("trivia kinds follow spec §3.1 and §3.2", "[lex]") {
     }
 }
 
-TEST_CASE("§3.1 newlines have no syntactic significance", "[lex]") {
+TEST_CASE("spec 3.1: newlines have no syntactic significance", "[lex]") {
     // "a block written across ten lines and the same block written on one
     // line are identical" -- identical, here, means the same token kinds in
     // the same order.
@@ -174,7 +174,7 @@ TEST_CASE("§3.1 newlines have no syntactic significance", "[lex]") {
     CHECK(spread.kinds() == inline_form.kinds());
 }
 
-TEST_CASE("§3.6 multi-character operators win over single-character ones", "[lex]") {
+TEST_CASE("spec 3.6: multi-character operators win over single-character ones", "[lex]") {
     // The rule that makes `>=` one token rather than an angle and an equals.
     Lexed lexed{">= <= == != += -= ?="};
     for (std::size_t index = 0; index < 7; ++index) {
@@ -185,7 +185,7 @@ TEST_CASE("§3.6 multi-character operators win over single-character ones", "[le
     CHECK(lexed.sink().error_count() == 0);
 }
 
-TEST_CASE("§3.7 a bare angle is never merged with a following equals", "[lex]") {
+TEST_CASE("spec 3.7: a bare angle is never merged with a following equals", "[lex]") {
     // `< =` is two tokens; `<=` is one. Whitespace decides nothing else in
     // this format, but it does decide which characters are adjacent.
     Lexed split{"< ="};
@@ -195,7 +195,7 @@ TEST_CASE("§3.7 a bare angle is never merged with a following equals", "[lex]")
     CHECK(joined.kinds() == std::vector{TokenKind::Operator});
 }
 
-TEST_CASE("§3.2 a '#' inside a string literal is an ordinary character", "[lex]") {
+TEST_CASE("spec 3.2: a '#' inside a string literal is an ordinary character", "[lex]") {
     Lexed lexed{"hash = \"Cell block #4\"\n"};
     CHECK(lexed.kinds() ==
           std::vector{TokenKind::Identifier, TokenKind::Operator, TokenKind::String});
@@ -203,13 +203,13 @@ TEST_CASE("§3.2 a '#' inside a string literal is an ordinary character", "[lex]
     CHECK(lexed.sink().error_count() == 0);
 }
 
-TEST_CASE("§3.4 a decimal is not two tokens around a dot", "[lex]") {
+TEST_CASE("spec 3.4: a decimal is not two tokens around a dot", "[lex]") {
     Lexed lexed{"weight = 1.500"};
     CHECK(lexed.stream()[2].kind == TokenKind::Decimal);
     CHECK(lexed.text_of(2) == "1.500");
 }
 
-TEST_CASE("§3.9 is_reserved_word covers exactly the reserved list", "[lex]") {
+TEST_CASE("spec 3.9: is_reserved_word covers exactly the reserved list", "[lex]") {
     for (std::string_view word : {"yes", "no", "inherit", "none", "all", "and", "or", "not", "if",
                                   "else", "end", "true", "false"}) {
         INFO("reserved word: " << word);

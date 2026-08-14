@@ -71,7 +71,7 @@ TEST_CASE("a token stream tiles its source with no gaps and no overlaps", "[lex]
     }
 }
 
-TEST_CASE("§3.5.1 adjacent string literals form one scalar", "[lex][strings]") {
+TEST_CASE("spec 3.5.1: adjacent string literals form one scalar", "[lex][strings]") {
     Lexed lexed{"long_description = \"The reactor housing is scorched black. \"\n"
                 "                   \"Something went very wrong here, and recently.\"\n"};
     const auto& stream = lexed.stream();
@@ -121,7 +121,7 @@ TEST_CASE("anything that is not trivia does break the run", "[lex][strings]") {
     CHECK(lexed.stream().string_run_at(2) == TokenRange{2, 3});
 }
 
-TEST_CASE("decode_string_escapes implements §3.5's escape table", "[lex][strings]") {
+TEST_CASE("decode_string_escapes implements spec 3.5's escape table", "[lex][strings]") {
     using stardata::lex::decode_string_escapes;
 
     CHECK(decode_string_escapes("\"plain\"") == "plain");

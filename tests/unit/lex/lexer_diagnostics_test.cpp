@@ -19,7 +19,7 @@ using stardata::diag::Code;
 using stardata::lex::TokenKind;
 using stardata::test::Lexed;
 
-TEST_CASE("§3.5 a string literal may not span a line terminator", "[lex][diag]") {
+TEST_CASE("spec 3.5: a string literal may not span a line terminator", "[lex][diag]") {
     Lexed lexed{"description = \"opens here\n  and closes there\"\n"};
 
     REQUIRE(lexed.reported(Code::StringMultiline));
@@ -37,7 +37,8 @@ TEST_CASE("§3.5 a string literal may not span a line terminator", "[lex][diag]"
     CHECK(lexed.stream()[3].kind == TokenKind::Identifier);
 }
 
-TEST_CASE("§3.5 an unterminated string is reported once, at the end of the file", "[lex][diag]") {
+TEST_CASE("spec 3.5: an unterminated string is reported once, at the end of the file",
+          "[lex][diag]") {
     Lexed lexed{"a = \"no closing quote"};
 
     CHECK(lexed.codes() == std::vector<std::string>{"E-STR-UNTERMINATED"});
@@ -48,7 +49,7 @@ TEST_CASE("§3.5 an unterminated string is reported once, at the end of the file
     CHECK(lexed.stream()[2].kind == TokenKind::String);
 }
 
-TEST_CASE("§3.5 escape sequences outside the defined set are rejected", "[lex][diag]") {
+TEST_CASE("spec 3.5: escape sequences outside the defined set are rejected", "[lex][diag]") {
     SECTION("an unknown letter") {
         Lexed lexed{"a = \"bad \\q escape\""};
         CHECK(lexed.codes() == std::vector<std::string>{"E-STR-ESCAPE"});
@@ -79,7 +80,7 @@ TEST_CASE("§3.5 escape sequences outside the defined set are rejected", "[lex][
     }
 }
 
-TEST_CASE("§3.4 a decimal has exactly three fractional digits", "[lex][diag]") {
+TEST_CASE("spec 3.4: a decimal has exactly three fractional digits", "[lex][diag]") {
     SECTION("too few, which is fixable by padding") {
         Lexed lexed{"weight = 1.5"};
         REQUIRE(lexed.reported(Code::DecimalPrecision));
@@ -106,7 +107,7 @@ TEST_CASE("§3.4 a decimal has exactly three fractional digits", "[lex][diag]") 
     }
 }
 
-TEST_CASE("§3.4 a decimal may not start with a dot", "[lex][diag]") {
+TEST_CASE("spec 3.4: a decimal may not start with a dot", "[lex][diag]") {
     Lexed lexed{"chance = .5"};
 
     REQUIRE(lexed.reported(Code::DecimalLeadingDot));
@@ -121,7 +122,7 @@ TEST_CASE("§3.4 a decimal may not start with a dot", "[lex][diag]") {
     CHECK(lexed.stream()[2].kind == TokenKind::Decimal);
 }
 
-TEST_CASE("§3.4 a number may not end with a dot", "[lex][diag]") {
+TEST_CASE("spec 3.4: a number may not end with a dot", "[lex][diag]") {
     Lexed lexed{"reach = 2."};
 
     REQUIRE(lexed.reported(Code::NumberTrailingDot));
@@ -131,7 +132,7 @@ TEST_CASE("§3.4 a number may not end with a dot", "[lex][diag]") {
     CHECK(diagnostic->fix_its()[0].replacement == "2");
 }
 
-TEST_CASE("§3.4 an integer literal must fit in a signed 64-bit value", "[lex][diag]") {
+TEST_CASE("spec 3.4: an integer literal must fit in a signed 64-bit value", "[lex][diag]") {
     SECTION("out of range") {
         Lexed lexed{"n = 99999999999999999999"};
         CHECK(lexed.codes() == std::vector<std::string>{"E-INT-RANGE"});
@@ -144,7 +145,7 @@ TEST_CASE("§3.4 an integer literal must fit in a signed 64-bit value", "[lex][d
     }
 }
 
-TEST_CASE("§3.7 brackets may not appear outside a string literal", "[lex][diag]") {
+TEST_CASE("spec 3.7: brackets may not appear outside a string literal", "[lex][diag]") {
     Lexed lexed{"stages = [ one ]\n"};
 
     CHECK(lexed.codes() == std::vector<std::string>{"E-BRACKET-OUTSIDE", "E-BRACKET-OUTSIDE"});
@@ -155,7 +156,7 @@ TEST_CASE("§3.7 brackets may not appear outside a string literal", "[lex][diag]
     CHECK(lexed.stream().covers_source(lexed.sources()));
 }
 
-TEST_CASE("§3.7 brackets inside a string literal are ordinary characters", "[lex][diag]") {
+TEST_CASE("spec 3.7: brackets inside a string literal are ordinary characters", "[lex][diag]") {
     // They belong to the template language there (§9), which is exactly why
     // §3.7 reserves them outside one.
     Lexed lexed{"msg = \"[if is_dark]dark[end]\"\n"};
@@ -163,7 +164,7 @@ TEST_CASE("§3.7 brackets inside a string literal are ordinary characters", "[le
     CHECK(lexed.stream()[2].kind == TokenKind::String);
 }
 
-TEST_CASE("§3.9 'true' and 'false' are rejected with a pointer at yes / no", "[lex][diag]") {
+TEST_CASE("spec 3.9: 'true' and 'false' are rejected with a pointer at yes / no", "[lex][diag]") {
     Lexed lexed{"open = true\nshut = false\n"};
 
     CHECK(lexed.codes() == std::vector<std::string>{"E-RESERVED-WORD", "E-RESERVED-WORD"});
@@ -176,7 +177,7 @@ TEST_CASE("§3.9 'true' and 'false' are rejected with a pointer at yes / no", "[
     CHECK(lexed.stream()[2].kind == TokenKind::Identifier);
 }
 
-TEST_CASE("§3.1 non-ASCII whitespace is rejected with an ASCII suggestion", "[lex][diag]") {
+TEST_CASE("spec 3.1: non-ASCII whitespace is rejected with an ASCII suggestion", "[lex][diag]") {
     SECTION("a no-break space") {
         Lexed lexed{"a\xC2\xA0= b"}; // U+00A0 between the key and the operator
         REQUIRE(lexed.reported(Code::UnicodeWhitespace));
@@ -209,7 +210,7 @@ TEST_CASE("§3.1 non-ASCII whitespace is rejected with an ASCII suggestion", "[l
     }
 }
 
-TEST_CASE("§3 a character that begins no token is reported and skipped", "[lex][diag]") {
+TEST_CASE("spec 3: a character that begins no token is reported and skipped", "[lex][diag]") {
     SECTION("an ASCII stray") {
         Lexed lexed{"a % b"};
         CHECK(lexed.codes() == std::vector<std::string>{"E-BAD-CHAR"});
@@ -246,7 +247,7 @@ TEST_CASE("§3 a character that begins no token is reported and skipped", "[lex]
     }
 }
 
-TEST_CASE("§2.1 malformed UTF-8 is a diagnostic, not a crash", "[lex][diag]") {
+TEST_CASE("spec 2.1: malformed UTF-8 is a diagnostic, not a crash", "[lex][diag]") {
     // No corpus fixture exists for this one: tests/check_stardata.py reads
     // the corpus as UTF-8 text, so a fixture containing invalid bytes would
     // break the Python checker rather than exercise it. The condition is

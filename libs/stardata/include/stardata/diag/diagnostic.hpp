@@ -15,6 +15,16 @@ namespace stardata::diag {
 // on the earlier of the two spans in a duplicate-key error (spec §5.3,
 // which requires citing both). `span` is optional so a note can also be
 // plain text with no source location of its own.
+//
+// DEFERRED: notes currently end by citing a section of
+// docs/stardata-spec.md, because that is the only document there is. The
+// specification is written for implementers -- an author sent to §3.4 to
+// find out why their decimal was rejected lands in a paragraph about
+// scaled 64-bit integers. Once the author manual of proposal §2.1 exists,
+// go through every with_note() call in libs/ and repoint it: the manual
+// for authors, the specification only where the note is genuinely about
+// conformance. Tracked as task C5 in docs/phase-0-backlog.md; `git grep -n
+// 'spec §' -- libs/` finds them all.
 struct Note {
     std::string message;
     std::optional<Span> span;

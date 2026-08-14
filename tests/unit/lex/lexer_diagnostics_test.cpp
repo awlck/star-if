@@ -114,9 +114,12 @@ TEST_CASE("spec 3.4: a decimal may not start with a dot", "[lex][diag]") {
     const auto* diagnostic = lexed.find(Code::DecimalLeadingDot);
     REQUIRE(diagnostic != nullptr);
     REQUIRE(diagnostic->fix_its().size() == 1);
-    CHECK(diagnostic->fix_its()[0].replacement == "0");
-    // `.5` is one error, not one for the dot and another for the precision:
-    // the note carries the second rule.
+    // The suggestion corrects both rules at once. Offering `0.5` would fix
+    // the leading dot and leave the author to discover the three-digit rule
+    // on the next build, which is one round trip too many.
+    CHECK(diagnostic->fix_its()[0].replacement == "0.500");
+    // `.5` is still one error, not one for the dot and another for the
+    // precision: the note carries the second rule.
     CHECK(lexed.codes() == std::vector<std::string>{"E-DEC-LEADING-DOT"});
     CHECK_FALSE(diagnostic->notes().empty());
     CHECK(lexed.stream()[2].kind == TokenKind::Decimal);

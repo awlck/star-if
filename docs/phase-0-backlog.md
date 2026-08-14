@@ -147,6 +147,23 @@ Spec §15 lists the required diagnostics; `tests/check_stardata.py` already defi
 - [ ] `--update-snapshots` regenerates; CI fails on any diff.
 - [ ] This is what stops error messages silently degrading, which is otherwise invisible until an author complains.
 
+### C5 · Point diagnostics at the author manual — **blocked until the manual exists**
+**Size:** S · **Depends on:** the author manual of proposal §2.1
+
+Every `with_note()` in `libs/` currently ends by citing a section of
+`docs/stardata-spec.md`, because that is the only document there is. The
+specification is written for implementers: an author sent to §3.4 to find out
+why their decimal was rejected lands in a paragraph about scaled 64-bit
+integers, which answers a question they did not ask.
+
+- [ ] Repoint each note at the author manual, keeping the specification only where the note is genuinely about conformance rather than about how to write the file.
+- [ ] `git grep -n 'spec §' -- libs/` finds the full set; there is no need for a marker comment.
+- [ ] Decide once whether the rendered form should carry a link or a section number, and apply it uniformly.
+
+Worth doing in one pass rather than opportunistically: the value is that the
+diagnostics speak with one voice about where to go next, and a half-converted
+set is worse than either end state.
+
 ---
 
 ## D · Lexer

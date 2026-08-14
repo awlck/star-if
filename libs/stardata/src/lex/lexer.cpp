@@ -195,6 +195,33 @@ struct Utf8Decoded {
     return "'" + std::string(text) + "'";
 }
 
+// House style for diagnostic prose, so that the hundreds still to be written
+// in workstreams E and F read as one voice rather than as whoever wrote them:
+//
+//   message  What happened, in the compiler's own voice, addressed to the
+//            author. First person is deliberate -- "I don't recognise the
+//            escape '\q'" is a colleague reporting a difficulty; "invalid
+//            escape sequence" is a machine filing a defect. One line: it has
+//            to fit the single-line machine rendering too.
+//   note     Why the rule exists, or what the rule actually is, ending in
+//            the section that says so. This is where an author who wants to
+//            understand rather than just comply is served.
+//   fix-it   The mechanical edit, imperative and boring. Never a joke: it is
+//            the one part a tool applies without a human reading it.
+//
+// Warmth is not the same as whimsy. A line an author reads once is allowed
+// to be funny; a line they read on every build had better be useful first.
+// Where the two are available at once -- 'true' being reserved for no reason
+// except to give this very message -- take both.
+//
+// Numbers inside prose read badly as digits ("has 1 fractional digits"), so
+// small counts are spelled.
+[[nodiscard]] std::string spelled(std::size_t count) {
+    static constexpr std::string_view kWords[] = {"no",   "one", "two",   "three", "four",
+                                                  "five", "six", "seven", "eight", "nine"};
+    return count < std::size(kWords) ? std::string(kWords[count]) : std::to_string(count);
+}
+
 // Encodes one scalar value as UTF-8. Used when decoding a `\uXXXX` escape;
 // surrogate halves have already been diagnosed by then and are encoded
 // as-written rather than replaced, since the token text is the truth.
@@ -340,9 +367,15 @@ private:
             } while (i < text_.size() && static_cast<unsigned char>(text_[i]) >= 0x80 &&
                      !decode_utf8(text_, i).valid);
             report(Code::Utf8Invalid, span(start, i - start),
-                   "invalid UTF-8: " + std::to_string(i - start) + " byte(s) starting with " +
-                       byte_name(static_cast<unsigned char>(text_[start])))
-                .with_note("spec §2.1 requires source files to be encoded in UTF-8");
+                   "I can't read this as UTF-8: " +
+                       (i - start == 1
+                            ? "the byte " + byte_name(static_cast<unsigned char>(text_[start])) +
+                                  " here begins no character"
+                            : spelled(i - start) + " bytes here, starting with " +
+                                  byte_name(static_cast<unsigned char>(text_[start])) +
+                                  ", spell no character"))
+                .with_note("every source file is UTF-8; if this one came from another editor, "
+                           "check which encoding it was saved in (spec §2.1)");
         }
     }
 
@@ -397,9 +430,22 @@ private:
         pos_ += decoded.length;
         const diag::Span at = span(start, decoded.length);
         const std::string name = code_point_name(decoded.code_point);
-        Reporter diagnostic = report(Code::UnicodeWhitespace, at, "non-ASCII whitespace " + name);
+        // The complaint is always the same one: it passes for whitespace
+        // without being any. Which way it deceives depends on the character.
+        std::string message;
         if (replacement.empty()) {
-            diagnostic.with_fix_it(at, "", "remove the zero-width character");
+            message = name + " is invisible here, and it is not a space";
+        } else if (replacement == "\n") {
+            message = name + " looks like a line break, but it is not one";
+        } else {
+            message = name + " looks like a space, but it is not one";
+        }
+        Reporter diagnostic = report(Code::UnicodeWhitespace, at, std::move(message));
+        diagnostic.with_note("only tab, newline, carriage return and the plain space separate "
+                             "tokens; a lookalike almost always arrives by copy-and-paste "
+                             "(spec §3.1)");
+        if (replacement.empty()) {
+            diagnostic.with_fix_it(at, "", "delete the zero-width character");
         } else {
             diagnostic.with_fix_it(at, std::string(replacement),
                                    replacement == "\n" ? "use a plain newline"
@@ -422,11 +468,15 @@ private:
             return;
         }
         if (c == '$') {
-            lex_sigil(TokenKind::LocKey, "a localisation key is '$' followed by an identifier");
+            lex_sigil(TokenKind::LocKey,
+                      "a localisation key is '$' followed straight away by a name, as in "
+                      "'$cell_description' (spec §3.5)");
             return;
         }
         if (c == '@') {
-            lex_sigil(TokenKind::Annotation, "an annotation is '@' followed by an identifier");
+            lex_sigil(TokenKind::Annotation,
+                      "an annotation is '@' followed straight away by a name, as in '@debug' "
+                      "(spec §3.8)");
             return;
         }
         if (lex_operator()) {
@@ -482,8 +532,10 @@ private:
                 // than swallowing the rest of the file. The terminator
                 // itself stays out of the token and becomes whitespace.
                 report(Code::StringMultiline, span(start, pos_ - start),
-                       "string literal is not closed before the end of the line")
-                    .with_note("spec §3.5.1: write long text as adjacent literals, one per line");
+                       "this string opens here, but the line ends before it closes")
+                    .with_note("no literal spans a line. Write long text as one literal per "
+                               "line: literals that sit next to each other join into a single "
+                               "string, with nothing inserted between them (spec §3.5.1)");
                 cut_short = true;
                 break;
             }
@@ -496,7 +548,7 @@ private:
 
         if (!closed && !cut_short) {
             report(Code::StringUnterminated, span(start, pos_ - start),
-                   "string literal is not closed before the end of the file")
+                   "this string opens here, and then the file simply ends")
                 .with_fix_it(span(pos_, 0), "\"", "add the closing quote");
         }
         push_token(TokenKind::String, start, pos_ - start);
@@ -507,7 +559,9 @@ private:
     void lex_escape() {
         const std::size_t start = pos_;
         if (pos_ + 1 >= text_.size()) {
-            report(Code::StringEscape, span(start, 1), "backslash at the end of the file");
+            report(Code::StringEscape, span(start, 1),
+                   "this backslash is the last thing in the file, so there is nothing left for "
+                   "it to escape");
             pos_ = text_.size();
             return;
         }
@@ -516,7 +570,9 @@ private:
         if (escaped == '\n' || escaped == '\r') {
             // Consume only the backslash: the line terminator still belongs
             // to the multiline check, which gives the better diagnostic.
-            report(Code::StringEscape, span(start, 1), "backslash at the end of the line");
+            report(Code::StringEscape, span(start, 1),
+                   "this backslash sits at the end of the line, so there is nothing for it to "
+                   "escape");
             ++pos_;
             return;
         }
@@ -542,9 +598,12 @@ private:
         const std::size_t length =
             1 + static_cast<std::size_t>(decode_utf8(text_, pos_ + 1).length);
         report(Code::StringEscape, span(start, length),
-               "unknown escape " + quoted_text(slice(start, length)))
-            .with_note("spec §3.5 defines \\\" \\\\ \\n \\t \\[ \\] \\$ \\@ and \\uXXXX")
-            .with_fix_it(span(start, 1), "\\\\", "write a literal backslash as '\\\\'");
+               "I don't recognise the escape " + quoted_text(slice(start, length)))
+            .with_note(
+                "the whole set is \\\" \\\\ \\n \\t \\[ \\] \\$ \\@ and \\uXXXX. It is closed on "
+                "purpose, so that a new escape can be added later without changing what "
+                "files written today mean (spec §3.5)")
+            .with_fix_it(span(start, 1), "\\\\", "if you meant a backslash of your own, double it");
         pos_ += length;
     }
 
@@ -554,7 +613,7 @@ private:
         const std::string_view digits = slice(start + 2, 4);
         if (!is_hex_quad(digits)) {
             report(Code::StringEscape, span(start, 2),
-                   "'\\u' must be followed by exactly four hexadecimal digits");
+                   "'\\u' wants exactly four hexadecimal digits after it");
             pos_ += 2;
             return;
         }
@@ -563,13 +622,16 @@ private:
         std::from_chars(digits.data(), digits.data() + digits.size(), value, 16);
         if (value >= 0xD800 && value <= 0xDFFF) {
             report(Code::StringEscape, span(start, 6),
-                   "'\\u" + std::string(digits) + "' is a surrogate half, not a character")
-                .with_note("spec §3.5: write the character directly in UTF-8 instead");
+                   "'\\u" + std::string(digits) + "' is half of a character, not a character")
+                .with_note("write the character itself instead -- the file is UTF-8, so it can "
+                           "hold it directly, and it will be far easier to read next year "
+                           "(spec §3.5)");
         }
         pos_ += 6;
     }
 
     // `$name` and `@name`: one sigil, one identifier, no space between.
+    // `expectation` becomes the note describing the form that was wanted.
     void lex_sigil(TokenKind kind, std::string_view expectation) {
         const std::size_t start = pos_;
         if (pos_ + 1 < text_.size() && is_ident_start(text_[pos_ + 1])) {
@@ -581,7 +643,8 @@ private:
             return;
         }
         report(Code::BadChar, span(start, 1),
-               "stray " + quoted_text(slice(start, 1)) + ": " + std::string(expectation));
+               quoted_text(slice(start, 1)) + " on its own does not name anything")
+            .with_note(std::string(expectation));
         ++pos_;
         push_token(TokenKind::Error, start, 1);
     }
@@ -611,9 +674,10 @@ private:
         const std::size_t start = pos_;
         ++pos_;
         report(Code::BracketOutside, span(start, 1),
-               quoted_text(slice(start, 1)) + " may not appear outside a string literal")
-            .with_note("spec §3.7 and §15 reserve '[' and ']' for the template language "
-                       "and for parser grammar lines");
+               quoted_text(slice(start, 1)) + " belongs inside a string literal, not out here")
+            .with_note("'[' and ']' are held permanently for the template language and for "
+                       "grammar lines, so they never come to mean anything on their own "
+                       "(spec §3.7, §15)");
         push_token(TokenKind::Error, start, 1);
     }
 
@@ -644,8 +708,8 @@ private:
             const std::string_view literal = slice(start, pos_ - start);
             const std::string mantissa(literal.substr(0, literal.size() - 1));
             report(Code::NumberTrailingDot, span(start, pos_ - start),
-                   quoted_text(literal) + " ends in '.'; write " + quoted_text(mantissa) + " or " +
-                       quoted_text(mantissa + ".000"))
+                   quoted_text(literal) + " trails off after the dot -- did you mean " +
+                       quoted_text(mantissa) + " or " + quoted_text(mantissa + ".000") + "?")
                 .with_fix_it(span(start, pos_ - start), mantissa, "drop the trailing '.'");
             push_token(TokenKind::Decimal, start, pos_ - start);
             return;
@@ -666,15 +730,16 @@ private:
         const std::string_view literal = slice(start, pos_ - start);
         Reporter diagnostic =
             report(Code::DecimalPrecision, span(start, pos_ - start),
-                   quoted_text(literal) + " has " + std::to_string(fraction_digits) +
-                       " fractional digits; a decimal has exactly three");
+                   quoted_text(literal) + " has " + spelled(fraction_digits) + " fractional digit" +
+                       (fraction_digits == 1 ? "" : "s") + ", and a decimal wants exactly three");
         if (fraction_digits < 3) {
             diagnostic.with_fix_it(span(start, pos_ - start),
                                    std::string(literal) + std::string(3 - fraction_digits, '0'),
                                    "pad to three fractional digits");
         } else {
-            diagnostic.with_note("spec §3.4 rejects rather than rounds, so that a damage "
-                                 "formula cannot lose precision silently");
+            diagnostic.with_note("I will not round it down for you: quietly losing precision "
+                                 "in a damage formula is the very accident fixed-point "
+                                 "arithmetic is here to prevent (spec §3.4)");
         }
     }
 
@@ -687,8 +752,9 @@ private:
         const auto result = std::from_chars(literal.data(), literal.data() + literal.size(), value);
         if (result.ec == std::errc::result_out_of_range) {
             report(Code::IntegerRange, span(start, end - start),
-                   quoted_text(literal) + " does not fit in a signed 64-bit integer")
-                .with_note("the range is -9223372036854775808 to 9223372036854775807");
+                   "I can't hold " + quoted_text(literal) + " in an integer")
+                .with_note("integers run from -9223372036854775808 to 9223372036854775807, "
+                           "which is as much room as a signed 64-bit value has (spec §3.4)");
         }
     }
 
@@ -703,11 +769,27 @@ private:
         }
         const std::size_t fraction_digits = pos_ - fraction_start;
         const std::string_view literal = slice(start, pos_ - start);
-        Reporter diagnostic = report(Code::DecimalLeadingDot, span(start, pos_ - start),
-                                     quoted_text(literal) + " has no digit before the '.'");
-        diagnostic.with_fix_it(span(start, 0), "0", "write a leading zero");
-        if (fraction_digits != 3) {
-            diagnostic.with_note("spec §3.4 also requires exactly three fractional digits");
+        const diag::Span at = span(start, pos_ - start);
+        Reporter diagnostic = report(Code::DecimalLeadingDot, at,
+                                     quoted_text(literal) + " is missing its leading digit");
+
+        if (fraction_digits <= 3) {
+            // Both rules are in play here, so offer the number the author
+            // almost certainly meant rather than half of it: '.5' wants to
+            // become '0.500', not '0.5', which would only fail the next rule
+            // along and cost them a second round trip.
+            const std::string whole = "0." + std::string(slice(fraction_start, fraction_digits)) +
+                                      std::string(3 - fraction_digits, '0');
+            diagnostic
+                .with_note("a decimal is a digit, a dot, and exactly three more digits, so the "
+                           "number you want here is " +
+                           quoted_text(whole) + " (spec §3.4)")
+                .with_fix_it(at, whole, "write it as " + quoted_text(whole));
+        } else {
+            diagnostic
+                .with_note("a decimal also wants exactly three fractional digits, which this "
+                           "one does not have either (spec §3.4)")
+                .with_fix_it(span(start, 0), "0", "add the leading digit");
         }
         push_token(TokenKind::Decimal, start, pos_ - start);
     }
@@ -722,8 +804,10 @@ private:
         if (identifier == "true" || identifier == "false") {
             const std::string_view replacement = identifier == "true" ? "yes" : "no";
             report(Code::ReservedWord, span(start, pos_ - start),
-                   quoted_text(identifier) + " is reserved and is not a value")
-                .with_note("spec §3.9: the boolean values are 'yes' and 'no'")
+                   quoted_text(identifier) + " is a word I know, but not a value I take")
+                .with_note("the booleans here are 'yes' and 'no'. 'true' and 'false' are "
+                           "reserved for no other purpose than to make this message possible, "
+                           "rather than leave you with an unknown identifier (spec §3.9)")
                 .with_fix_it(span(start, pos_ - start), std::string(replacement),
                              "use " + quoted_text(replacement));
         }
@@ -739,15 +823,16 @@ private:
                 !reserved.empty()) {
                 pos_ += 2;
                 report(Code::BadChar, span(start, 2),
-                       quoted_text(reserved) + " is not an operator in this version of the format")
-                    .with_note("spec §15 reserves it, so that adding it later is not a "
-                               "breaking change");
+                       quoted_text(reserved) + " is spoken for: it is held back for a later "
+                                               "version of the format")
+                    .with_note("reserving it now is what lets it be added later without "
+                               "changing the meaning of a file written today (spec §15)");
                 push_token(TokenKind::Error, start, 2);
                 return;
             }
             ++pos_;
             report(Code::BadChar, span(start, 1),
-                   "unexpected character " + quoted_text(slice(start, 1)));
+                   "I don't know what to do with " + quoted_text(slice(start, 1)) + " here");
             push_token(TokenKind::Error, start, 1);
             return;
         }
@@ -756,9 +841,10 @@ private:
         if (decoded.valid) {
             pos_ += decoded.length;
             report(Code::BadChar, span(start, decoded.length),
-                   "unexpected character " + code_point_name(decoded.code_point))
-                .with_note("spec §3.3 admits only ASCII letters, digits, '_' and '.' in an "
-                           "identifier");
+                   "I don't know what to do with " + code_point_name(decoded.code_point) + " here")
+                .with_note("a name is built from ASCII letters, digits, '_' and '.'; an "
+                           "accented letter or a symbol is perfectly welcome inside a string "
+                           "literal, just not out here (spec §3.3)");
             push_token(TokenKind::Error, start, decoded.length);
             return;
         }

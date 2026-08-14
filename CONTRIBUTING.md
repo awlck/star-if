@@ -120,9 +120,41 @@ mean to edit is almost always this.
 - Python (`tests/check_stardata.py`, `scripts/`) is dependency-free by
   design — don't add a `requirements.txt` for tooling that doesn't need
   one.
+- `TEST_CASE` names are ASCII. CTest passes each name back to the test
+  binary as a command-line argument, and on Windows that round trip goes
+  through the active code page, so a `§` in a name arrives mangled, matches
+  no test, and fails the Windows legs only — with a message ("No test cases
+  matched") that gives no hint of the cause. CI checks this. Section markers
+  are welcome in comments and `INFO` strings, which never travel through
+  `argv`.
 - No Qt in `libs/` — that boundary is load-bearing (proposal §2.1): it's
   what keeps the compiler and CLI runtime buildable and testable without
   Qt, and keeps the WASM target tractable.
+
+## Writing a diagnostic
+
+An error message is the part of this system most authors will meet most
+often, and the tone is a deliberate choice rather than an accident of
+whoever wrote it. The model is Inform and Elm: the compiler speaks in the
+first person, to a person, about a difficulty it is having.
+
+| Part | Job |
+|---|---|
+| **message** | What happened, in the compiler's voice. *"I don't recognise the escape `\q`"*, not *"invalid escape sequence"*. One line — it has to fit the machine rendering too. |
+| **note** | Why the rule exists, or what the rule actually is, ending in the section that says so. This serves the author who wants to understand rather than merely comply. |
+| **fix-it** | The mechanical edit. Imperative, boring, never a joke: it is the one part a tool applies without a human reading it. |
+
+Warmth is not whimsy. A line an author reads once may be funny; a line they
+read on every build had better be useful first. Where both are available at
+once — `true` being reserved for no reason except to make a good error
+message possible — take both. Suggest the whole correction rather than half
+of it: `.5` should be offered as `0.500`, not `0.5`, which only fails the
+next rule along.
+
+`libs/stardata/src/lex/lexer.cpp` carries the same rules next to a working
+set of examples, and backlog C5 records the one thing known to be wrong with
+them today: the notes cite the specification because the author manual does
+not exist yet.
 
 ## Dependencies
 

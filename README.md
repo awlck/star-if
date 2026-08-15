@@ -40,10 +40,20 @@ What exists today:
 - The build skeleton: CMake, presets for all three desktop platforms, a
   vcpkg manifest, compiler warnings-as-errors, and ASan/UBSan in Debug.
 - In `libs/stardata`: the diagnostics layer (source manager, spans,
-  diagnostic model, human and machine renderers) and the **lexer** — tokens
-  and retained trivia for every rule of the specification's §3, with the
-  lexical diagnostics and a golden token stream for the corpus. There is no
-  CST or parser yet, so nothing turns a token stream into a tree.
+  diagnostic model, human and machine renderers), the **lexer** — tokens and
+  retained trivia for every rule of the specification's §3 — and the
+  **lossless CST**: a green/red syntax tree, a parser for the grammar of §4
+  with error recovery, a writer, and an edit API that shares untouched
+  subtrees.
+
+  `tests/corpus/tour.star` — 63 KB exercising every construct in the spec —
+  parses with zero diagnostics and writes back **byte for byte**, CRLF and
+  LF fixtures alike. So does every deliberately broken file in
+  `tests/corpus/invalid/`, because recovery has to be lossless too. That is
+  the round-trip property of spec §14.2, and the Phase 0 exit criterion.
+
+  Not yet: the schema layer, so nothing knows what any of it *means* — no
+  types, no arity, no reference resolution.
 
 Not yet started: the actual engine (the rest of `libs/`, all of `apps/`).
 Nothing here plays a game yet.

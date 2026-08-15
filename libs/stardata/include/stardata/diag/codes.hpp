@@ -43,6 +43,13 @@ enum class Code : std::uint8_t {
     BadChar,                // E-BAD-CHAR              §3      character that begins no token
     Utf8Invalid,            // E-UTF8-INVALID          §2      file is not well-formed UTF-8
 
+    // Syntactic (spec §4, §5.2). E-BRACE-UNBALANCED and E-STRAY-TOKEN reuse
+    // the names tests/check_stardata.py already reports, so the two
+    // implementations keep one vocabulary through the overlap of backlog H2.
+    BraceUnbalanced,        // E-BRACE-UNBALANCED      §4      a '{' with no '}', or a '}' with no '{'
+    StrayToken,             // E-STRAY-TOKEN           §4      a token where the grammar allows none
+    ValueMissing,           // E-VALUE-MISSING         §4      an operator with no value after it
+
     // Spec §14.3's required-diagnostics table, one entry per row.
     BlockMixed,             // E-BLOCK-MIXED           §5.2    mixed list/record contents in one block
     DuplicateKey,           // E-DUP-KEY               §5.3    duplicate key, arity = one; cites both spans

@@ -10,6 +10,13 @@ add_library(stardata STATIC
     src/diag/render.cpp
     src/lex/token.cpp
     src/lex/lexer.cpp
+    src/cst/kind.cpp
+    src/cst/green.cpp
+    src/cst/syntax.cpp
+    src/cst/builder.cpp
+    src/cst/parser.cpp
+    src/cst/writer.cpp
+    src/cst/edit.cpp
 )
 add_library(stardata::stardata ALIAS stardata)
 

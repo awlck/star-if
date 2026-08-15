@@ -490,10 +490,31 @@ Collection-typed properties and globals (`list<T>`, `set<T>`, `map<K,V>`, `flags
 
 | Predicate | Form |
 |---|---|
-| `includes` | `{ includes = { collection = <datum>  value = good_end } }` |
+| `includes` | `{ includes = { collection = <datum>  value = good_end } }` or `{ includes = { collection = <datum>  key = north } }` |
 | `is_empty` | `{ is_empty = <datum> }` |
+| `count_of` | via `compare` (§10.6) — for a map this counts entries |
 
 `includes` is deliberately not called `contains`: §10.4 already has `containing`, which is about *physical* containment, and two predicates a letter apart meaning entirely different things is a trap.
+
+#### 6.5.1 `includes` takes a value or a key
+
+`includes` is the format's first form with two alternative arguments, and it is worth being explicit about why that is acceptable here.
+
+```stardata
+includes = { collection = seen_endings     value = good_end }   # list / set member
+includes = { collection = npc_moods        value = hostile }    # a map's values
+includes = { collection = location.exits   key   = north }      # a map's keys
+```
+
+- `value` applies to any collection. On a `map`, it searches the **values**.
+- `key` applies **only** to a `map`. Using it on a `list` or `set` is an error naming the collection's declared type.
+- Specifying **both** is an error. The author almost certainly means "is entry *K* equal to *V*", which is a different question with a much better spelling — so the diagnostic suggests the path form `location.exits.north == corridor` (§6.6.1), or `map_get` inside `compare` (§10.6) when the key is computed.
+
+**Why unify rather than keep `has_key`.** The two really are one question asked over two domains, and the argument name says which — `key` and `value` are exactly the right words, so the call site is self-documenting without a second predicate name to learn. The overload is resolved statically by which argument is present, and enforced by the `exclusive_group` mechanism of §7.2.1 — which is not new machinery invented for this, since `rule`, `list_remove` and `present_in` all already require it and previously had no way to say so.
+
+**One asymmetry worth knowing.** `key` is a hash lookup; `value` on a map is a linear scan. Sharing a name hides that, so it is documented here rather than in a footnote: if a map is large and searched by value often, the data probably wants a second map keyed the other way.
+
+For maps, `count_of` and `is_empty` operate on **entries**, not on keys or values separately.
 
 **Effects** (§11.1):
 
@@ -533,11 +554,55 @@ A collection can be a global or an object's property, and `collection = waypoint
 | bare identifier | a `global` or `const` (§6.4) | `seen_endings` |
 | dotted path | a property of an object | `noun.waypoints`, `airlock_hatch.open` |
 
-A path's first segment is a slot (`actor`, `noun`, `second`, `self`, `speaker`, `player`) or an object id; each later segment is a property name. Intermediate segments MUST be `ref<C>`-typed, so `noun.holder.name` is legal and `noun.weight.name` is not.
+A path's first segment is a slot (`actor`, `noun`, `second`, `self`, `speaker`, `player`, `location`) or an object id. Intermediate segments MUST be `ref<C>`-typed, so `noun.holder.name` is legal and `noun.weight.name` is not.
+
+`location` denotes the acting actor's current room. It was missing from earlier drafts, which is awkward given that "what is true of the room I am in" is among the most common things an author tests.
 
 Dots inside identifiers are already lexical (§3.3), so a path is one token and no grammar change is needed. It is also the same notation templates use — `[noun.damage]`, `[self.range]` (§9.2) — so authors write one form of property reference throughout.
 
-#### 6.6.1 The rule that resolves the ambiguity
+#### 6.6.1 Map keys are path segments
+
+A segment following a `map<K,V>`-typed segment is a **key**, not a property name:
+
+```stardata
+restrictions = { location = { exits.north == corridor } }
+```
+
+`exits` is `map<direction, ref<room>>`, so `north` is read as a key of type `direction` and the path yields a `ref<room>`. Chaining continues normally: `location.exits.north.name` is the name of the room to the north.
+
+This is unambiguous to the compiler, because whether a segment is a property or a key is decided by the *declared type* of the segment before it. It is also unambiguous to a reader, provided they know `exits` is a map — which the schema, the editor and `Ctrl+click` all tell them.
+
+Note that in your original phrasing, `exits.north == "Foyer"` would be a type error: the map's value type is `ref<room>`, so the operand must be a room id (`corridor`), not a string. That the compiler catches it is the point of declaring the type.
+
+**Restrictions, each with a reason:**
+
+1. **Keys must be writable as identifiers.** `map<identifier, V>` and `map<enum, V>` work; `map<int, V>` and `map<string, V>` cannot use dot syntax, because §3.3 identifiers may not begin with a digit or contain arbitrary characters. Those use `map_get` (§10.6.1).
+2. **Keys must be literal.** A key computed at run time cannot be written in a path. That also uses `map_get`.
+3. **A missing key yields `none`**, and this is the rule that makes the syntax safe.
+
+#### 6.6.2 A missing key is `none`, but a missing property raises
+
+These look identical and behave differently, so the distinction is worth stating plainly:
+
+| Access | Absent means | Result |
+|---|---|---|
+| `noun.damage` — a **property** | the *type* does not declare it | compile error, or a runtime raise (§8.8.4) |
+| `location.exits.north` — a **map key** | the *contents* do not include it | `none` |
+
+The asymmetry is principled rather than convenient. Whether a property exists is a **static** question about the type, so an absent one is a defect. Whether a key is present is a **runtime** question about contents — a room with no north exit is not a defect, it is Tuesday. Raising there would make the common case the error case.
+
+So a `map<K,V>` read has type `V` *or* `none`, and the idiomatic emptiness test is direct:
+
+```stardata
+conditions = { location = { exits.north == none } }
+```
+
+Two consequences:
+
+- **Chaining through a missing key raises.** `location.exits.north.name` where there is no north exit is an error, not silently `none`. Silent propagation would hide the mistake several lines from its cause, which §8.8.4 already refuses for properties. Test the key first, or use `value_or` (§10.6.1).
+- **`includes` with a `key` argument** tests presence without reading: `{ includes = { collection = location.exits  key = north } }` (§6.5.1).
+
+#### 6.6.3 The rule that resolves the ambiguity
 
 > **A bare identifier in an *argument* position is always a global or const. It never resolves against an enclosing object scope.**
 
@@ -561,7 +626,7 @@ This is distinct from — and does not disturb — the existing rule for **key**
 
 The two are always distinguishable, because a key is followed by an operator and an argument is not.
 
-#### 6.6.2 Namespaced ids
+#### 6.6.4 Namespaced ids
 
 Libraries prefix their globals (`starscape.combat_round`, §6.4), which looks exactly like a path. Resolution is therefore ordered and deterministic:
 
@@ -617,6 +682,25 @@ Fields of a `key` declaration:
 | `doc` | text | documentation string |
 | `editor` | identifier | a hint for the inspector widget (`text_area`, `object_picker`, `slider`, …) |
 | `deprecated` | text | if present, using this key produces a warning carrying this message |
+| `exclusive_group` | identifier | this key belongs to a mutually exclusive group; see §7.2.1 |
+
+#### 7.2.1 Exclusive groups
+
+Several forms accept one of two alternative arguments and never both. Earlier drafts stated this in prose and gave the schema no way to express it, which meant the rule was unenforceable:
+
+| Form | Alternatives |
+|---|---|
+| `rule` | `of_action` / `of_event` (Appendix C.1) |
+| `list_remove` | `value` / `index` (§6.5) |
+| `present_in` | a list block / a `where` query (§8.6) |
+| `includes` | `value` / `key` (§6.5) |
+
+```stardata
+key = { name = of_action  type = ref<action>  exclusive_group = subject }
+key = { name = of_event   type = identifier   exclusive_group = subject }
+```
+
+Within a block, **exactly one** key of a given `exclusive_group` may appear. Zero is an error if any member is `required`; two or more is always an error, and the diagnostic MUST name the group's members. A group MAY declare a `fix_hint` so the error can point at the right construct rather than merely refusing.
 
 `block<S>` as a type means "a record block conforming to schema `S`", which is how nested shapes such as `rule`, `stage`, `node` and `choice` are declared.
 
@@ -964,6 +1048,8 @@ The error unwinds to the turn boundary like any other script error (proposal §8
 
 **"Absent" means undeclared for this object.** A declared property always has a value — its own, its class default, or its type's zero — so an unset property is never absent. Absence is a question about the type, not about the value.
 
+**A missing map key is not this case.** Map contents are runtime state, so a key that is not present yields `none` rather than raising; see §6.6.2 for why the two differ.
+
 ### 8.9 Replication — deferred
 
 **Status: specified, not scheduled.** Nothing implements this before Phase 4, and it is recorded here because it constrains the parser, which is Phase 1.
@@ -1245,7 +1331,7 @@ Inside such a block, a key naming a property of that object with a comparison op
 | `global` | `{ global = { alert_level == high } }` |
 | `has_prop` | `{ has_prop = damage }` — runtime test **and** static narrowing (§8.8.3) |
 | `compare` | computes a value and tests it — §10.6 |
-| `includes` | `{ includes = { collection = <datum>  value = good_end } }` (§6.5) |
+| `includes` | `{ includes = { collection = <datum>  value = … } }` or `{ … key = … }` — §6.5.1 |
 | `is_empty` | `{ is_empty = <datum> }` |
 | `quest_state` | `{ quest = … state = unstarted\|active\|complete\|failed }` |
 | `quest_flag` | `{ quest_flag = captain_confronted }` |
@@ -1365,7 +1451,7 @@ Every reader takes a `<datum>` (§6.6), so one reference notation serves globals
 | `value_or = { datum = <datum>  default = D }` | as above, yielding `D` when the property is absent (§8.8.3) |
 | `count_of = <datum>` | element count of a collection, as `int` |
 | `at = { collection = <datum>  index = N }` | the element at `N`; the collection's element type |
-| `map_get = { collection = <datum>  key = K }` | the value stored under `K` |
+| `map_get = { collection = <datum>  key = K }` | the value stored under `K`, or `none`. `a.b` desugars to this (§6.6.1), so `map_get` is what remains for **computed** keys and for key types that cannot be written as identifiers |
 | `script_value = { fn = F }` | a script's return value, for anything the declarative readers cannot express |
 
 `value_of` replaces what earlier drafts split into `global_value` and `prop_of`. Globals had accumulated three unrelated access syntaxes — a `global = { … }` namespace block, a `global_value` reader, and the `flag_set` sugar — and collapsing the value-reading cases onto one datum-taking reader removes two of them.
@@ -1656,8 +1742,14 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | Undeclared global named by `set_flag` / `clear_flag` / `flag_set`, or one not of type `bool` (§6.4.1) | error |
 | Reference to an undeclared `global` or `const` (§6.4) | error |
 | A `<datum>` resolving neither as a global/const id nor as an object path (§6.6) | error |
-| A `<datum>` resolving **both** ways (§6.6.2) | error, naming both candidates |
+| A `<datum>` resolving **both** ways (§6.6.4) | error, naming both candidates |
 | A path segment whose intermediate is not `ref<C>`-typed (§6.6) | error |
+| A map key in a path that is not a valid member of the key's type — `exits.nrth` for `map<direction, …>` (§6.6.1) | error, with a suggestion |
+| Dot syntax used on a map whose key type cannot be written as an identifier (§6.6.1) | error, suggesting `map_get` |
+| `includes` with a `key` argument on a non-map collection (§6.5.1) | error, naming the collection's declared type |
+| `includes` with both `key` and `value` (§6.5.1) | error, suggesting the path form or `map_get` |
+| Two or more keys of one `exclusive_group` in a block (§7.2.1) | error, naming the group's members |
+| No key of a required `exclusive_group` (§7.2.1) | error |
 | Property read that is definitely absent for the slot's static type (§8.8.2) | error |
 | Property read that is possibly absent and not narrowed (§8.8.3), with a `has_prop` fix-it | error |
 | Local `prop_def` redeclaring an inherited name with a different type (§8.7) | error |
@@ -1714,9 +1806,13 @@ The proposal left the following under-determined. This specification settles the
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |
 | A20 | An absent property raises rather than defaulting (§8.8.4) | A `0` that should have been an error yields a game that is subtly wrong, which is far harder to find than one that is obviously broken |
+| A29 | `includes` overloaded on `value` / `key` rather than a separate `has_key` (§6.5.1) | One question over two domains, with the argument name saying which. Acceptable because `exclusive_group` was already required by `rule`, `list_remove` and `present_in` — this makes an unmet need visible rather than inventing one |
+| A30 | `exclusive_group` added to the schema layer (§7.2.1) | Three forms already documented mutually exclusive arguments in prose with no way to enforce them |
+| A27 | Map keys are path segments — `location.exits.north` (§6.6.1) | Reads far better than the reader form for the overwhelmingly common literal-key case, and the compiler distinguishes key from property by the preceding segment's declared type. `map_get` remains for computed and non-identifier keys |
+| A28 | A missing map key yields `none`; a missing property raises (§6.6.2) | Property existence is a static question about the type, so absence is a defect. Key presence is a runtime question about contents, and a room with no north exit is not a defect |
 | A25 | Broad grammar tokens by default; narrowing comes from restrictions and rules, not from `[class:…]` (§8.8.1) | A narrow token makes a non-match fail *in the parser*, so the player is told they cannot see a laptop that is plainly there. Recovering the sensible refusal would mean a duplicate action per verb |
 | A26 | Narrowing flows forward through pipeline stages, including from `restrictions` into `effects` (§8.8.3) | Without it, A25 would cost the author their static knowledge; with it, one restriction buys both the message and the type |
-| A23 | A bare identifier in an argument position is always a global; object properties use a dotted path (§6.6.1) | Scope-sensitive arguments would mean the same identifier denotes a property in one block and a global in another, and moving a condition between blocks would silently change its meaning |
+| A23 | A bare identifier in an argument position is always a global; object properties use a dotted path (§6.6.3) | Scope-sensitive arguments would mean the same identifier denotes a property in one block and a global in another, and moving a condition between blocks would silently change its meaning |
 | A24 | `includes` rather than `contains` for collection membership (§6.5) | `containing` already means physical containment; two predicates one letter apart with unrelated meanings is a trap |
 | A22 | `compare` as the single home for computed values (§10.6) | `count_of = { … } >= 2` is not merely unusual but ungrammatical — a statement is `Key Op Value`, so a dangling second operator has nowhere to live. One shallow form beats scattering value-producing predicates that cannot express their own result |
 | A21 | Replication is specified but unscheduled; its parser constraint is not (§8.9) | Indistinguishable candidates arise from hand-declared objects too, so the parser needs the rule regardless |

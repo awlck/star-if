@@ -7,9 +7,10 @@ Phase 0 (Foundations) is in progress — see
 [`docs/README.md`](docs/README.md) for the rest of the documentation. The
 build skeleton (workstream B) exists: CMake, presets, a dependency manifest,
 compiler warnings and sanitisers. Inside `libs/stardata`, the diagnostics
-layer (workstream C) and the lexer (workstream D) are implemented; the
-lossless CST, the parser and the schema layer (workstreams E and F) have not
-started, so nothing yet turns a token stream into a tree.
+layer (C), the lexer (D) and the lossless CST — green tree, cursors, parser,
+writer and edit API (E) — are implemented. A `.star` file parses to a tree
+and writes back byte for byte. The schema layer (F) has not started, so
+nothing yet knows what any of it *means*.
 
 ## Build
 
@@ -130,6 +131,53 @@ mean to edit is almost always this.
 - No Qt in `libs/` — that boundary is load-bearing (proposal §2.1): it's
   what keeps the compiler and CLI runtime buildable and testable without
   Qt, and keeps the WASM target tractable.
+
+## Where comments go: the trivia attachment policy
+
+A Stardata file's comments and whitespace are kept in the syntax tree, not
+discarded (spec §14.2), which means every tool that moves a statement has to
+know which comments move with it. Deciding that ad hoc is what makes comments
+drift, so the rule is fixed here, and
+`libs/stardata/src/cst/parser.cpp` states it again beside the code that
+implements it. `tests/unit/cst/trivia_test.cpp` is the same rule as
+behaviour: if the prose and the tests ever disagree, the tests win.
+
+1. **Trailing.** A statement's trailing trivia runs from its last token to
+   and including the first line terminator.
+2. **Leading.** What remains attaches to the statement that follows.
+3. **Detached.** Except that a blank line breaks the association: trivia up
+   to and including the last blank line belongs to the enclosing file or
+   block instead.
+
+```stardata
+# A file banner.                 <- rule 3: a blank line follows, so this
+# Two lines of it.                  comment stays with the file
+
+# What this room is.             <- rule 2: moves with `room`
+room = {
+    id = cell     # the id       <- rule 1: moves with `id`
+
+    # The way out.               <- rule 3 detached the blank line above to
+    #                               the block; rule 2 then moved this
+    #                               comment along with `exits`
+    exits = { north = hall }
+}
+```
+
+Every annotation there is inside a comment, so the block is a conforming file
+as it stands -- which `tests/unit/cst/trivia_test.cpp` relies on, since it
+parses this exact arrangement.
+
+Rule 3 is the only addition to what the backlog originally suggested, and it
+earns its place: without it a file's header banner attaches to whichever
+statement happens to be first, and moving that statement takes the banner
+along.
+
+A related convention, which the parser applies everywhere: **a node's range
+begins at its own first token.** Trivia before a node belongs to the node's
+parent. `Statement` is the single exception — it owns its leading and
+trailing trivia, which is exactly what makes rules 1 to 3 work. Without this,
+replacing the block in `exits = { … }` would eat the space before it.
 
 ## Writing a diagnostic
 

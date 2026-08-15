@@ -262,65 +262,95 @@ Prototype E1–E2 in a scratch branch before committing to the design.
 
 Immutable, shareable, parent-free nodes — the rust-analyzer `rowan` / Roslyn green-red model.
 
-- [ ] `GreenNode { kind, text_length, children[] }`, `GreenToken { kind, text }`.
-- [ ] Interning so identical subtrees share storage.
-- [ ] No parent pointers and no absolute offsets — that is what makes subtrees shareable across edits.
-- [ ] Reference-counted, thread-safe to share.
+- [x] `GreenNode { kind, text_length, children[] }`, `GreenToken { kind, text }`.
+- [x] Interning so identical subtrees share storage.
+- [x] No parent pointers and no absolute offsets — that is what makes subtrees shareable across edits.
+- [x] Reference-counted, thread-safe to share.
+
+Interning is bottom-up and identity-based, so structurally identical subtrees
+built through one cache are literally one object. Tokens are always interned;
+nodes only up to three children, following rowan's heuristic — a `File` node
+with two thousand children is unique by construction and hashing it would
+cost more than the sharing could save.
 
 ### E2 · Red tree / cursor API
 **Size:** M · **Depends on:** E1
 
-- [ ] Cursor carrying parent and absolute offset, computed on demand.
-- [ ] Navigation: parent, children, siblings, ancestors, descendants.
-- [ ] `SyntaxNode::text()` reconstructs source by concatenating leaves.
+- [x] Cursor carrying parent and absolute offset, computed on demand.
+- [x] Navigation: parent, children, siblings, ancestors, descendants.
+- [x] `SyntaxNode::text()` reconstructs source by concatenating leaves.
 
 ### E3 · Trivia attachment policy
 **Size:** M · **Depends on:** E2
 
 Unglamorous and worth deciding once, in writing, because ad-hoc rules here are what make comments drift during editing.
 
-- [ ] Written rule for leading vs trailing trivia (suggested: trailing runs to and including the newline; everything else is leading on the next token).
-- [ ] A comment on its own line above a statement attaches to that statement, so moving the statement moves the comment.
-- [ ] Documented in `CONTRIBUTING.md` with examples.
+- [x] Written rule for leading vs trailing trivia (suggested: trailing runs to and including the newline; everything else is leading on the next token).
+- [x] A comment on its own line above a statement attaches to that statement, so moving the statement moves the comment.
+- [x] Documented in `CONTRIBUTING.md` with examples.
+
+The written rule adds one clause to the suggested policy: **a blank line
+detaches**. Trivia up to and including the last blank line belongs to the
+enclosing File or Block rather than to the next statement. Without it a
+file's header banner attaches to whichever statement happens to be first, and
+moving that statement takes the banner along.
+
+A second convention falls out and is applied everywhere: a node's range
+begins at its own first token, so trivia before a node belongs to the node's
+parent. `Statement` is the sole exception, which is what makes the three
+rules work. The worked example in `CONTRIBUTING.md` is pinned by a test, so
+the prose cannot drift from the behaviour.
 
 ### E4 · Parser
 **Size:** L · **Depends on:** E2, D5, C2
 
-- [ ] Implements the grammar of spec §4 exactly.
-- [ ] `<` disambiguation per §4.2 — comparison in operator position, type arguments in value position, **never by whitespace**.
-- [ ] `Call` in value position (§4.3).
-- [ ] Block shape: list vs record, `E-BLOCK-MIXED` on mixing (§5.2).
-- [ ] **Error recovery**: a malformed block produces an error node and parsing continues, because an editor must have a tree even for broken input.
-- [ ] The tree covers every byte of input, including trivia and error text.
+- [x] Implements the grammar of spec §4 exactly.
+- [x] `<` disambiguation per §4.2 — comparison in operator position, type arguments in value position, **never by whitespace**.
+- [x] `Call` in value position (§4.3).
+- [x] Block shape: list vs record, `E-BLOCK-MIXED` on mixing (§5.2).
+- [x] **Error recovery**: a malformed block produces an error node and parsing continues, because an editor must have a tree even for broken input.
+- [x] The tree covers every byte of input, including trivia and error text.
+
+One known limitation, from the lexer rather than the parser: `list<int>= 1`
+cannot close its type argument list, because §3.6 matches `>=` as one
+operator and §3.1 forbids the lexer from using the spacing to know better.
+The grammar reports it rather than mis-parsing. It takes a type expression
+immediately followed by `=` with no space, which no real file contains.
 
 ### E5 · Writer
 **Size:** S · **Depends on:** E4
 
-- [ ] Serialise any tree back to text.
-- [ ] Byte-exact for an unmodified tree, including BOM and line-ending style.
+- [x] Serialise any tree back to text.
+- [x] Byte-exact for an unmodified tree, including BOM and line-ending style.
 
 ### E6 · Round-trip conformance — **the phase's headline test**
 **Size:** S · **Depends on:** E5, A4
 
-- [ ] For every `.star` under `tests/corpus/`, parse → write → compare bytes.
-- [ ] Runs on all three platforms.
-- [ ] Includes the CRLF and LF fixtures from A4.
+- [x] For every `.star` under `tests/corpus/`, parse → write → compare bytes.
+- [x] Runs on all three platforms.
+- [x] Includes the CRLF and LF fixtures from A4.
+
+Holds for the whole corpus, `tour.star` included — 63 KB exercising every
+construct in the specification, zero diagnostics, byte-identical. It also
+holds for every file in `tests/corpus/invalid/`, which matters more than it
+sounds: recovery has to be lossless too, or an editor would corrupt a file
+the moment it opened one with a typo in it.
 
 ### E7 · Edit API
 **Size:** M · **Depends on:** E6
 
-- [ ] Replace a node or token, returning a new tree sharing unchanged subtrees.
-- [ ] Re-print touches only the affected span; text outside it is byte-identical.
-- [ ] Insert and delete a statement within a block, preserving surrounding trivia.
+- [x] Replace a node or token, returning a new tree sharing unchanged subtrees.
+- [x] Re-print touches only the affected span; text outside it is byte-identical.
+- [x] Insert and delete a statement within a block, preserving surrounding trivia.
 
 ### E8 · Round-trip fuzzing
 **Size:** M · **Depends on:** E7
 
 Proposal §16.1 names round-trip degradation as a high risk; this is the mitigation.
 
-- [ ] Property test: apply N random edits, assert unaffected regions are byte-identical and the result re-parses.
-- [ ] Structure-aware fuzzer over the corpus, run in CI on a time budget.
-- [ ] A corpus of any crashers found, kept as regression fixtures.
+- [x] Property test: apply N random edits, assert unaffected regions are byte-identical and the result re-parses.
+- [x] Structure-aware fuzzer over the corpus, run in CI on a time budget.
+- [x] A corpus of any crashers found, kept as regression fixtures.
 
 ---
 

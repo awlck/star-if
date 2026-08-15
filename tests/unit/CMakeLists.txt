@@ -10,6 +10,7 @@ add_executable(stardata_unit_tests
     corpus_discovery_test.cpp
     support/snapshot.cpp
     support/token_dump.cpp
+    support/tree_dump.cpp
     diagnostics/source_manager_test.cpp
     diagnostics/diagnostic_test.cpp
     diagnostics/render_test.cpp
@@ -19,6 +20,13 @@ add_executable(stardata_unit_tests
     lex/lexer_diagnostics_test.cpp
     lex/lexer_corpus_test.cpp
     lex/lexer_fuzz_test.cpp
+    cst/green_test.cpp
+    cst/syntax_test.cpp
+    cst/trivia_test.cpp
+    cst/parser_test.cpp
+    cst/roundtrip_test.cpp
+    cst/edit_test.cpp
+    cst/edit_fuzz_test.cpp
 )
 
 target_link_libraries(stardata_unit_tests

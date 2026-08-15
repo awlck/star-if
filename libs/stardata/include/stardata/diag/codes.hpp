@@ -14,7 +14,8 @@ enum class Severity : std::uint8_t { Info, Warning, Error };
 // One entry per row of the required-diagnostics table, spec §14.3
 // ("Diagnostics"; the backlog's own reference to "§15" is to a section that
 // was renumbered to "Reserved for future use" -- §14.3 is the table that
-// actually exists). The string codes are stable identifiers: CI assertions
+// actually exists), preceded by the lexical conditions of §3, which that
+// table does not cover. The string codes are stable identifiers: CI assertions
 // and the `# EXPECT` fixtures under tests/corpus/invalid/ key on them, not
 // on message text, so a code must never be renamed once it ships.
 //
@@ -25,6 +26,24 @@ enum class Severity : std::uint8_t { Info, Warning, Error };
 // that backlog H2 describes.
 enum class Code : std::uint8_t {
     // clang-format off
+
+    // Lexical (spec §3). These predate §14.3's table, which begins at §5.2
+    // and so lists none of them, but §3 states each as a MUST and
+    // tests/check_stardata.py already reports all but the last two under
+    // these names. Backlog D3 enumerates the set the lexer must produce.
+    StringMultiline,        // E-STR-MULTILINE         §3.5    string literal spans a line terminator
+    StringEscape,           // E-STR-ESCAPE            §3.5    invalid escape sequence
+    StringUnterminated,     // E-STR-UNTERMINATED      §3.5    string literal not closed before EOF
+    DecimalPrecision,       // E-DEC-PRECISION         §3.4    decimal without exactly three fractional digits
+    DecimalLeadingDot,      // E-DEC-LEADING-DOT       §3.4    decimal written as '.5' rather than '0.5'
+    NumberTrailingDot,      // E-NUM-TRAILING-DOT      §3.4    number written as '5.' rather than '5.0'
+    IntegerRange,           // E-INT-RANGE             §3.4    integer literal outside signed 64-bit range
+    BracketOutside,         // E-BRACKET-OUTSIDE       §3.7    '[' or ']' outside a string literal
+    UnicodeWhitespace,      // E-UNICODE-WS            §3.1    non-ASCII whitespace
+    BadChar,                // E-BAD-CHAR              §3      character that begins no token
+    Utf8Invalid,            // E-UTF8-INVALID          §2      file is not well-formed UTF-8
+
+    // Spec §14.3's required-diagnostics table, one entry per row.
     BlockMixed,             // E-BLOCK-MIXED           §5.2    mixed list/record contents in one block
     DuplicateKey,           // E-DUP-KEY               §5.3    duplicate key, arity = one; cites both spans
     UnknownKey,              // E-UNKNOWN-KEY           §7.3    unknown key in a closed schema
@@ -39,7 +58,7 @@ enum class Code : std::uint8_t {
     FlagNotBool,              // E-FLAG-NOT-BOOL         §6.4.1  ...names a global that is not of type bool
     GlobalUndeclared,         // E-GLOBAL-UNDECLARED     §6.4    reference to an undeclared global/const
     DatumUnresolved,          // E-DATUM-UNRESOLVED      §6.6    <datum> resolves neither as id nor as a path
-    DatumAmbiguous,           // E-DATUM-AMBIGUOUS       §6.6.2  <datum> resolves both ways; names both candidates
+    DatumAmbiguous,           // E-DATUM-AMBIGUOUS       §6.6.4  <datum> resolves both ways; names both candidates
     PathNotRef,               // E-PATH-NOT-REF          §6.6    a path segment's intermediate isn't ref<C>-typed
     PropAbsent,               // E-PROP-ABSENT           §8.8.2  property read is definitely absent
     PropMaybeAbsent,          // E-PROP-MAYBE-ABSENT     §8.8.3  property read is possibly absent, not narrowed

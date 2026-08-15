@@ -8,6 +8,8 @@ add_library(stardata STATIC
     src/diag/diagnostic.cpp
     src/diag/sink.cpp
     src/diag/render.cpp
+    src/lex/token.cpp
+    src/lex/lexer.cpp
 )
 add_library(stardata::stardata ALIAS stardata)
 

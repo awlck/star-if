@@ -33,6 +33,16 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_no_qt_in_libs.py
 
+  # Section numbers cited from the code are positional, so a specification
+  # edit can renumber them out from under a comment or a diagnostic without
+  # anything failing to compile.
+  spec-refs:
+    name: Specification references resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_spec_refs.py
+
   # backlog B4/B5: the format check.
   format-check:
     name: clang-format
@@ -47,6 +57,21 @@ jobs:
             exit 0
           fi
           clang-format --dry-run --Werror $files
+
+      # catch_discover_tests registers each TEST_CASE by name and CTest hands
+      # that name back to the binary as a command-line argument. On Windows
+      # that round trip goes through the active code page, so a non-ASCII
+      # character in a name arrives mangled, matches no test, and fails the
+      # run -- on the Windows legs only, with a message ("No test cases
+      # matched") that says nothing about encoding. Keep the names ASCII;
+      # section markers belong in comments and INFO strings, which never
+      # travel through argv.
+      - name: Test-case names are ASCII
+        run: |
+          if git grep -nP 'TEST_CASE\("[^"]*[^\x00-\x7F]' -- '*.cpp'; then
+            echo "::error::TEST_CASE names must be ASCII (CTest passes them as argv, which mangles non-ASCII on Windows)"
+            exit 1
+          fi
 
   # backlog B5: {Windows, macOS, Linux} x {Debug, Release}, each via its
   # CMakePresets.json workflow preset (backlog B1) so CI runs exactly the

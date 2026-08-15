@@ -23,9 +23,9 @@ python3 tests/check_stardata.py --check-docs --self-test --strict
 ### Why it exists
 
 `docs/proposal.md` §4.9 requires that the specification and the conformance
-corpus cannot silently diverge. Until `libs/stardata` exists there is no parser
-to enforce that, and a specification with no implementation drifts within
-weeks. This script is the stand-in.
+corpus cannot silently diverge. Until `libs/stardata` has a parser there is
+nothing to enforce that, and a specification with no implementation drifts
+within weeks. This script is the stand-in.
 
 It is **temporary by design**. When Starforge can validate the corpus, this
 script should be *deleted* rather than maintained alongside it — two validators
@@ -63,6 +63,34 @@ cells and inline code spans are not extracted, so those still need care — the
 The operator-context check (`W-CMP-OUTSIDE-COND`) is a heuristic standing in
 for the schema, driven by a hard-coded list of condition-bearing keys near the
 top of the script. It is the only place library knowledge is baked in.
+
+## `unit/`
+
+The C++ suite, Catch2 driven by `ctest`. `cmake --workflow --preset
+linux-gcc-debug` (or any other preset) builds and runs it; the Debug presets
+on Linux and macOS run it under ASan and UBSan.
+
+| Path | Covers |
+|---|---|
+| `unit/diagnostics/` | Workstream C: source manager, spans, the diagnostic model, the human and machine renderers. |
+| `unit/lex/` | Workstream D: the token and trivia model, the lexer, its diagnostics, and the fuzzer. |
+| `unit/support/` | Shared helpers — corpus discovery, snapshot comparison, the token dump, the lexing harness. |
+
+Tests that compare against a checked-in expected output (`unit/*/snapshots/`)
+regenerate it when run with `--update-snapshots`:
+
+```sh
+./stardata_unit_tests --update-snapshots     # from the build directory
+```
+
+Review the resulting diff before committing it — that diff is the only thing
+standing between a deliberate change and a silently degraded error message.
+
+The lexer suite reads `corpus/` directly: every file must lex without a
+diagnostic, every file's token stream is pinned by a golden, and every
+fixture in `corpus/invalid/` must provoke the lexical codes its `# EXPECT`
+lines declare. Codes belonging to workstreams that do not exist yet are
+skipped rather than asserted.
 
 ## `corpus/`
 

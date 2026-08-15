@@ -65,6 +65,13 @@ public:
     [[nodiscard]] const std::filesystem::path& path(SourceId id) const;
     [[nodiscard]] std::string_view contents(SourceId id) const;
 
+    // The bytes a span covers. Both ends are clamped to the source's length,
+    // so a span that outlives the text it was computed against yields a
+    // short view rather than reading out of bounds. Tokens store spans
+    // rather than copied text (backlog D1), so this is how a caller gets a
+    // token's characters.
+    [[nodiscard]] std::string_view text(Span span) const;
+
     // Byte offset -> 1-based line/column. The line table is built lazily on
     // first use for a given source and cached, since most sources are never
     // queried (e.g. a file with no diagnostics).

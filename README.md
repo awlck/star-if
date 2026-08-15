@@ -39,8 +39,11 @@ What exists today:
   [`tests/README.md`](tests/README.md).
 - The build skeleton: CMake, presets for all three desktop platforms, a
   vcpkg manifest, compiler warnings-as-errors, and ASan/UBSan in Debug.
-  `libs/stardata` is currently a placeholder library — enough to prove the
-  build works, not yet the lexer/CST/parser.
+- In `libs/stardata`: the diagnostics layer (source manager, spans,
+  diagnostic model, human and machine renderers) and the **lexer** — tokens
+  and retained trivia for every rule of the specification's §3, with the
+  lexical diagnostics and a golden token stream for the corpus. There is no
+  CST or parser yet, so nothing turns a token stream into a tree.
 
 Not yet started: the actual engine (the rest of `libs/`, all of `apps/`).
 Nothing here plays a game yet.

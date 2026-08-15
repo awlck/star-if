@@ -62,6 +62,7 @@ CODES = {
     "E-DEC-PRECISION":      "§3.4 decimal must have exactly three fractional digits",
     "E-DEC-LEADING-DOT":    "§3.4 decimal may not start with '.'",
     "E-NUM-TRAILING-DOT":   "§3.4 decimal may not end with '.'",
+    "E-INT-RANGE":          "§3.4 integer literal outside signed 64-bit range",
     "E-BRACKET-OUTSIDE":    "§3.7 '[' or ']' outside a string literal",
     "E-RESERVED-WORD":      "§3.9 reserved word used as a value",
     "E-BAD-CHAR":           "§3 unexpected character",
@@ -248,7 +249,14 @@ def tokenize(src, path, diags):
             continue
         m = re.match(r"-?[0-9]+", src[i:])
         if m:
-            add("num", m.group(0), i)
+            txt = m.group(0)
+            # §3.4: an Integer is a signed 64-bit value, and an out-of-range
+            # literal is rejected rather than wrapped. Python's integers are
+            # unbounded, so this has to be checked explicitly.
+            if not (-2**63 <= int(txt) < 2**63):
+                diags.append(Diag("E-INT-RANGE", path,
+                                  src.count("\n", 0, i) + 1, txt))
+            add("num", txt, i)
             i += m.end()
             continue
 

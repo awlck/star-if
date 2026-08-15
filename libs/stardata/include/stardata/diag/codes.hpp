@@ -58,7 +58,7 @@ enum class Code : std::uint8_t {
     FlagNotBool,              // E-FLAG-NOT-BOOL         §6.4.1  ...names a global that is not of type bool
     GlobalUndeclared,         // E-GLOBAL-UNDECLARED     §6.4    reference to an undeclared global/const
     DatumUnresolved,          // E-DATUM-UNRESOLVED      §6.6    <datum> resolves neither as id nor as a path
-    DatumAmbiguous,           // E-DATUM-AMBIGUOUS       §6.6.2  <datum> resolves both ways; names both candidates
+    DatumAmbiguous,           // E-DATUM-AMBIGUOUS       §6.6.4  <datum> resolves both ways; names both candidates
     PathNotRef,               // E-PATH-NOT-REF          §6.6    a path segment's intermediate isn't ref<C>-typed
     PropAbsent,               // E-PROP-ABSENT           §8.8.2  property read is definitely absent
     PropMaybeAbsent,          // E-PROP-MAYBE-ABSENT     §8.8.3  property read is possibly absent, not narrowed

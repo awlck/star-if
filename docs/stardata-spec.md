@@ -855,6 +855,7 @@ Every slot has a static type, and most of them are narrower than "some object":
 | Slot | Static type |
 |---|---|
 | `self` | the declaring class or object |
+| `location` | the acting actor's current room — `room` |
 | `actor` | `person`, or whatever the ruleset narrows it to |
 | `noun`, `second` | determined by the action's grammar token (proposal §6.2) |
 
@@ -1007,7 +1008,8 @@ Expr      ::= Apply | Call | Path | Slot | Literal
 Call      ::= Identifier '(' ( Expr ( ',' Expr )* )? ')'
 Apply     ::= Identifier Expr
 Path      ::= Slot ( '.' Identifier )+
-Slot      ::= 'actor' | 'noun' | 'second' | 'self' | 'player' | 'speaker' | Identifier
+Slot      ::= 'actor' | 'noun' | 'second' | 'self' | 'player' | 'speaker'
+            | 'location' | Identifier
 ```
 
 Slots are bound by the evaluation context: an action's message binds `actor`, `noun` and `second`; an object's own `description` binds `self`; a dialogue node binds `speaker`.
@@ -1200,7 +1202,7 @@ Evaluation order follows source order, and evaluation **short-circuits**. This i
 
 ### 10.2 Object-scoped conditions
 
-A key naming an object slot (`actor`, `noun`, `second`, `self`, `speaker`) or an object id opens a block of conditions about that object:
+A key naming an object slot (`actor`, `noun`, `second`, `self`, `speaker`, `location`) or an object id opens a block of conditions about that object:
 
 ```stardata
 noun = {

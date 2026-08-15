@@ -148,6 +148,11 @@ enum = {
     values = { none low elevated high }
 }
 
+enum = {
+    id     = mood_enum
+    values = { warm neutral wary hostile }
+}
+
 # An enum used as a `flags<E>` bitset further down.
 enum = {
     id     = damage_type_enum
@@ -184,6 +189,14 @@ global = { id = captain_confronted   type = bool  initial = no }
 
 # A collection-valued global, mutated at runtime (spec §6.5).
 global = { id = seen_endings  type = set<identifier>  initial = { } }
+
+# A map-valued global, so `includes` has both a key domain and a value domain
+# to search (spec §6.5.1).
+global = {
+    id      = npc_moods
+    type    = map<identifier, mood_enum>
+    initial = { quartermaster_vex = wary  companion_kira = warm }
+}
 
 const = { id = max_reactor_temp  type = int  value = 1200 }
 
@@ -348,8 +361,11 @@ class = {
 
 trait = {
     id = openable
+    # A prop_def entry may be a bare type or a block carrying markers. The
+    # engine never learns the name `open`; it learns which properties affect
+    # scope and is told which ones do (spec §7.2.3).
     prop_def = {
-        open             = bool
+        open             = { type = bool  affects_scope = yes }
         openable_by_hand = bool
     }
     open             = no
@@ -594,11 +610,15 @@ container = {
     capacity = 3
 }
 
+# The long form of placement. `in = ornate_box` is sugar for exactly these two
+# `starcore.object` properties (spec §8.5, §8.1.1); both spellings are legal
+# and produce identical data, but writing both in one block is an error.
 thing = {
-    id   = brass_key
-    in   = ornate_box                    # relation `in`
-    name = $thing_brass_key
-    traits = { portable }
+    id       = brass_key
+    holder   = ornate_box
+    relation = in
+    name     = $thing_brass_key
+    traits   = { portable }
     synonyms = { key brass }
 }
 
@@ -1150,6 +1170,56 @@ rule = {
         }
     }
     effects = { set_global = { id = alert_level  value = elevated } }
+}
+
+# --- 11.3e Map access ------------------------------ (spec §6.6.1, §6.6.2) ---
+# A segment following a map-typed segment is a KEY, not a property name. Here
+# `exits` is map<direction, ref<room>>, so `north` is a key and the path yields
+# a room reference. `location` is the acting actor's current room.
+
+rule = {
+    of_action  = examine
+    when       = { noun = { is = blood_trail } }
+    conditions = { location = { exits.north == corridor } }
+    effects    = { set_flag = heard_vex_slip }
+}
+
+# A missing KEY yields `none` rather than raising, because "this room has no
+# north exit" is ordinary rather than a defect. A missing PROPERTY still
+# raises — the two look alike and differ deliberately (spec §6.6.2).
+rule = {
+    of_action  = go
+    when       = { }
+    conditions = { location = { exits.north == none } }
+    effects    = { add_global = { id = times_caught  amount = 1 } }
+}
+
+# `includes` takes EITHER a value or a key — one question over two domains,
+# with the argument name saying which (spec §6.5.1). The `key` form tests
+# presence without reading, which is what to use before chaining, since
+# `location.exits.north.name` raises if there is no north exit.
+rule = {
+    of_action  = look
+    when       = { }
+    conditions = {
+        includes = { collection = location.exits  key = north }
+        includes = { collection = npc_moods       value = hostile }
+    }
+    successMsg = @after "Something moves in the corridor to the north."
+}
+
+# `map_get` remains for keys that are COMPUTED, or whose type cannot be
+# written as an identifier. `a.b` is just sugar for it.
+rule = {
+    of_action = go
+    when      = { }
+    conditions = {
+        compare = {
+            map_get = { collection = location.exits  key = south }
+            value == your_cell
+        }
+    }
+    effects = { set_flag = saw_the_manifest }
 }
 
 # --- 11.4 A fully scripted rule (spec §12.1) -------------------------------

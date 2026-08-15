@@ -136,6 +136,14 @@ star-if-system/
 
 The standard library (`stdlib/`) is written in Stardata and Lua, not C++. This is a deliberate constraint that forces the engine to expose enough power for authors to do what the stdlib does. If a stdlib feature needs a C++ hook, that is a signal the extension surface is too narrow, and the hook gets designed as a general mechanism rather than a special case. §9.1 discusses where this rule bends for the RPG layer.
 
+**With one correction, because as first stated this was too absolute.** A handful of schemas describe data that `starcore` itself reads and writes — the containment tree, an object's class and sector, the action and rule forms the dispatch index is built from. Those are **core-owned**: registered from `starcore` before any file loads, sealed against redefinition, and asserted rather than assumed (spec §7.2.2). Every world object descends from a built-in root class, `starcore.object` (spec §8.1.1).
+
+The reason is that the alternative is a documented failure mode rather than a hypothetical one. ADRIFT 5 needs a library to create the location properties its engine uses; Inform 7 attaches special handling to the eighth action declared, expecting Going. In both, an engine depends on a convention while presenting the library as free to choose — and the dependency is invisible in the source until it breaks. Stating the floor and checking it is strictly better than hoping.
+
+The constraint that survives is the useful half: **`stdlib/core` gets no privileges the core doesn't grant every library.** `thing`, `person`, `container`, `door`, every action and every message are ordinary Stardata, replaceable wholesale.
+
+**Recommended implementation.** Rather than hand-written C++ registration calls, keep the core definitions as Stardata in `libs/starcore/builtin/*.star` and **embed them into the binary at build time** via a CMake step that generates a string literal. One source of truth, readable and diffable, validated by the same tooling as everything else, and impossible to ship without. During Phase 0 the files are loaded from disk so the schema validator can be developed against them; the embedding step lands with Phase 1.
+
 ---
 
 ## 3. System overview

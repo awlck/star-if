@@ -362,14 +362,41 @@ Proposal §16.1 names round-trip degradation as a high risk; this is the mitigat
 - [ ] Typed accessors over the CST (`Statement::key()`, `Value::as_block()`), no separate tree.
 - [ ] Tolerates missing and malformed children, returning optionals rather than asserting.
 
-### F2 · Schema bootstrap
+### F2 · The core-owned schema set and root class
 **Size:** M · **Depends on:** F1
 
-Schemas are written in Stardata (spec §7.2), so this is mildly circular and needs care.
+Replaces the earlier "minimal schema-of-schemas, everything else in stdlib" plan. Some schemas describe `starcore`'s own data and cannot be a library's to define; spec §7.2.2 and §8.1.1 say which and why.
 
-- [ ] A minimal hard-coded schema-of-schemas sufficient to validate `schema.star` itself.
-- [ ] `stdlib/core/schema.star` declaring the standard forms of Appendix C.
-- [ ] A test asserting `schema.star` validates against the bootstrap.
+- [ ] Core definitions written as Stardata in `libs/starcore/builtin/*.star`: the forms of spec §7.2.4, plus `starcore.object`, `starcore.room` and the `starcore.actor` trait.
+- [ ] Loaded from disk in Phase 0 so the validator can be developed against them. **Phase 1 embeds them into the binary** via a CMake-generated string literal, so they are one source of truth, diffable, and impossible to ship without.
+- [ ] A minimal hard-coded schema-of-schemas, sufficient only to validate the builtin files themselves.
+- [ ] `stdlib/core/*.star` declares everything else — `thing`, `person`, `container`, actions, messages — with **no privileged status**. A test asserts `stdlib/core` uses only mechanisms available to any library.
+
+### F2a · Sealing and assertions — **the anti-wart task**
+**Size:** S · **Depends on:** F2
+
+The point of F2 is not that core owns some schemas; it is that core *checks* rather than hopes. ADRIFT 5 needs the library to create its location properties, and Inform 7 attaches special handling to the eighth action declared. Both fail bewilderingly and invisibly when the expectation is not met.
+
+- [ ] `sealed` on a schema: redefinition is an error naming the owner.
+- [ ] `class_extension` may add to a core class; retyping or removing a core property, or changing `of_class`, is an error.
+- [ ] Every core requirement is checked at load and reported by name — no requirement is left implicit.
+- [ ] A fixture per assertion in `tests/corpus/invalid/`.
+
+### F2b · Markers
+**Size:** S · **Depends on:** F2
+
+Where core needs to know *which* property means something, the library declares it (spec §7.2.3) rather than core hard-coding a name.
+
+- [ ] `prop_def` accepts a block as well as a bare type.
+- [ ] `affects_scope`, `always_resident`, `save_exclude` parsed and exposed to `starcore`.
+- [ ] An unknown marker is an error, not ignored.
+
+### F2c · Placement sugar
+**Size:** S · **Depends on:** F2
+
+- [ ] `in` / `on` / `under` / `behind` / `carried` / `worn` / `part_of` desugar to `holder` + `relation` (spec §8.5).
+- [ ] Using a relation keyword together with `holder` or `relation` in one block is an error.
+- [ ] Round-trip (E5) preserves whichever spelling the author used — the sugar is expanded in the semantic view, never in the CST.
 
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2
@@ -568,10 +595,10 @@ B1 → B3 → C1 → C2 → C3 → C4      │
 | C · Diagnostics | 7 |
 | D · Lexer | 8 |
 | E · CST | 14 |
-| F · Schema | 17 |
+| F · Schema | 20 |
 | G · VFS | 7 |
 | H · Corpus and exit | 7 |
-| **Total** | **≈ 69 days ≈ 14 weeks** |
+| **Total** | **≈ 72 days ≈ 14–15 weeks** |
 
 The proposal estimated 6–8 weeks. **That was optimistic** — the CST and the schema layer are each about a fortnight on their own, and the estimate did not account for diagnostics being real infrastructure rather than a printf.
 

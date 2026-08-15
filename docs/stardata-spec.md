@@ -704,6 +704,65 @@ Within a block, **exactly one** key of a given `exclusive_group` may appear. Zer
 
 `block<S>` as a type means "a record block conforming to schema `S`", which is how nested shapes such as `rule`, `stage`, `node` and `choice` are declared.
 
+### 7.2.2 Core-owned schemas
+
+Some schemas are not the standard library's to define, because `starcore` reads and writes the data they describe. The containment tree, the class of an object, its sector, its presence set — these are not conventions the engine hopes a library will follow, they are the shape of its own data structures.
+
+**Those schemas are owned by `starcore`, registered before any file loads, and `sealed`.** A library may extend them; it cannot redefine, retype or remove them.
+
+This is a deliberate departure from "the standard library defines everything", and the reason is worth stating because the alternative is a known failure mode rather than a hypothetical one. ADRIFT 5 requires a library to create the location properties the system uses; Inform 7's compiler attaches special handling to the eighth action defined, expecting it to be Going. Both are cases of an engine *depending* on a convention while *pretending* the library is free. The result is a wart that nobody can see in the source and that breaks bewilderingly when violated.
+
+> **If `starcore` requires something to be defined a particular way, it MUST assert that requirement rather than assume it will be met.**
+
+Concretely, an implementation MUST reject:
+
+- a `schema` declaration whose `id` names a sealed core schema;
+- a `class_extension` that retypes an inherited core property, or that changes a core class's `of_class`;
+- a `prop_def` that redeclares a core property name with a different type;
+- the absence of anything core requires — reported at load, naming the requirement, rather than surfacing as a failure later.
+
+Adding is always permitted: new keys on a core schema through `provides_schema` (§13.3), new properties on a core class through `class_extension` (§8.2), new subclasses, new traits.
+
+#### 7.2.3 Markers, not magic names
+
+Where the engine needs to know *which* property means something, the library says so with a **marker** rather than the engine hard-coding a name. `prop_def` therefore accepts a block as well as a bare type:
+
+```stardata
+trait = {
+    id = openable
+    prop_def = {
+        open = { type = bool  affects_scope = yes }
+    }
+    open = no
+}
+```
+
+`affects_scope` tells the scope cache (proposal §5.4) to invalidate when this property changes. The engine never learns the name `open`; it learns that *some* properties affect scope and is told which. A ruleset with a `shuttered` property gets the same behaviour by declaring the same marker.
+
+This is the general form of the rule above: core depends on **declared, checkable markers**, and hard-codes a name only where the concept itself is core (§7.2.4). Defined markers include `affects_scope`, `always_resident` (§5.3 of the proposal), and `save_exclude`.
+
+#### 7.2.4 What is core-owned
+
+The test is narrow and mechanical: **does `starcore`'s own code read or write it?** If yes, it is core-owned and asserted. If no, it is library policy.
+
+| Core-owned forms | Why |
+|---|---|
+| `schema`, `class`, `class_extension`, `trait`, `enum` | the schema layer itself |
+| `global`, `const` | save-state layout |
+| `action`, `rule`, `turn_hook` | the turn sequence and dispatch index |
+| `sector` | residency and streaming |
+| `project`, `library` | load order |
+
+| Core-owned classes and traits | Why |
+|---|---|
+| `starcore.object` | §8.1.1 — the containment tree, presence, identity |
+| `starcore.room` | scope is computed from an actor's room; the `location` slot resolves to one |
+| `starcore.actor` (trait) | the actor loop iterates these, and `busy_until` lives on them |
+
+Everything else in `stdlib/core` — `thing`, `person`, `container`, `supporter`, `door`, `backdrop`, every action, every message — is ordinary Stardata with no privileged status, and could be replaced wholesale by a different library.
+
+**[OPEN]** The exact membership of the second table is the part most worth arguing about. `starcore.room` and `starcore.actor` are included because the parser and turn loop are core and cannot function without the concepts. A narrower reading would make them markers instead (`is_location = yes`), at the cost of an indirection for two concepts that an IF system is never going to be without.
+
 ### 7.3 Open and closed schemas
 
 A schema is **closed** by default: an unknown key MUST be an error, with a "did you mean …?" suggestion computed by edit distance against the declared keys.
@@ -742,9 +801,26 @@ class = {
 ```
 
 - A class has exactly **one** parent, named by `of_class`. Single inheritance.
-- `prop_def` declares properties. A `prop_def` block is a record block mapping property name to type.
+- `prop_def` declares properties. A `prop_def` block maps a property name either to a bare type or to a block carrying markers (§7.2.3).
 - Any other key sets the class's **default value** for that property. The property MUST be declared, by this class or an ancestor.
-- The root class is `entity`. `thing`, `room`, `person` and `direction` derive from it and are supplied by `stdlib/core`.
+- A class with no `of_class` derives from `starcore.object` (§8.1.1). There is no way to declare a class outside that hierarchy.
+
+#### 8.1.1 `starcore.object`, the built-in root class
+
+Every world object is a `starcore.object`, in the way that every C# or Java type is an `Object`. It is **built into `starcore` and cannot be redefined** (§7.2.2), because its properties are not conveniences — they are the fields of the world store (proposal §5.2) under author-visible names.
+
+| Property | Type | Purpose |
+|---|---|---|
+| `holder` | `ref<starcore.object>` | the containment parent; `none` for a root |
+| `relation` | `enum<relation_enum>` | how it is held — `in`, `on`, `under`, `behind`, `carried`, `worn`, `part_of` |
+| `sector` | `ref<sector>` | residency (§8.6.2 of the proposal) |
+| `present_in` | `set<ref<starcore.room>>` | presence, for objects in several places (§8.6) |
+| `name` | `text` | what the parser matches and the templates print |
+| `synonyms` | `list<identifier>` | additional parser names |
+
+Declaring these in one built-in place is what lets `starcore` implement predicates like `held_by`, `carrying` and `containing` in C++ against a known layout, rather than reading whatever a library happened to call its parent pointer. The alternative — the engine walking library-defined properties by convention — is both slower and the ADRIFT failure mode described in §7.2.2.
+
+A library MAY add properties to `starcore.object` with `class_extension`; it MUST NOT retype or remove these.
 
 ### 8.2 Class extension
 
@@ -827,10 +903,20 @@ in · on · under · behind · carried · worn · part_of
 An object's initial placement is written with the relation as the key:
 
 ```stardata
-thing = { id = brass_key   in  = ornate_box }
-thing = { id = tarnished_mug  on  = mess_table }
+thing = { id = brass_key      in      = ornate_box }
+thing = { id = tarnished_mug  on      = mess_table }
 thing = { id = access_panel   part_of = reactor_console }
 ```
+
+**This is sugar.** Each relation name is shorthand for setting the two `starcore.object` properties of §8.1.1, so the first line above means exactly:
+
+```stardata
+thing = { id = brass_key  holder = ornate_box  relation = in }
+```
+
+Both spellings are legal and produce identical data. The sugar exists because placement is written for nearly every object in a game and the long form would be noise; the long form exists because it is what `holder` and `relation` actually are, and because a computed or conditional placement has no relation keyword to use.
+
+Writing a relation keyword *and* `holder`/`relation` in the same block is an error — they are the same two slots, and the conflict is not resolvable by precedence.
 
 `part_of` differs from the others in that the child is destroyed with the parent and is in scope whenever the parent is.
 

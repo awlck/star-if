@@ -40,17 +40,25 @@ namespace {
     return false;
 }
 
-// The placement a block declares, read straight from a parsed string.
+// The placement a block declares.
+//
+// The built-in set is loaded because the relation keywords come from it --
+// they are the values of the enum `starcore.object`'s `relation` property is
+// typed by, not a list in the code. A test that passed its own list would be
+// testing a list it had just written.
 struct Placed {
+    test::LoadedSet loaded;
     test::Parsed parsed;
     diag::DiagnosticSink sink;
 
     explicit Placed(std::string body)
-        : parsed("thing = {\n    id = subject\n" + std::move(body) + "}\n") {}
+        : parsed("thing = {\n    id = subject\n" + std::move(body) + "}\n") {
+        loaded.load_builtin();
+    }
 
     [[nodiscard]] std::optional<schema::Placement> placement() {
         const ast::Block block = *parsed.ast().statements()[0].value()->as_block();
-        return schema::read_placement(block, sink);
+        return schema::read_placement(block, loaded.set.relation_values(), sink);
     }
 };
 
@@ -78,18 +86,20 @@ TEST_CASE("a property declares its markers, and they reach the engine", "[schema
     // type; they differ only in what else they say.
     REQUIRE(trait->find_property("shuttered") != nullptr);
     CHECK(trait->find_property("shuttered")->type.to_string() == "bool");
-    CHECK(trait->find_property("shuttered")->markers.affects_scope);
-    CHECK_FALSE(trait->find_property("shuttered")->markers.save_exclude);
+    CHECK(trait->find_property("shuttered")->markers.is_set("affects_scope"));
+    CHECK_FALSE(trait->find_property("shuttered")->markers.is_set("save_exclude"));
 
-    CHECK(trait->find_property("panes")->markers.save_exclude);
-    CHECK_FALSE(trait->find_property("panes")->markers.affects_scope);
+    CHECK(trait->find_property("panes")->markers.is_set("save_exclude"));
+    CHECK_FALSE(trait->find_property("panes")->markers.is_set("affects_scope"));
 
-    // A bare type carries no markers, which is the common case.
+    // A bare type carries no markers at all, which is the common case --
+    // not three markers that happen to be false.
     REQUIRE(trait->find_property("frame") != nullptr);
+    CHECK(trait->find_property("frame")->markers.empty());
     CHECK(trait->find_property("frame")->type.to_string() == "int");
-    CHECK_FALSE(trait->find_property("frame")->markers.affects_scope);
-    CHECK_FALSE(trait->find_property("frame")->markers.always_resident);
-    CHECK_FALSE(trait->find_property("frame")->markers.save_exclude);
+    CHECK_FALSE(trait->find_property("frame")->markers.is_set("affects_scope"));
+    CHECK_FALSE(trait->find_property("frame")->markers.is_set("always_resident"));
+    CHECK_FALSE(trait->find_property("frame")->markers.is_set("save_exclude"));
 }
 
 TEST_CASE("the engine learns which properties affect scope, not their names", "[schema][markers]") {
@@ -108,7 +118,7 @@ TEST_CASE("the engine learns which properties affect scope, not their names", "[
     std::vector<std::string> scope_properties;
     for (const schema::ClassDecl& declared : loaded.set.classes()) {
         for (const schema::PropDecl& property : declared.properties) {
-            if (property.markers.affects_scope) {
+            if (property.markers.is_set("affects_scope")) {
                 scope_properties.push_back(declared.id + "." + property.name);
             }
         }
@@ -251,12 +261,15 @@ TEST_CASE("the sugar is expanded in the view and never in the tree", "[schema][p
     // reading of the tree, not an edit to it.
     const std::string source = "thing = { id = brass_key  in = ornate_box }\n";
     test::Parsed parsed(source);
+    test::LoadedSet loaded;
+    loaded.load_builtin();
 
     CHECK(parsed.written() == source);
 
     const ast::Block block = *parsed.ast().statements()[0].value()->as_block();
     diag::DiagnosticSink sink;
-    const std::optional<schema::Placement> placement = schema::read_placement(block, sink);
+    const std::optional<schema::Placement> placement =
+        schema::read_placement(block, loaded.set.relation_values(), sink);
     REQUIRE(placement);
     CHECK(placement->relation == "in");
 
@@ -273,4 +286,82 @@ TEST_CASE("stdlib and the corpus both keep the placement rule", "[schema][placem
     loaded.load_builtin();
     loaded.load_stdlib();
     CHECK_FALSE(loaded.reported(diag::Code::PlacementConflict));
+}
+
+// --- the vocabularies are data, and these prove it ---------------------
+
+TEST_CASE("a marker added to the schema is read with no code change", "[schema][markers]") {
+    // The sharpest form of §7.2.3's claim, and the one that would fail if
+    // the markers were named fields in C++: extend `prop_marker` with a
+    // marker nothing in this repository has ever heard of, and it is read.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("schema_extension = {\n"
+                     "    of_schema = prop_marker\n"
+                     "    key = { name = telepathic  type = bool }\n"
+                     "}\n"
+                     "trait = {\n"
+                     "    id = psychic\n"
+                     "    prop_def = { thoughts = { type = text  telepathic = yes } }\n"
+                     "}\n");
+
+    CHECK(loaded.sink.error_count() == 0);
+    const schema::ClassDecl* trait = loaded.set.find_class("psychic");
+    REQUIRE(trait != nullptr);
+    REQUIRE(trait->find_property("thoughts") != nullptr);
+    CHECK(trait->find_property("thoughts")->markers.is_set("telepathic"));
+
+    // And it is the only one set: reading is by name, not by position.
+    REQUIRE(trait->find_property("thoughts")->markers.all().size() == 1);
+    CHECK(trait->find_property("thoughts")->markers.all().front().first == "telepathic");
+}
+
+TEST_CASE("the relation keywords come from the enum, not from the code", "[schema][placement]") {
+    // Point the placement vocabulary at a different enum and the keywords
+    // follow it. If the seven words of §8.5 were a list in the code this
+    // could not work, and `in` would still be sugar here.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("enum = { id = mounting_enum  values = { bolted welded } }\n");
+    loaded.set.set_relation_enum("mounting_enum");
+
+    CHECK(loaded.set.relation_values().size() == 2);
+
+    test::Parsed bolted("thing = { id = plate  bolted = bulkhead }\n");
+    diag::DiagnosticSink sink;
+    const std::optional<schema::Placement> placement = schema::read_placement(
+        *bolted.ast().statements()[0].value()->as_block(), loaded.set.relation_values(), sink);
+
+    REQUIRE(placement);
+    CHECK(placement->relation == "bolted");
+    CHECK(placement->holder == "bulkhead");
+
+    // And `in` is now just a key like any other, because nothing in the code
+    // ever knew it.
+    test::Parsed inside("thing = { id = key  in = box }\n");
+    diag::DiagnosticSink other;
+    CHECK_FALSE(schema::read_placement(*inside.ast().statements()[0].value()->as_block(),
+                                       loaded.set.relation_values(), other));
+    CHECK(other.diagnostics().empty());
+}
+
+TEST_CASE("relation_enum names the enum starcore.object is typed by", "[schema][placement]") {
+    // The link that makes the harness's `set_relation_enum` the right name
+    // rather than a guess: `starcore.object.relation` is declared at
+    // `enum<relation_enum>`, and a core_requirement asserts it.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+
+    const schema::ClassDecl* object = loaded.set.find_class("starcore.object");
+    REQUIRE(object != nullptr);
+    REQUIRE(object->find_property("relation") != nullptr);
+    CHECK(object->find_property("relation")->type.to_string() == "enum<relation_enum>");
+
+    const schema::EnumDecl* relations = loaded.set.find_enum("relation_enum");
+    REQUIRE(relations != nullptr);
+    CHECK(relations->values.size() == 7);
+    for (const char* keyword : {"in", "on", "under", "behind", "carried", "worn", "part_of"}) {
+        INFO("relation: " << keyword);
+        CHECK(relations->has_value(keyword));
+    }
 }

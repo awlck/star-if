@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "stardata/ast/ast.hpp"
@@ -74,21 +75,32 @@ struct Schema {
 
 // What a property tells the engine about itself (§7.2.3, backlog F2b).
 //
-// The point of markers is that core depends on *declared, checkable*
-// facts rather than on names it has memorised. The engine never learns that
-// a property called `open` affects what is in scope; it learns that some
+// The point of markers is that core depends on *declared, checkable* facts
+// rather than on names it has memorised. The engine never learns that a
+// property called `open` affects what is in scope; it learns that some
 // properties do, and is told which. A ruleset whose equivalent is called
 // `shuttered` gets the same behaviour by declaring the same marker, which is
 // the whole difference between this and the ADRIFT failure of §7.2.2.
 //
-// The vocabulary is core's, and is declared as the `prop_marker` form in
-// `libs/starcore/builtin/schema.star` rather than hard-coded here -- so an
-// unknown marker is refused by the ordinary closed-schema check, and a new
-// one is a data change.
-struct PropMarkers {
-    bool affects_scope = false;   // invalidate the scope cache when this changes
-    bool always_resident = false; // never streamed out with its sector
-    bool save_exclude = false;    // derived state; not written to the save
+// A NAME-TO-FLAG MAP, NOT NAMED FIELDS. The vocabulary belongs to the
+// `prop_marker` form in `libs/starcore/builtin/schema.star`, and naming the
+// markers here would put a second copy of it in C++ -- which is the same
+// mistake one level down, and would mean adding a marker took an edit to
+// this header, to the reader, and to the schema. It takes an edit to the
+// schema and a line in `starcore` that acts on the marker. Nothing here.
+class PropMarkers {
+public:
+    [[nodiscard]] bool is_set(std::string_view name) const noexcept;
+    void set(std::string name, bool value);
+
+    // Every marker written on the property, in declaration order.
+    [[nodiscard]] const std::vector<std::pair<std::string, bool>>& all() const noexcept {
+        return flags_;
+    }
+    [[nodiscard]] bool empty() const noexcept { return flags_.empty(); }
+
+private:
+    std::vector<std::pair<std::string, bool>> flags_;
 };
 
 // One entry of a `prop_def` block (§8.1), written either as a bare type or
@@ -159,6 +171,19 @@ struct Replaces {
 // does not, which is the ordinary case.
 [[nodiscard]] std::optional<Replaces> read_replaces(const ast::Statement& statement);
 
+// An `enum` declaration (§6.2): a closed set of named values, usable as a
+// type. Read structurally because more than the type checker needs it --
+// §8.5's placement keywords are the values of one, so the set of legal
+// relation names is data rather than a list in the code.
+struct EnumDecl {
+    std::string id;
+    std::vector<std::string> values;
+    std::string owner;
+    diag::Span span;
+
+    [[nodiscard]] bool has_value(std::string_view value) const noexcept;
+};
+
 // Something `starcore` requires of the data it is handed, declared as data
 // rather than assumed (§7.2.2, and §7.2.5 for the form itself).
 //
@@ -207,6 +232,9 @@ read_schema_extension(const ast::Statement& statement, diag::DiagnosticSink& sin
 [[nodiscard]] std::optional<CoreRequirement> read_core_requirement(const ast::Statement& statement,
                                                                    diag::DiagnosticSink& sink);
 
+[[nodiscard]] std::optional<EnumDecl> read_enum(const ast::Statement& statement,
+                                                std::string_view owner, diag::DiagnosticSink& sink);
+
 // Where an object starts out (§8.5, backlog F2c).
 //
 // Every object has at most one parent, and the parent link carries a
@@ -222,21 +250,26 @@ read_schema_extension(const ast::Statement& statement, diag::DiagnosticSink& sin
 // keeps the spelling.
 struct Placement {
     std::string holder;   // the id of the containing object
-    std::string relation; // in | on | under | behind | carried | worn | part_of
+    std::string relation; // one of the values of the relation enum
     bool from_sugar = false;
     diag::Span span; // the key that established it
 };
 
-// The seven relation keywords of §8.5, in the order the spec lists them.
-[[nodiscard]] const std::vector<std::string>& relation_keywords();
-[[nodiscard]] bool is_relation_keyword(std::string_view key) noexcept;
-
 // The placement an object instantiation block declares, if any.
+//
+// `relations` is the set of legal relation names -- the values of the enum
+// that `starcore.object`'s `relation` property is typed by. It is passed in
+// rather than known here for the same reason the markers are: `libs/stardata`
+// does not know that placement is a thing interactive fiction has, and a list
+// of seven words in this file would be a piece of the object model hiding in
+// the format library. An empty set means no keyword is sugar, which is what
+// a caller with no object model wants.
 //
 // Reports when a block writes both spellings: they are the same two slots,
 // and §8.5 says the conflict is not resolvable by precedence -- so neither
 // wins, and nothing is returned.
 [[nodiscard]] std::optional<Placement> read_placement(const ast::Block& block,
+                                                      const std::vector<std::string>& relations,
                                                       diag::DiagnosticSink& sink);
 
 // --- the bootstrap -----------------------------------------------------

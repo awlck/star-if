@@ -175,6 +175,42 @@ void validate_marker_block(const ast::Block& block, const Schema& markers,
     }
 }
 
+// Every marker written on a property, read by name from the block.
+//
+// Nothing here knows what any marker means -- it reads whatever the
+// `prop_marker` form declares as a `bool` and hands the names upward. That
+// is the difference between a marker and a magic name, and writing the three
+// current markers out as fields here would have quietly reintroduced the
+// second: adding a fourth would then take an edit to the schema, to a struct
+// and to this function, and the schema would no longer be where the answer
+// lived.
+//
+// With no schema to consult -- only possible before `prop_marker` is
+// declared -- every key but `type` is taken as a flag. Unknown ones have
+// already been reported by validate_marker_block.
+void read_markers(const ast::Block& block, const Schema* markers, PropMarkers& out) {
+    for (const ast::Statement& statement : block.statements()) {
+        const std::optional<std::string> name = statement.key_name();
+        if (!name || name->empty() || *name == "type") {
+            continue;
+        }
+        if (markers != nullptr) {
+            const KeyDecl* declared = markers->find_key(*name);
+            // A marker the form does not declare, or one whose declared type
+            // is not a flag: neither is this function's to guess at. The
+            // first is already an error; the second is a marker whose reader
+            // has not been written, and inventing a `false` for it would be
+            // worse than leaving it absent.
+            if (declared == nullptr || declared->type.to_string() != "bool") {
+                continue;
+            }
+        }
+        const std::optional<ast::Value> value = statement.value();
+        const std::optional<ast::Scalar> scalar = value ? value->as_scalar() : std::nullopt;
+        out.set(*name, scalar && scalar->as_bool().value_or(false));
+    }
+}
+
 // A `prop_def` block: each statement maps a property name either to a bare
 // type or to a block carrying markers (§7.2.3).
 void read_prop_defs(const ast::Block& owner_block, const Schema* markers,
@@ -220,9 +256,7 @@ void read_prop_defs(const ast::Block& owner_block, const Schema* markers,
                         decl.type = *lowered;
                     }
                 }
-                decl.markers.affects_scope = flag_of(*marked, "affects_scope");
-                decl.markers.always_resident = flag_of(*marked, "always_resident");
-                decl.markers.save_exclude = flag_of(*marked, "save_exclude");
+                read_markers(*marked, markers, decl.markers);
             }
 
             if (decl.type.name.empty()) {
@@ -301,6 +335,34 @@ const KeyDecl* Schema::find_key(std::string_view name) const noexcept {
         }
     }
     return nullptr;
+}
+
+bool PropMarkers::is_set(std::string_view name) const noexcept {
+    for (const auto& [flag, value] : flags_) {
+        if (flag == name) {
+            return value;
+        }
+    }
+    return false;
+}
+
+void PropMarkers::set(std::string name, bool value) {
+    for (auto& [flag, existing] : flags_) {
+        if (flag == name) {
+            existing = value;
+            return;
+        }
+    }
+    flags_.emplace_back(std::move(name), value);
+}
+
+bool EnumDecl::has_value(std::string_view value) const noexcept {
+    for (const std::string& declared : values) {
+        if (declared == value) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const PropDecl* ClassDecl::find_property(std::string_view name) const noexcept {
@@ -496,6 +558,43 @@ std::optional<Replaces> read_replaces(const ast::Statement& statement) {
     return std::nullopt;
 }
 
+std::optional<EnumDecl> read_enum(const ast::Statement& statement, std::string_view owner,
+                                  diag::DiagnosticSink& sink) {
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        Diagnostic diagnostic(Code::SchemaInvalid, head_span(statement),
+                              "an enum is a block of declarations, not a bare value");
+        diagnostic.with_note("an enum is written `enum = { id = ...  values = { a b c } }` "
+                             "(spec §6.2)");
+        sink.report(std::move(diagnostic));
+        return std::nullopt;
+    }
+
+    EnumDecl decl;
+    decl.span = head_span(statement);
+    decl.owner = std::string(owner);
+    decl.id = text_of(*block, "id");
+    if (decl.id.empty()) {
+        report_missing(statement, "enum", "id", sink);
+        return std::nullopt;
+    }
+    if (const std::optional<ast::Statement> id_statement = block->find("id")) {
+        decl.span = id_statement->report_span();
+    }
+
+    if (const std::optional<ast::Value> values = block->value_of("values")) {
+        if (const std::optional<ast::Block> list = values->as_block()) {
+            for (const ast::Scalar& entry : list->values()) {
+                if (const std::optional<std::string_view> name = entry.as_identifier()) {
+                    decl.values.emplace_back(*name);
+                }
+            }
+        }
+    }
+    return decl;
+}
+
 std::optional<CoreRequirement> read_core_requirement(const ast::Statement& statement,
                                                      diag::DiagnosticSink& sink) {
     const std::optional<ast::Value> value = statement.value();
@@ -530,22 +629,18 @@ std::optional<CoreRequirement> read_core_requirement(const ast::Statement& state
 
 // --- placement (spec 8.5) ----------------------------------------------
 
-const std::vector<std::string>& relation_keywords() {
-    static const std::vector<std::string> keywords = {"in",      "on",   "under",  "behind",
-                                                      "carried", "worn", "part_of"};
-    return keywords;
-}
-
-bool is_relation_keyword(std::string_view key) noexcept {
-    for (const std::string& keyword : relation_keywords()) {
-        if (keyword == key) {
-            return true;
+std::optional<Placement> read_placement(const ast::Block& block,
+                                        const std::vector<std::string>& relations,
+                                        diag::DiagnosticSink& sink) {
+    const auto is_relation = [&relations](std::string_view key) {
+        for (const std::string& relation : relations) {
+            if (relation == key) {
+                return true;
+            }
         }
-    }
-    return false;
-}
+        return false;
+    };
 
-std::optional<Placement> read_placement(const ast::Block& block, diag::DiagnosticSink& sink) {
     // The long form first: `holder` and `relation` are what the two slots
     // actually are (§8.1.1), and the keywords are shorthand for setting them.
     const std::optional<ast::Statement> holder = block.find("holder");
@@ -554,7 +649,7 @@ std::optional<Placement> read_placement(const ast::Block& block, diag::Diagnosti
     std::vector<ast::Statement> sugar;
     for (const ast::Statement& statement : block.statements()) {
         const std::optional<std::string> key = statement.key_name();
-        if (key && is_relation_keyword(*key)) {
+        if (key && is_relation(*key)) {
             sugar.push_back(statement);
         }
     }

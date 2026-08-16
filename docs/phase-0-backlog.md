@@ -415,11 +415,13 @@ Where core needs to know *which* property means something, the library declares 
 - [x] An unknown marker is an error, not ignored.
 
 The marker vocabulary is **declared**, as the `prop_marker` form in
-`libs/starcore/builtin/schema.star`, rather than being a list in C++. So an
-unknown marker is refused by the ordinary closed-schema check (`E-UNKNOWN-KEY`),
-and adding a marker is a data change plus a line in `starcore` that acts on
-it. Hard-coding the set would have reproduced, one level down, exactly the
-thing §7.2.3 exists to avoid.
+`libs/starcore/builtin/schema.star`, rather than being a list in C++ — and
+that has to hold for the *reader* as well as the validator. `PropMarkers` is
+a name-to-flag map, not named fields, and the reader takes whatever the form
+declares as a `bool`. Adding a marker is an edit to the schema and a line in
+`starcore` that acts on it; nothing in `libs/stardata` changes, which is what
+`a marker added to the schema is read with no code change` asserts by
+extending `prop_marker` with a marker the repository has never heard of.
 
 ### F2c · Placement sugar
 **Size:** S · **Depends on:** F2
@@ -433,6 +435,15 @@ to know which spelling it started as. Two relation keywords in one block are
 the same conflict wearing one spelling, and are reported too. On a conflict
 **neither** spelling wins: §8.5 says the precedence is not resolvable, and
 guessing would put the object somewhere the author did not ask for.
+
+The keywords are **the values of the enum `starcore.object.relation` is typed
+by**, read from the data rather than listed in the code — so `libs/stardata`
+holds no piece of the object model. Which enum that is, is named by whoever
+owns the object model (`starcore` in Phase 1, the test harness today) through
+`SchemaSet::set_relation_enum`. **[OPEN]** Whether the desugaring belongs in
+`stardata` at all, or moves up into `starcore` in Phase 1, is worth deciding
+before F3 — and whether a library may amend the relation set needs a spec
+mechanism, since there is no `enum_extension`.
 
 ### F2d · `schema_extension`, replacement, and the no-duplicates rule
 **Size:** M · **Depends on:** F2a

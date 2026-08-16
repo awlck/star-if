@@ -37,7 +37,7 @@ using diag::Diagnostic;
 // layer, so the layer has to read it itself.
 [[nodiscard]] bool is_structural_form(std::string_view key) noexcept {
     return key == "schema" || key == "class" || key == "trait" || key == "class_extension" ||
-           key == "schema_extension" || key == "core_requirement";
+           key == "schema_extension" || key == "core_requirement" || key == "enum";
 }
 
 } // namespace
@@ -51,6 +51,24 @@ const Schema* SchemaSet::find(std::string_view id) const noexcept {
         }
     }
     return nullptr;
+}
+
+const EnumDecl* SchemaSet::find_enum(std::string_view id) const noexcept {
+    for (const EnumDecl& decl : enums_) {
+        if (decl.id == id) {
+            return &decl;
+        }
+    }
+    return nullptr;
+}
+
+const std::vector<std::string>& SchemaSet::relation_values() const noexcept {
+    static const std::vector<std::string> none;
+    if (relation_enum_.empty()) {
+        return none;
+    }
+    const EnumDecl* declared = find_enum(relation_enum_);
+    return declared != nullptr ? declared->values : none;
 }
 
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
@@ -199,6 +217,23 @@ bool SchemaSet::declare_class(ClassDecl decl, const std::optional<Replaces>& rep
         }
     }
     classes_.push_back(std::move(decl));
+    return true;
+}
+
+bool SchemaSet::declare_enum(EnumDecl decl, const std::optional<Replaces>& replaces,
+                             diag::DiagnosticSink& sink) {
+    const Outcome outcome = offer(
+        Declaration{"enum", decl.id, decl.owner, /*sealed=*/false, decl.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
+        return false;
+    }
+    for (EnumDecl& existing : enums_) {
+        if (existing.id == decl.id) {
+            existing = std::move(decl);
+            return true;
+        }
+    }
+    enums_.push_back(std::move(decl));
     return true;
 }
 
@@ -388,6 +423,12 @@ void fold_declaration(const ast::Statement& statement, const std::string& key,
         }
         return;
     }
+    if (key == "enum") {
+        if (std::optional<EnumDecl> decl = read_enum(statement, options.owner, sink)) {
+            set.declare_enum(*std::move(decl), replaces, sink);
+        }
+        return;
+    }
     if (key == "core_requirement") {
         // §7.2.5.1: a reserved internal form. Core has a dependency the
         // schema layer cannot otherwise see -- its C++ reads the containment
@@ -468,7 +509,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
             // object in a game (§8.5, backlog F2c).
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-                (void)read_placement(*block, sink);
+                (void)read_placement(*block, set.relation_values(), sink);
             }
             return;
         }

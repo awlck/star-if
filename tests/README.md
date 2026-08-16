@@ -77,15 +77,45 @@ on Linux and macOS run it under ASan and UBSan.
 | `unit/cst/` | Workstream E: the green tree, cursors, the trivia attachment policy, the parser, the byte-exact round-trip, the edit API and the edit fuzzer. |
 | `unit/support/` | Shared helpers — corpus discovery, snapshot comparison, the token dump, the lexing harness. |
 
-Tests that compare against a checked-in expected output (`unit/*/snapshots/`)
-regenerate it when run with `--update-snapshots`:
+### Snapshots, and how to bless a change
+
+Several tests compare against a checked-in expected output under
+`unit/*/snapshots/`. Editing `corpus/tour.star` — or anything else that
+changes a token stream, a tree shape or a rendered diagnostic — makes those
+tests fail by design. Regenerating them is one command:
 
 ```sh
-./stardata_unit_tests --update-snapshots     # from the build directory
+cmake --build build/linux-gcc-debug                              # build first
+./build/linux-gcc-debug/tests/unit/stardata_unit_tests --update-snapshots
 ```
 
-Review the resulting diff before committing it — that diff is the only thing
-standing between a deliberate change and a silently degraded error message.
+That rewrites every snapshot in place. Then **read `git diff` before you
+commit it.** That diff is the only thing standing between a deliberate change
+and a silently degraded error message, and blessing without reading defeats
+the entire point of having snapshots.
+
+What to look for in the diff:
+
+- **Expected**: lines added or removed roughly in proportion to what you
+  changed, and offsets shifting after the point you edited.
+- **Suspicious**: `error_token` or `Error` appearing anywhere; a kind you did
+  not expect; a change far from what you touched; the file shrinking when you
+  added to the corpus.
+
+The snapshots are not the real test. `every corpus file round-trips byte for
+byte`, `parses with no diagnostic at all` and the error-node count are
+asserted outright, precisely so they cannot be blessed away — if a corpus
+edit breaks one of those, regenerating snapshots will not silence it, and it
+should not.
+
+Current snapshots:
+
+| File | What it pins |
+|---|---|
+| `unit/lex/snapshots/*.tokens.txt` | The token stream of each corpus file. |
+| `unit/cst/snapshots/lf.tree.txt`, `crlf.tree.txt` | The full parse tree, including where trivia attached. |
+| `unit/cst/snapshots/tour.census.txt` | A per-kind census of `tour.star`, whose full tree would run to tens of thousands of lines. |
+| `unit/diagnostics/snapshots/*.txt` | Rendered diagnostics, human and machine form. |
 
 The lexer suite reads `corpus/` directly: every file must lex without a
 diagnostic, every file's token stream is pinned by a golden, and every

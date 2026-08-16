@@ -131,19 +131,21 @@ TEST_CASE("the parse tree of the line-ending fixtures matches its golden", "[cst
     }
 }
 
-TEST_CASE("tour.star has the structure the corpus claims", "[cst][roundtrip]") {
-    // Standing in for a golden on the big file: the counts move only when
-    // the corpus or the parser changes, and either is worth a look.
+TEST_CASE("the structure of tour.star matches its golden census", "[cst][roundtrip]") {
+    // A golden for the big file, where a full tree dump would run to tens of
+    // thousands of lines nobody would read. The census moves when the parser
+    // changes shape and when the corpus grows, and both are worth a look --
+    // but it blesses through --update-snapshots like every other snapshot,
+    // rather than being a number somebody edits by hand every time a
+    // statement is added to the corpus.
     ParsedFile parsed(corpus_dir() / "tour.star");
     const cst::SyntaxNode root = cst::SyntaxNode::root(parsed.green);
 
-    std::size_t top_level_statements = 0;
-    for (const cst::SyntaxNode& child : root.child_nodes()) {
-        top_level_statements += child.kind() == cst::SyntaxKind::Statement ? 1 : 0;
-    }
-    // tests/check_stardata.py reports 149 top-level statements for this file.
-    CHECK(top_level_statements == 149);
+    CHECK(test::check_snapshot(snapshot_dir() / "tour.census.txt", test::summarise_tree(root)));
 
+    // One thing worth asserting outright rather than leaving to the census,
+    // because a golden makes it too easy to bless away: the reference corpus
+    // must contain no error nodes at all.
     std::size_t errors = 0;
     for (const cst::SyntaxNode& node : root.descendants()) {
         errors += node.kind() == cst::SyntaxKind::Error ? 1 : 0;

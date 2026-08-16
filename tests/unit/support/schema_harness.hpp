@@ -38,9 +38,12 @@ public:
     // libs/starcore/builtin/, as `starcore` owns it.
     void load_builtin() { load_from(builtin_dir(), "starcore"); }
 
-    // stdlib/core/, which is ordinary Stardata with no privileged status --
-    // the second step of the load order in spec §13.2.
-    void load_stdlib_core() { load_from(stdlib_core_dir(), "stdlib/core"); }
+    // stdlib/core/, which is ordinary Stardata with no privileged status.
+    // Owned by `star_core`, its own `library` id: an owner is the name
+    // `@replaces` uses (§7.6), so it has to be the library id and not a
+    // path. The built-in set's owner is `starcore`, which is not a library
+    // and cannot be named by `@replaces` for exactly that reason.
+    void load_stdlib_core() { load_from(stdlib_core_dir(), "star_core"); }
 
     // One string loaded as if it were a library file. This is how the
     // sealing assertions of backlog F2a are exercised: a library trying to

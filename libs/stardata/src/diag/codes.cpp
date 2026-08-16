@@ -61,6 +61,8 @@ std::string_view code_string(Code code) noexcept {
         return "E-CORE-REPARENT";
     case Code::CoreRequirement:
         return "E-CORE-REQUIREMENT";
+    case Code::ProvidesMismatch:
+        return "W-PROVIDES-MISMATCH";
     case Code::BlockMixed:
         return "E-BLOCK-MIXED";
     case Code::DuplicateKey:
@@ -133,6 +135,7 @@ std::string_view code_string(Code code) noexcept {
 Severity default_severity(Code code) noexcept {
     switch (code) {
     case Code::AssignInCondition:
+    case Code::ProvidesMismatch:
     case Code::PropDefRedundant:
     case Code::NamesSubset:
     case Code::GlobalUnused:

@@ -57,7 +57,9 @@ What exists today:
   written as Stardata — the forms `starcore` reads and writes itself,
   `starcore.object` and its six slots, and the list of what core depends on,
   stated as data so that a failure is a named diagnostic at load rather than
-  a crash much later. All of it sealed; a library may add, never redefine.
+  a crash much later. All of it sealed — a library adds keys with
+  `schema_extension` and properties with `class_extension`, and may never
+  redefine or supersede.
 
 - In `stdlib/core`: the kinds, traits and actions an author actually writes,
   with **no privileged status** — and a test that says so, by loading the

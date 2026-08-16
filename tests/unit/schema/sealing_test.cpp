@@ -56,7 +56,9 @@ TEST_CASE("a library cannot redefine a sealed core form", "[schema][sealing]") {
 
     CHECK(loaded.reported(diag::Code::SchemaSealed));
     CHECK(mentions(loaded, diag::Code::SchemaSealed, "starcore"));
-    CHECK(mentions(loaded, diag::Code::SchemaSealed, "provides_schema"));
+    // §7.2.2 named `provides_schema` here until the spec corrected itself:
+    // that is a manifest field on `library`, never a mechanism. §7.5 is.
+    CHECK(mentions(loaded, diag::Code::SchemaSealed, "schema_extension"));
 
     // And the original survived: a rejected declaration changes nothing.
     const schema::Schema* sector = loaded.set.find("sector");

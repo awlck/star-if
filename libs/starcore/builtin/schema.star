@@ -67,6 +67,19 @@ schema = {
 }
 
 schema = {
+    id        = schema_extension
+    top_level = yes
+    sealed    = yes
+    doc       = "Adds keys to a form declared elsewhere, including a sealed one (§7.5)."
+
+    key = { name = of_schema  type = identifier   required = yes
+            doc  = "The form being extended. It must already exist." }
+    key = { name = key        type = block<key>   arity = many
+            doc  = "Keys to add. A key that already exists is a redefinition, not an extension." }
+    key = { name = doc        type = text }
+}
+
+schema = {
     id        = trait
     top_level = yes
     sealed    = yes
@@ -148,7 +161,7 @@ schema = {
     sealed    = yes
     doc       = "A response to an action or an event, run when its conditions hold."
 
-    key = { name = id            type = identifier       unique_in = rule }
+    key = { name = id            type = identifier }
     key = { name = of_action     type = ref<action>      exclusive_group = subject
             doc  = "The action this rule responds to." }
     key = { name = of_event      type = identifier       exclusive_group = subject

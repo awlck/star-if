@@ -136,3 +136,7 @@ core_requirement = { id = actor_busy_until
                      requires = property  subject = starcore.actor  member = busy_until
                      type = int
                      doc = "When this actor is next free to act. The turn loop reads it every turn." }
+
+core_requirement = { id = form_schema_extension
+                     requires = form  subject = schema_extension
+                     doc = "Adding keys to a form is the mechanism a library extends the schema layer with (§7.5)." }

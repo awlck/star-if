@@ -13,10 +13,11 @@ implemented. A `.star` file parses to a tree and writes back byte for byte.
 
 The schema layer has begun: `libs/starcore/builtin/` holds the core-owned,
 sealed schema set of spec §7.2.2 (F2), the assertions that keep it sealed
-are enforced (F2a), and `stdlib/core/` declares the rest with no privileged
-status. Types, arity, combination modes and reference resolution (F3–F12)
-have not started, so nothing yet checks that a value matches its declared
-type.
+are enforced (F2a), `schema_extension`, `@replaces` and the no-duplicates
+rule are implemented (F2d), and `stdlib/core/` declares the rest with no
+privileged status. Types, arity, combination modes and reference resolution
+(F3–F12) have not started, so nothing yet checks that a value matches its
+declared type.
 
 ## The sealing boundary
 
@@ -32,6 +33,22 @@ Do not add a name to `builtin/` to make something convenient. §7.2.2 exists
 because ADRIFT 5 and Inform 7 both grew engine dependencies on library
 conventions that nobody could see in the source, and every one of those
 started as a convenience.
+
+**Sealing prevents redefinition, not extension**, and the three verbs are
+worth keeping straight:
+
+| You want to | Use | Works on a sealed thing? |
+|---|---|---|
+| add a key to an existing form | `schema_extension` (§7.5) | yes |
+| add a property to an existing class | `class_extension` (§8.2) | yes |
+| supersede a whole declaration | `@replaces(lib)` (§7.6) | **no** |
+
+`provides_schema` is none of these. It is a manifest field on `library` that
+lists the forms a library contributes, so the editor's browser and a reader
+can see them in one place; it declares nothing, and a mismatch against what
+the library really declares is a warning. The spec described it as a
+mechanism until §7.5 existed, which is worth knowing if you meet the old
+wording anywhere.
 
 ## Build
 

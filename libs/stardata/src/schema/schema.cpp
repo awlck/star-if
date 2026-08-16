@@ -248,6 +248,12 @@ std::optional<Combine> combine_from_string(std::string_view text) noexcept {
     return std::nullopt;
 }
 
+bool KeyDecl::same_as(const KeyDecl& other) const {
+    return name == other.name && type.same_as(other.type) && required == other.required &&
+           arity == other.arity && combine == other.combine && unique_in == other.unique_in &&
+           exclusive_group == other.exclusive_group && has_default == other.has_default;
+}
+
 const KeyDecl* Schema::find_key(std::string_view name) const noexcept {
     for (const KeyDecl& key : keys) {
         if (key.name == name) {
@@ -394,6 +400,59 @@ std::optional<ExtensionDecl> read_class_extension(const ast::Statement& statemen
 
     read_prop_defs(*block, decl.properties, sink);
     return decl;
+}
+
+std::optional<SchemaExtensionDecl> read_schema_extension(const ast::Statement& statement,
+                                                         diag::DiagnosticSink& sink) {
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        Diagnostic diagnostic(Code::SchemaInvalid, head_span(statement),
+                              "a schema_extension is a block of key declarations, not a bare "
+                              "value");
+        diagnostic.with_note("spec §7.5 gives the shape; it mirrors class_extension");
+        sink.report(std::move(diagnostic));
+        return std::nullopt;
+    }
+
+    SchemaExtensionDecl decl;
+    decl.span = head_span(statement);
+    decl.of_schema = text_of(*block, "of_schema");
+    decl.of_schema_span = decl.span;
+    if (const std::optional<ast::Statement> target = block->find("of_schema")) {
+        decl.of_schema_span = target->report_span();
+    }
+    if (decl.of_schema.empty()) {
+        report_missing(statement, "schema_extension", "of_schema", sink);
+        return std::nullopt;
+    }
+
+    for (const ast::Statement& key : block->find_all("key")) {
+        if (std::optional<KeyDecl> parsed = read_key(key, sink)) {
+            decl.keys.push_back(*std::move(parsed));
+        }
+    }
+    return decl;
+}
+
+std::optional<Replaces> read_replaces(const ast::Statement& statement) {
+    const std::optional<ast::Value> value = statement.value();
+    if (!value) {
+        return std::nullopt;
+    }
+    for (const ast::Annotation& annotation : value->annotations()) {
+        if (annotation.name() != "replaces") {
+            continue;
+        }
+        Replaces replaces;
+        replaces.span = annotation.span();
+        const std::vector<cst::SyntaxToken> arguments = annotation.arguments();
+        if (!arguments.empty()) {
+            replaces.source = std::string(arguments.front().text());
+        }
+        return replaces;
+    }
+    return std::nullopt;
 }
 
 std::optional<CoreRequirement> read_core_requirement(const ast::Statement& statement,

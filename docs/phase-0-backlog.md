@@ -426,11 +426,22 @@ Where core needs to know *which* property means something, the library declares 
 
 Three gaps the implementation surfaced. Spec §7.5 and §7.6.
 
-- [ ] `schema_extension` adds keys to an existing form, **including a sealed one** — sealing prevents redefinition, not extension. Redeclaring a key identically warns; any difference errors.
-- [ ] No declaration may be duplicated, for any form with a `unique_in` key. Error cites both spans.
-- [ ] `@replaces(lib)` supersedes a declaration from a named library. Total replacement, no merge. Naming a source that declared no such thing is an error — that check is the point of naming it.
-- [ ] `@replaces` on a sealed declaration is an error.
-- [ ] `provides_schema` demoted to a checked manifest (§13.3); a mismatch warns. It was never a mechanism, and §7.2.2 previously said it was.
+- [x] `schema_extension` adds keys to an existing form, **including a sealed one** — sealing prevents redefinition, not extension. Redeclaring a key identically warns; any difference errors.
+- [x] No declaration may be duplicated, for any form with a `unique_in` key. Error cites both spans.
+- [x] `@replaces(lib)` supersedes a declaration from a named library. Total replacement, no merge. Naming a source that declared no such thing is an error — that check is the point of naming it.
+- [x] `@replaces` on a sealed declaration is an error.
+- [x] `provides_schema` demoted to a checked manifest (§13.3); a mismatch warns. It was never a mechanism, and §7.2.2 previously said it was.
+
+The uniqueness rule and `@replaces` are enforced in one place — `SchemaSet::offer`
+— for every top-level declaration, rather than per kind. The previous shape
+enforced uniqueness only on the two kinds the loader happened to track
+structurally, which is to say on the two an author is least likely to
+duplicate by accident. The namespace comes from the schema's `unique_in`, so
+`rule` and `loc` are exempt without being named in the code.
+
+An owner is a **library id** (`star_core`, `starscape`), because that is the
+name `@replaces(lib)` uses. The built-in set's owner is `starcore`, which is
+not a library and so is a name no `@replaces` can successfully claim.
 
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2

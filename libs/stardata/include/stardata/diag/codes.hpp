@@ -61,7 +61,8 @@ enum class Code : std::uint8_t {
     SchemaSealed,           // E-SCHEMA-SEALED         §7.2.2  redefinition of a sealed core declaration
     KeyMissing,             // E-KEY-MISSING           §7.2    a required key is absent
     CoreReparent,           // E-CORE-REPARENT         §7.2.2  class_extension changes a class's of_class
-    CoreRequirement,        // E-CORE-REQUIREMENT      §7.2.2  something core requires is absent or wrong
+    CoreRequirement,        // E-CORE-REQUIREMENT      §7.2.5  something core requires is absent or wrong
+    ProvidesMismatch,       // W-PROVIDES-MISMATCH     §13.3   provides_schema disagrees with what the library declares
 
     // Spec §14.3's required-diagnostics table, one entry per row.
     BlockMixed,             // E-BLOCK-MIXED           §5.2    mixed list/record contents in one block

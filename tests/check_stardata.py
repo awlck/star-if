@@ -87,6 +87,15 @@ CODES = {
     "W-PRAGMA-UNUSED":      "a '# check: allow' pragma that suppressed nothing",
     "E-PRAGMA-UNKNOWN":     "a '# check: allow' pragma naming an unknown code",
     "E-DOC-EXAMPLE":        "a ```stardata example in the docs does not parse",
+    # Schema layer (§7). Listed so a `# check: allow` pragma naming one is
+    # recognised; none is produced here — see NEEDS_SCHEMA_LAYER below.
+    "E-SCHEMA-INVALID":     "§7.2 a schema declaration the schema layer cannot use",
+    "E-SCHEMA-DUPLICATE":   "§7.6 two declarations share an id, without @replaces",
+    "E-SCHEMA-SEALED":      "§7.2.2 redefinition of a sealed core declaration",
+    "E-KEY-MISSING":        "§7.2 a required key is absent",
+    "E-CORE-REPARENT":      "§8.2 class_extension changes a class's of_class",
+    "E-CORE-REQUIREMENT":   "§7.2.5 something core requires is absent or wrong",
+    "W-PROVIDES-MISMATCH":  "§13.3 provides_schema disagrees with what the library declares",
 }
 
 # Codes this script structurally cannot produce, and the fixtures that
@@ -112,6 +121,7 @@ NEEDS_SCHEMA_LAYER = {
     "E-CORE-REQUIREMENT",
     "E-PROPDEF-TYPE-MISMATCH",
     "E-UNKNOWN-KEY",
+    "W-PROVIDES-MISMATCH",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:

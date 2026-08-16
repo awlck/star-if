@@ -48,6 +48,14 @@ struct KeyDecl {
     std::string deprecated;
     bool has_default = false;
     diag::Span span; // the key's own name, for a diagnostic to point at
+
+    // Whether two declarations of the same key say the same thing. §7.5
+    // turns on this: a `schema_extension` redeclaring a key identically is
+    // redundant (a warning), and any difference is a redefinition wearing an
+    // extension's clothes (an error). Position and documentation are not
+    // part of the comparison -- two libraries agreeing about a key while
+    // wording its `doc` differently have not disagreed about anything.
+    [[nodiscard]] bool same_as(const KeyDecl& other) const;
 };
 
 // A form: `action`, `class`, `sector`, and so on.
@@ -100,8 +108,40 @@ struct ExtensionDecl {
     diag::Span reparent_span;
 };
 
+// A `schema_extension` (§7.5): adds keys to an existing form, including a
+// sealed one.
+//
+// The distinction it exists to draw is §7.2.2's: **sealing prevents
+// redefinition, not extension.** A ruleset may add `stamina_cost` to the
+// core `action` form and may not change what `id` means, and before this
+// form existed the spec pointed at `provides_schema` -- a manifest field,
+// never a mechanism -- as though it were the way to do the first.
+struct SchemaExtensionDecl {
+    std::string of_schema;
+    std::vector<KeyDecl> keys;
+    diag::Span span;
+    diag::Span of_schema_span;
+};
+
+// `@replaces(lib)` on a top-level declaration (§7.6): this supersedes the
+// declaration of the same id contributed by library `lib`.
+//
+// The argument names a library rather than a file, and it is an error if
+// that library declared no such thing. That check is the whole value of
+// naming a source: a typo, an upstream rename, or a library that stopped
+// shipping the thing being patched all become build failures instead of a
+// new declaration that silently never takes effect.
+struct Replaces {
+    std::string source; // the library id being superseded
+    diag::Span span;
+};
+
+// The `@replaces` on a statement's value, if it carries one. Empty when it
+// does not, which is the ordinary case.
+[[nodiscard]] std::optional<Replaces> read_replaces(const ast::Statement& statement);
+
 // Something `starcore` requires of the data it is handed, declared as data
-// rather than assumed (§7.2.2).
+// rather than assumed (§7.2.2, and §7.2.5 for the form itself).
 //
 // The list lives in `libs/starcore/builtin/` as ordinary Stardata, so that
 // every requirement has an id a diagnostic can name and nobody has to read
@@ -134,6 +174,9 @@ read_class(const ast::Statement& statement, std::string_view owner, diag::Diagno
 
 [[nodiscard]] std::optional<ExtensionDecl> read_class_extension(const ast::Statement& statement,
                                                                 diag::DiagnosticSink& sink);
+
+[[nodiscard]] std::optional<SchemaExtensionDecl>
+read_schema_extension(const ast::Statement& statement, diag::DiagnosticSink& sink);
 
 [[nodiscard]] std::optional<CoreRequirement> read_core_requirement(const ast::Statement& statement,
                                                                    diag::DiagnosticSink& sink);

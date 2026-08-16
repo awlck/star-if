@@ -1,0 +1,16 @@
+# tests/corpus/invalid/includes-key-and-value.star
+# declared E-BLOCK-MIXED
+# lexer and parser report E-BLOCK-MIXED
+
+error: E-BLOCK-MIXED: this block holds statements, and 'stray' is a bare value among them
+  --> tests/corpus/invalid/includes-key-and-value.star:13:40
+   |
+13 |                      value = corridor  stray }
+   |                                        ^^^^^
+note: a block is either a list of values or a set of statements, never both (spec §5.2)
+  --> tests/corpus/invalid/includes-key-and-value.star:12:22
+   |
+12 |         includes = { collection = location.exits  key = north
+   |                      ^^^^^^^^^^
+fix-it: if a '=' went missing, this is where it belongs
+  replace tests/corpus/invalid/includes-key-and-value.star:13:45 with ` = `

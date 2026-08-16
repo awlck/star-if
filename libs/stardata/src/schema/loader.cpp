@@ -37,7 +37,7 @@ using diag::Diagnostic;
 // layer, so the layer has to read it itself.
 [[nodiscard]] bool is_structural_form(std::string_view key) noexcept {
     return key == "schema" || key == "class" || key == "trait" || key == "class_extension" ||
-           key == "core_requirement";
+           key == "schema_extension" || key == "core_requirement";
 }
 
 } // namespace
@@ -66,62 +66,189 @@ void SchemaSet::add_requirement(CoreRequirement requirement) {
     requirements_.push_back(std::move(requirement));
 }
 
-bool SchemaSet::declare(Schema schema, diag::DiagnosticSink& sink) {
-    if (const Schema* existing = find(schema.id)) {
-        // The sealed case is the one §7.2.2 exists for, and it gets the
-        // message that explains itself: the author has run into a rule they
-        // very likely did not know was there.
+void SchemaSet::add_library(LibraryManifest manifest) {
+    libraries_.push_back(std::move(manifest));
+}
+
+const SchemaSet::Declaration* SchemaSet::find_declaration(std::string_view space,
+                                                          std::string_view id) const noexcept {
+    for (const Declaration& declaration : declarations_) {
+        if (declaration.space == space && declaration.id == id) {
+            return &declaration;
+        }
+    }
+    return nullptr;
+}
+
+// The §7.6 gate. Everything a file declares at the top level comes through
+// here, so the uniqueness rule and `@replaces` are written once rather than
+// once per kind of declaration -- which is what stopped the earlier version
+// of this file from enforcing either on anything but schemas and classes.
+SchemaSet::Outcome SchemaSet::offer(Declaration declaration,
+                                    const std::optional<Replaces>& replaces,
+                                    diag::DiagnosticSink& sink) {
+    const Declaration* existing = find_declaration(declaration.space, declaration.id);
+
+    if (replaces) {
+        // §7.6: naming the source is the point. A typo, an upstream rename,
+        // or a library that stopped shipping the thing being patched all
+        // become build failures here rather than a second declaration that
+        // silently never takes effect.
+        if (existing == nullptr) {
+            Diagnostic diagnostic(Code::SchemaInvalid, replaces->span,
+                                  "there is no '" + declaration.id + "' to replace");
+            diagnostic.with_note("`@replaces` supersedes a declaration that already exists; if "
+                                 "this is meant to be a new one, write it without the annotation "
+                                 "(spec §7.6)");
+            diagnostic.with_fix_it(replaces->span, "", "remove the `@replaces` annotation");
+            sink.report(std::move(diagnostic));
+            return Outcome::Rejected;
+        }
+        if (existing->owner != replaces->source) {
+            Diagnostic diagnostic(Code::SchemaInvalid, replaces->span,
+                                  "'" + declaration.id + "' doesn't come from " + replaces->source);
+            diagnostic.with_note("it was declared by " + existing->owner +
+                                     ", so that is the name "
+                                     "`@replaces` wants (spec §7.6)",
+                                 existing->span);
+            diagnostic.with_fix_it(replaces->span, "@replaces(" + existing->owner + ")",
+                                   "name " + existing->owner + " instead");
+            sink.report(std::move(diagnostic));
+            return Outcome::Rejected;
+        }
         if (existing->sealed) {
-            Diagnostic diagnostic(Code::SchemaSealed, schema.span,
-                                  "'" + schema.id +
-                                      "' already has a perfectly good definition, "
-                                      "and it belongs to " +
+            Diagnostic diagnostic(Code::SchemaSealed, replaces->span,
+                                  "'" + declaration.id +
+                                      "' is sealed, so it can be added to but never replaced");
+            diagnostic.with_note("sealed means exactly this: extend freely, never supersede. "
+                                 "Replacing it would change the shape of data " +
+                                     existing->owner + " reads directly (spec §7.2.2, §7.6)",
+                                 existing->span);
+            sink.report(std::move(diagnostic));
+            return Outcome::Rejected;
+        }
+
+        const std::size_t index = static_cast<std::size_t>(existing - declarations_.data());
+        declarations_[index] = std::move(declaration);
+        return Outcome::Replaced;
+    }
+
+    if (existing != nullptr) {
+        if (existing->sealed) {
+            // The sealed case is the one §7.2.2 exists for, and it gets the
+            // message that explains itself: the author has run into a rule
+            // they very likely did not know was there.
+            Diagnostic diagnostic(Code::SchemaSealed, declaration.span,
+                                  "'" + declaration.id +
+                                      "' already has a perfectly good definition, and it belongs "
+                                      "to " +
                                       existing->owner);
-            diagnostic.with_note("a sealed form describes data " + existing->owner +
+            diagnostic.with_note("a sealed declaration describes data " + existing->owner +
                                      " reads and writes itself, so redefining it would leave the "
                                      "two disagreeing about the same bytes (spec §7.2.2)",
                                  existing->span);
-            diagnostic.with_note("you can still add to it: `provides_schema` contributes new keys "
-                                 "to an existing form (spec §13.3)");
+            diagnostic.with_note("you can still add to it: `schema_extension` contributes new keys "
+                                 "to an existing form, and `class_extension` new properties to an "
+                                 "existing class (spec §7.5, §8.2)");
             sink.report(std::move(diagnostic));
-            return false;
+            return Outcome::Rejected;
         }
-        Diagnostic diagnostic(Code::SchemaDuplicate, schema.span,
-                              "the form '" + schema.id + "' is declared twice");
+        Diagnostic diagnostic(Code::SchemaDuplicate, declaration.span,
+                              "'" + declaration.id + "' is declared twice");
         diagnostic.with_note("first declared here, by " + existing->owner, existing->span);
+        diagnostic.with_note("if the second one is meant to supersede the first, say so: "
+                             "`@replaces(" +
+                             existing->owner + ")` (spec §7.6)");
         sink.report(std::move(diagnostic));
+        return Outcome::Rejected;
+    }
+
+    declarations_.push_back(std::move(declaration));
+    return Outcome::Fresh;
+}
+
+bool SchemaSet::declare(Schema schema, const std::optional<Replaces>& replaces,
+                        diag::DiagnosticSink& sink) {
+    const Outcome outcome = offer(
+        Declaration{"schema", schema.id, schema.owner, schema.sealed, schema.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
         return false;
+    }
+    for (Schema& existing : schemas_) {
+        if (existing.id == schema.id) {
+            existing = std::move(schema); // §7.6: replacement is total
+            return true;
+        }
     }
     schemas_.push_back(std::move(schema));
     return true;
 }
 
-bool SchemaSet::declare_class(ClassDecl decl, diag::DiagnosticSink& sink) {
-    if (const ClassDecl* existing = find_class(decl.id)) {
-        const std::string_view noun = existing->is_trait ? "trait" : "class";
-        if (existing->sealed) {
-            Diagnostic diagnostic(Code::SchemaSealed, decl.span,
-                                  "the " + std::string(noun) + " '" + decl.id +
-                                      "' already has a perfectly good definition, and it belongs "
-                                      "to " +
-                                      existing->owner);
-            diagnostic.with_note("its properties are the fields of the world store under "
-                                 "author-visible names, so they are not a convention to be "
-                                 "replaced (spec §7.2.2, §8.1.1)",
-                                 existing->span);
-            diagnostic.with_note("you can still add to it: `class_extension` adds properties and "
-                                 "changes defaults on a class declared elsewhere (spec §8.2)");
-            sink.report(std::move(diagnostic));
-            return false;
-        }
-        Diagnostic diagnostic(Code::SchemaDuplicate, decl.span,
-                              "the " + std::string(noun) + " '" + decl.id + "' is declared twice");
-        diagnostic.with_note("first declared here, by " + existing->owner, existing->span);
-        sink.report(std::move(diagnostic));
+bool SchemaSet::declare_class(ClassDecl decl, const std::optional<Replaces>& replaces,
+                              diag::DiagnosticSink& sink) {
+    const std::string space = decl.is_trait ? "trait" : "class";
+    const Outcome outcome =
+        offer(Declaration{space, decl.id, decl.owner, decl.sealed, decl.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
         return false;
+    }
+    for (ClassDecl& existing : classes_) {
+        if (existing.id == decl.id && existing.is_trait == decl.is_trait) {
+            existing = std::move(decl);
+            return true;
+        }
     }
     classes_.push_back(std::move(decl));
     return true;
+}
+
+bool SchemaSet::apply_schema_extension(const SchemaExtensionDecl& extension,
+                                       diag::DiagnosticSink& sink) {
+    const Schema* existing = find(extension.of_schema);
+    if (existing == nullptr) {
+        Diagnostic diagnostic(Code::SchemaInvalid, extension.of_schema_span,
+                              "I can't extend '" + extension.of_schema +
+                                  "', because nothing declares it");
+        diagnostic.with_note("a schema_extension names a form declared elsewhere -- in a library, "
+                             "or earlier in the load order (spec §7.5, §13.2)");
+        sink.report(std::move(diagnostic));
+        return false;
+    }
+
+    const std::size_t index = static_cast<std::size_t>(existing - schemas_.data());
+    bool accepted = true;
+    for (const KeyDecl& key : extension.keys) {
+        const KeyDecl* declared = schemas_[index].find_key(key.name);
+        if (declared == nullptr) {
+            // The permitted case, and the one this form exists for: adding
+            // to a sealed schema is legal, because sealing prevents
+            // redefinition and not extension (§7.2.2).
+            schemas_[index].keys.push_back(key);
+            continue;
+        }
+        if (declared->same_as(key)) {
+            Diagnostic diagnostic(Code::PropDefRedundant, key.span,
+                                  "'" + key.name + "' is already declared on '" +
+                                      extension.of_schema + "', in just these words");
+            diagnostic.with_note("declared here, by " + schemas_[index].owner, declared->span);
+            diagnostic.with_note("harmless, but the line does nothing -- an extension adds keys "
+                                 "(spec §7.5)");
+            diagnostic.with_fix_it(key.span, "", "remove the redundant key declaration");
+            sink.report(std::move(diagnostic));
+            continue;
+        }
+        Diagnostic diagnostic(Code::PropDefTypeMismatch, key.span,
+                              "'" + key.name + "' is already a " + declared->type.to_string() +
+                                  " on '" + extension.of_schema + "', and this would make it a " +
+                                  key.type.to_string());
+        diagnostic.with_note("declared here, by " + schemas_[index].owner, declared->span);
+        diagnostic.with_note("an extension adds keys; changing one is a redefinition wearing an "
+                             "extension's clothes, and on a sealed form it is exactly what "
+                             "sealing exists to prevent (spec §7.5, §7.2.2)");
+        sink.report(std::move(diagnostic));
+        accepted = false;
+    }
+    return accepted;
 }
 
 bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::DiagnosticSink& sink) {
@@ -235,10 +362,11 @@ struct LoadedFile {
 
 // Pass two: everything that is not a `schema`.
 void fold_declaration(const ast::Statement& statement, const std::string& key,
-                      const LoadOptions& options, SchemaSet& set, diag::DiagnosticSink& sink) {
+                      const std::optional<Replaces>& replaces, const LoadOptions& options,
+                      SchemaSet& set, diag::DiagnosticSink& sink) {
     if (key == "class" || key == "trait") {
         if (std::optional<ClassDecl> decl = read_class(statement, options.owner, sink)) {
-            set.declare_class(*std::move(decl), sink);
+            set.declare_class(*std::move(decl), replaces, sink);
         }
         return;
     }
@@ -248,12 +376,58 @@ void fold_declaration(const ast::Statement& statement, const std::string& key,
         }
         return;
     }
+    if (key == "schema_extension") {
+        if (const std::optional<SchemaExtensionDecl> decl =
+                read_schema_extension(statement, sink)) {
+            set.apply_schema_extension(*decl, sink);
+        }
+        return;
+    }
     if (key == "core_requirement") {
         if (std::optional<CoreRequirement> requirement = read_core_requirement(statement, sink)) {
             set.add_requirement(*std::move(requirement));
         }
         return;
     }
+}
+
+// §7.6's uniqueness rule, for every form that is not one of the few the
+// loader handles structurally.
+//
+// The rule is stated in terms of `unique_in` (§7.2), so it reads the
+// namespace out of the schema rather than knowing anything about particular
+// forms -- which is why `rule` and `loc` are exempt without being named
+// here: neither declares a unique id, so several are normal.
+void note_generic_declaration(const ast::Statement& statement, const Schema& schema,
+                              const std::optional<Replaces>& replaces, const LoadOptions& options,
+                              SchemaSet& set, diag::DiagnosticSink& sink) {
+    const KeyDecl* unique = nullptr;
+    for (const KeyDecl& key : schema.keys) {
+        if (!key.unique_in.empty()) {
+            unique = &key;
+            break;
+        }
+    }
+    if (unique == nullptr) {
+        return;
+    }
+
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    const std::optional<ast::Statement> id = block ? block->find(unique->name) : std::nullopt;
+    if (!id) {
+        return; // no id to be unique by; validate_block already said so
+    }
+    const std::optional<ast::Value> id_value = id->value();
+    const std::optional<ast::Scalar> scalar = id_value ? id_value->as_scalar() : std::nullopt;
+    const std::optional<std::string_view> text = scalar ? scalar->as_identifier() : std::nullopt;
+    if (!text || text->empty()) {
+        return;
+    }
+
+    set.offer(SchemaSet::Declaration{unique->unique_in, std::string(*text), options.owner,
+                                     /*sealed=*/false, id->report_span()},
+              replaces, sink);
 }
 
 // Whether a top-level statement is something the set knows about at all: a
@@ -294,6 +468,49 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
     }
 }
 
+// A `library` declaration's manifest, kept for the §13.3 check that runs
+// once everything has loaded.
+void collect_library_manifest(const ast::Statement& statement, const std::string& key,
+                              const LoadOptions& options, SchemaSet& set) {
+    if (key != "library") {
+        return;
+    }
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        return;
+    }
+
+    SchemaSet::LibraryManifest manifest;
+    manifest.owner = options.owner;
+    manifest.span = statement.report_span();
+    if (const std::optional<ast::Statement> id = block->find("id")) {
+        manifest.span = id->report_span();
+        const std::optional<ast::Value> id_value = id->value();
+        const std::optional<ast::Scalar> scalar = id_value ? id_value->as_scalar() : std::nullopt;
+        if (const std::optional<std::string_view> text =
+                scalar ? scalar->as_identifier() : std::nullopt) {
+            manifest.id = std::string(*text);
+        }
+    }
+
+    if (const std::optional<ast::Statement> provides = block->find("provides_schema")) {
+        manifest.declares_provides = true;
+        manifest.provides_span = provides->report_span();
+        const std::optional<ast::Value> provides_value = provides->value();
+        const std::optional<ast::Block> list =
+            provides_value ? provides_value->as_block() : std::nullopt;
+        if (list) {
+            for (const ast::Scalar& entry : list->values()) {
+                if (const std::optional<std::string_view> name = entry.as_identifier()) {
+                    manifest.provides_schema.emplace_back(*name);
+                }
+            }
+        }
+    }
+    set.add_library(std::move(manifest));
+}
+
 // The two passes, over files already parsed.
 void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options, SchemaSet& set,
               diag::DiagnosticSink& sink) {
@@ -314,7 +531,7 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
                 }
             }
             if (std::optional<Schema> schema = read_schema(statement, options.owner, sink)) {
-                set.declare(*std::move(schema), sink);
+                set.declare(*std::move(schema), read_replaces(statement), sink);
             }
         }
     }
@@ -327,10 +544,21 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
             if (!key || key->empty() || *key == "schema") {
                 continue;
             }
+            const std::optional<Replaces> replaces = read_replaces(statement);
             check_top_level(statement, *key, set, sink);
+
             if (is_structural_form(*key)) {
-                fold_declaration(statement, *key, options, set, sink);
+                fold_declaration(statement, *key, replaces, options, set, sink);
+                continue;
             }
+            // Not one of the few the loader reads itself: an ordinary form,
+            // or an instantiation. §7.6's uniqueness rule applies to the
+            // first and not the second, since only a form has a schema to
+            // read `unique_in` out of.
+            if (const Schema* schema = set.find(*key)) {
+                note_generic_declaration(statement, *schema, replaces, options, set, sink);
+            }
+            collect_library_manifest(statement, *key, options, set);
         }
     }
 }
@@ -374,6 +602,58 @@ std::vector<std::filesystem::path> load_directory(const std::filesystem::path& d
     std::sort(files.begin(), files.end());
     load_files(files, options, sources, cache, set, sink);
     return files;
+}
+
+// --- library manifests -------------------------------------------------
+
+void check_library_manifests(const SchemaSet& set, diag::DiagnosticSink& sink) {
+    for (const SchemaSet::LibraryManifest& manifest : set.libraries()) {
+        if (!manifest.declares_provides) {
+            continue; // saying nothing is not a mismatch
+        }
+
+        std::vector<std::string> declared;
+        for (const Schema& schema : set.schemas()) {
+            if (schema.owner == manifest.owner) {
+                declared.push_back(schema.id);
+            }
+        }
+
+        const auto lists = [](const std::vector<std::string>& names, std::string_view id) {
+            for (const std::string& name : names) {
+                if (name == id) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        for (const std::string& listed : manifest.provides_schema) {
+            if (lists(declared, listed)) {
+                continue;
+            }
+            Diagnostic diagnostic(Code::ProvidesMismatch, manifest.provides_span,
+                                  manifest.id + " lists '" + listed +
+                                      "' in provides_schema, and declares no such form");
+            diagnostic.with_note("`provides_schema` is a manifest, so the editor's library browser "
+                                 "and a reader can see a library's forms in one place -- it "
+                                 "declares nothing itself (spec §13.3)");
+            sink.report(std::move(diagnostic));
+        }
+
+        for (const std::string& form : declared) {
+            if (lists(manifest.provides_schema, form)) {
+                continue;
+            }
+            Diagnostic diagnostic(Code::ProvidesMismatch, manifest.provides_span,
+                                  manifest.id + " declares the form '" + form +
+                                      "', and does not list it in provides_schema");
+            diagnostic.with_note("the manifest is what a reader and the editor's library browser "
+                                 "go by, so a form missing from it is a form nobody finds "
+                                 "(spec §13.3)");
+            sink.report(std::move(diagnostic));
+        }
+    }
 }
 
 // --- core requirements -------------------------------------------------

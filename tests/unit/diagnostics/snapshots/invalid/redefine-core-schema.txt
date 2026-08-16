@@ -1,0 +1,5 @@
+# tests/corpus/invalid/redefine-core-schema.star
+# declared E-SCHEMA-SEALED
+# lexer and parser report (none)
+
+(no diagnostics)

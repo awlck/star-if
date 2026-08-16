@@ -33,19 +33,27 @@ namespace {
 // report today.
 const std::set<std::string>& schema_codes() {
     static const std::set<std::string> codes = {
-        "E-SCHEMA-INVALID", "E-SCHEMA-DUPLICATE", "E-SCHEMA-SEALED",         "E-KEY-MISSING",
-        "E-CORE-REPARENT",  "E-CORE-REQUIREMENT", "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY"};
+        "E-SCHEMA-INVALID",        "E-SCHEMA-DUPLICATE", "E-SCHEMA-SEALED",
+        "E-KEY-MISSING",           "E-CORE-REPARENT",    "E-CORE-REQUIREMENT",
+        "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",      "W-PROVIDES-MISMATCH"};
     return codes;
 }
 
-// Loads the built-in set, then one fixture as a library, then checks the
-// requirements -- the full load sequence, which is what a fixture declaring
-// E-CORE-REQUIREMENT needs in order to fail.
+// The real load order of spec §13.2 -- the built-in set, then stdlib/core,
+// then the fixture as a library on top -- followed by the two checks that run
+// once everything is loaded.
+//
+// Loading the whole stack rather than the built-in set alone matters for more
+// than realism: `@replaces(no_such_library)` can only report "that is not
+// where this came from" if the thing being replaced exists, which means
+// stdlib/core has to be there.
 std::set<std::string> codes_for(const std::filesystem::path& path) {
     test::LoadedSet loaded;
     loaded.load_builtin();
+    loaded.load_stdlib_core();
     loaded.load_text(test::read_bytes(path), "a library", test::corpus_name(path));
     schema::check_requirements(loaded.set, loaded.sink);
+    schema::check_library_manifests(loaded.set, loaded.sink);
 
     std::set<std::string> reported;
     for (const diag::Diagnostic& diagnostic : loaded.sink.diagnostics()) {
@@ -124,7 +132,7 @@ TEST_CASE("stdlib core uses only mechanisms available to any library", "[schema]
     // by mistake would show up here.
     std::size_t from_library = 0;
     for (const schema::Schema& declared : loaded.set.schemas()) {
-        if (declared.owner != "stdlib/core") {
+        if (declared.owner != "star_core") {
             continue;
         }
         ++from_library;
@@ -133,7 +141,7 @@ TEST_CASE("stdlib core uses only mechanisms available to any library", "[schema]
     }
 
     for (const schema::ClassDecl& declared : loaded.set.classes()) {
-        if (declared.owner != "stdlib/core") {
+        if (declared.owner != "star_core") {
             continue;
         }
         ++from_library;
@@ -154,6 +162,6 @@ TEST_CASE("stdlib core uses only mechanisms available to any library", "[schema]
     // the §7.2.2 boundary in one declaration.
     const schema::ClassDecl* room = loaded.set.find_class("room");
     REQUIRE(room != nullptr);
-    CHECK(room->owner == "stdlib/core");
+    CHECK(room->owner == "star_core");
     CHECK(room->of_class == "starcore.room");
 }

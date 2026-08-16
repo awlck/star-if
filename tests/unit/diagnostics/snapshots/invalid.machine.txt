@@ -1,0 +1,36 @@
+tests/corpus/invalid/bad-character.star:8:12: error: E-BAD-CHAR: '*=' is spoken for: it is held back for a later version of the format
+tests/corpus/invalid/bad-character.star:9:18: error: E-BAD-CHAR: I don't know what to do with '?' here
+tests/corpus/invalid/bad-character.star:8:12: error: E-STRAY-TOKEN: I don't know what '*=' is doing here
+tests/corpus/invalid/bad-character.star:9:18: error: E-STRAY-TOKEN: I don't know what '?' is doing here
+tests/corpus/invalid/bad-character.star:9:9: error: E-BLOCK-MIXED: this block holds bare values, and 'note' is a statement among them
+tests/corpus/invalid/brackets-outside-string.star:6:14: error: E-BRACKET-OUTSIDE: '[' belongs inside a string literal, not out here
+tests/corpus/invalid/brackets-outside-string.star:6:42: error: E-BRACKET-OUTSIDE: ']' belongs inside a string literal, not out here
+tests/corpus/invalid/brackets-outside-string.star:6:13: error: E-VALUE-MISSING: this statement has an operator but no value after it
+tests/corpus/invalid/brackets-outside-string.star:6:14: error: E-STRAY-TOKEN: I don't know what '[' is doing here
+tests/corpus/invalid/brackets-outside-string.star:6:16: error: E-STRAY-TOKEN: I don't know what '{' is doing here
+tests/corpus/invalid/brackets-outside-string.star:6:29: error: E-STRAY-TOKEN: I don't know what '{' is doing here
+tests/corpus/invalid/brackets-outside-string.star:6:40: error: E-BRACE-UNBALANCED: this '}' closes a block that was never opened
+tests/corpus/invalid/brackets-outside-string.star:6:42: error: E-STRAY-TOKEN: I don't know what ']' is doing here
+tests/corpus/invalid/brackets-outside-string.star:7:1: error: E-BRACE-UNBALANCED: this '}' closes a block that was never opened
+tests/corpus/invalid/datum-scope-ambiguity.star:18:72: error: E-BLOCK-MIXED: this block holds statements, and 'extra' is a bare value among them
+tests/corpus/invalid/decimal-leading-dot.star:5:16: error: E-DEC-LEADING-DOT: '.5' is missing its leading digit
+tests/corpus/invalid/decimal-precision.star:8:14: error: E-DEC-PRECISION: '1.5' has one fractional digit, and a decimal wants exactly three
+tests/corpus/invalid/decimal-precision.star:9:14: error: E-NUM-TRAILING-DOT: '2.' trails off after the dot -- did you mean '2' or '2.000'?
+tests/corpus/invalid/integer-out-of-range.star:7:15: error: E-INT-RANGE: I can't hold '99999999999999999999' in an integer
+tests/corpus/invalid/local-propdef-shadow.star:14:43: error: E-BLOCK-MIXED: this block holds statements, and 'diagnostic_code' is a bare value among them
+tests/corpus/invalid/mixed-block.star:6:16: error: E-BLOCK-MIXED: this block holds statements, and 'openable' is a bare value among them
+tests/corpus/invalid/multiline-string.star:6:19: error: E-STR-MULTILINE: this string opens here, but the line ends before it closes
+tests/corpus/invalid/multiline-string.star:7:70: error: E-STR-MULTILINE: this string opens here, but the line ends before it closes
+tests/corpus/invalid/multiline-string.star:7:47: error: E-STRAY-TOKEN: I don't know what ',' is doing here
+tests/corpus/invalid/multiline-string.star:5:5: error: E-BLOCK-MIXED: this block holds bare values, and 'id' is a statement among them
+tests/corpus/invalid/presence-portable.star:9:20: error: E-BLOCK-MIXED: this block holds statements, and 'antecourt' is a bare value among them
+tests/corpus/invalid/reserved-words.star:6:12: error: E-RESERVED-WORD: 'true' is a word I know, but not a value I take
+tests/corpus/invalid/side-state-leak.star:9:59: error: E-BLOCK-MIXED: this block holds statements, and 'locked' is a bare value among them
+tests/corpus/invalid/string-bad-escape.star:7:54: error: E-STR-ESCAPE: I don't recognise the escape '\U'
+tests/corpus/invalid/string-bad-escape.star:7:60: error: E-STR-ESCAPE: I don't recognise the escape '\v'
+tests/corpus/invalid/string-bad-escape.star:8:57: error: E-STR-ESCAPE: '\ud800' is half of a character, not a character
+tests/corpus/invalid/string-unterminated.star:7:19: error: E-STR-UNTERMINATED: this string opens here, and then the file simply ends
+tests/corpus/invalid/string-unterminated.star:5:9: error: E-BRACE-UNBALANCED: this block is never closed
+tests/corpus/invalid/unbalanced-braces.star:4:8: error: E-BRACE-UNBALANCED: this block is never closed
+tests/corpus/invalid/unicode-whitespace.star:7:7: error: E-UNICODE-WS: U+2007 looks like a space, but it is not one
+tests/corpus/invalid/unicode-whitespace.star:8:15: error: E-UNICODE-WS: U+00A0 looks like a space, but it is not one

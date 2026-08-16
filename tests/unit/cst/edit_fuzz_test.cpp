@@ -13,9 +13,7 @@
 
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
 #include <random>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -26,6 +24,7 @@
 #include "stardata/diag/source_manager.hpp"
 
 #include "support/corpus.hpp"
+#include "support/fixture.hpp"
 
 using namespace stardata;
 
@@ -33,12 +32,7 @@ namespace {
 
 constexpr std::uint32_t kSeed = 0xC57EDDU;
 
-std::string read_bytes(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    std::ostringstream contents;
-    contents << in.rdbuf();
-    return contents.str();
-}
+using test::read_bytes;
 
 cst::GreenNodePtr parse_text(const std::string& text, cst::GreenCache& cache,
                              diag::DiagnosticSink& sink) {

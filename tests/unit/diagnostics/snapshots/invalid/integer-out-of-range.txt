@@ -1,0 +1,10 @@
+# tests/corpus/invalid/integer-out-of-range.star
+# declared E-INT-RANGE
+# reported E-INT-RANGE
+
+error: E-INT-RANGE: I can't hold '99999999999999999999' in an integer
+  --> tests/corpus/invalid/integer-out-of-range.star:7:15
+  |
+7 |     initial = 99999999999999999999
+  |               ^^^^^^^^^^^^^^^^^^^^
+note: integers run from -9223372036854775808 to 9223372036854775807, which is as much room as a signed 64-bit value has (spec §3.4)

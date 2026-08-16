@@ -1,0 +1,64 @@
+# tests/corpus/invalid/brackets-outside-string.star
+# declared E-BRACKET-OUTSIDE
+# reported E-BRACE-UNBALANCED E-BRACKET-OUTSIDE E-STRAY-TOKEN E-VALUE-MISSING
+
+error: E-BRACKET-OUTSIDE: '[' belongs inside a string literal, not out here
+  --> tests/corpus/invalid/brackets-outside-string.star:6:14
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |              ^
+note: '[' and ']' are held permanently for the template language and for grammar lines, so they never come to mean anything on their own (spec §3.7, §15)
+
+error: E-BRACKET-OUTSIDE: ']' belongs inside a string literal, not out here
+  --> tests/corpus/invalid/brackets-outside-string.star:6:42
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |                                          ^
+note: '[' and ']' are held permanently for the template language and for grammar lines, so they never come to mean anything on their own (spec §3.7, §15)
+
+error: E-VALUE-MISSING: this statement has an operator but no value after it
+  --> tests/corpus/invalid/brackets-outside-string.star:6:13
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |             ^
+note: a statement is a key, an operator and a value (spec §4)
+
+error: E-STRAY-TOKEN: I don't know what '[' is doing here
+  --> tests/corpus/invalid/brackets-outside-string.star:6:14
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |              ^
+note: a block holds either statements or bare values, and this is neither (spec §4, §5.2)
+
+error: E-STRAY-TOKEN: I don't know what '{' is doing here
+  --> tests/corpus/invalid/brackets-outside-string.star:6:16
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |                ^
+note: a block holds either statements or bare values, and this is neither (spec §4, §5.2)
+
+error: E-STRAY-TOKEN: I don't know what '{' is doing here
+  --> tests/corpus/invalid/brackets-outside-string.star:6:29
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |                             ^
+note: a file is a sequence of statements, each a key, an operator and a value (spec §4)
+
+error: E-BRACE-UNBALANCED: this '}' closes a block that was never opened
+  --> tests/corpus/invalid/brackets-outside-string.star:6:40
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |                                        ^
+
+error: E-STRAY-TOKEN: I don't know what ']' is doing here
+  --> tests/corpus/invalid/brackets-outside-string.star:6:42
+  |
+6 |     stages = [ { id = one } { id = two } ]
+  |                                          ^
+note: a file is a sequence of statements, each a key, an operator and a value (spec §4)
+
+error: E-BRACE-UNBALANCED: this '}' closes a block that was never opened
+  --> tests/corpus/invalid/brackets-outside-string.star:7:1
+  |
+7 | }
+  | ^

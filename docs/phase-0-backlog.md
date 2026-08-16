@@ -143,9 +143,14 @@ Spec §15 lists the required diagnostics; `tests/check_stardata.py` already defi
 ### C4 · Diagnostic snapshot tests
 **Size:** M · **Depends on:** C3, B3
 
-- [ ] Each file in `tests/corpus/invalid/` has an expected-output snapshot.
-- [ ] `--update-snapshots` regenerates; CI fails on any diff.
-- [ ] This is what stops error messages silently degrading, which is otherwise invisible until an author complains.
+- [x] Each file in `tests/corpus/invalid/` has an expected-output snapshot.
+- [x] `--update-snapshots` regenerates; CI fails on any diff.
+- [x] This is what stops error messages silently degrading, which is otherwise invisible until an author complains.
+
+A fixture whose declared code belongs to the schema layer gets a snapshot
+too, recording that the front end presently says nothing about it. That is
+the gap written down rather than a hole in the test: when F lands, those
+snapshots move and somebody has to read the diff.
 
 ### C5 · Point diagnostics at the author manual — **blocked until the manual exists**
 **Size:** S · **Depends on:** the author manual of proposal §2.1

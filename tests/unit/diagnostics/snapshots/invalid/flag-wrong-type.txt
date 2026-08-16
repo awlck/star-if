@@ -1,0 +1,5 @@
+# tests/corpus/invalid/flag-wrong-type.star
+# declared E-FLAG-NOT-BOOL
+# reported (none)
+
+(no diagnostics)

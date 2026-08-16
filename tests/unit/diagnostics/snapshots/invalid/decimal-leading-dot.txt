@@ -1,0 +1,12 @@
+# tests/corpus/invalid/decimal-leading-dot.star
+# declared E-DEC-LEADING-DOT
+# reported E-DEC-LEADING-DOT
+
+error: E-DEC-LEADING-DOT: '.5' is missing its leading digit
+  --> tests/corpus/invalid/decimal-leading-dot.star:5:16
+  |
+5 |     accuracy = .5
+  |                ^^
+note: a decimal is a digit, a dot, and exactly three more digits, so the number you want here is '0.500' (spec §3.4)
+fix-it: write it as '0.500'
+  replace tests/corpus/invalid/decimal-leading-dot.star:5:16 with `0.500`

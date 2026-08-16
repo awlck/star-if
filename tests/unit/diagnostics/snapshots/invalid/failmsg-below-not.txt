@@ -1,0 +1,5 @@
+# tests/corpus/invalid/failmsg-below-not.star
+# declared E-FAILMSG-UNREACHABLE
+# reported (none)
+
+(no diagnostics)

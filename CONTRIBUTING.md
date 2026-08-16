@@ -216,6 +216,14 @@ set of examples, and backlog C5 records the one thing known to be wrong with
 them today: the notes cite the specification because the author manual does
 not exist yet.
 
+Changing a message will fail the goldens under
+`tests/unit/diagnostics/snapshots/invalid/`, which hold what the front end
+says about every fixture in `tests/corpus/invalid/`. That is the point of
+them — a message quietly losing the detail that made it useful is otherwise
+invisible until an author complains. Regenerate with `--update-snapshots`
+and read the diff; if the new wording doesn't read better than the old in
+context, in full, with the caret under it, it isn't ready.
+
 ## Dependencies
 
 `vcpkg.json` (backlog B2) currently pins two things:

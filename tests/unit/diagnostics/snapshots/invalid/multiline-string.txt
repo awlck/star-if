@@ -1,0 +1,35 @@
+# tests/corpus/invalid/multiline-string.star
+# declared E-STR-MULTILINE
+# reported E-BLOCK-MIXED E-STR-MULTILINE E-STRAY-TOKEN
+
+error: E-STR-MULTILINE: this string opens here, but the line ends before it closes
+  --> tests/corpus/invalid/multiline-string.star:6:19
+  |
+6 |     description = "This literal opens here
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+note: no literal spans a line. Write long text as one literal per line: literals that sit next to each other join into a single string, with nothing inserted between them (spec §3.5.1)
+
+error: E-STR-MULTILINE: this string opens here, but the line ends before it closes
+  --> tests/corpus/invalid/multiline-string.star:7:70
+  |
+7 |                    and closes on the next line, which is not allowed."
+  |                                                                      ^
+note: no literal spans a line. Write long text as one literal per line: literals that sit next to each other join into a single string, with nothing inserted between them (spec §3.5.1)
+
+error: E-STRAY-TOKEN: I don't know what ',' is doing here
+  --> tests/corpus/invalid/multiline-string.star:7:47
+  |
+7 |                    and closes on the next line, which is not allowed."
+  |                                               ^
+note: a block holds either statements or bare values, and this is neither (spec §4, §5.2)
+
+error: E-BLOCK-MIXED: this block holds bare values, and 'id' is a statement among them
+  --> tests/corpus/invalid/multiline-string.star:5:5
+  |
+5 |     id = broken
+  |     ^^
+note: a block is either a list of values or a set of statements, never both (spec §5.2)
+  --> tests/corpus/invalid/multiline-string.star:7:20
+  |
+7 |                    and closes on the next line, which is not allowed."
+  |                    ^^^

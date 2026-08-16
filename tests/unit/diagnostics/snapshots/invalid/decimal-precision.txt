@@ -1,0 +1,19 @@
+# tests/corpus/invalid/decimal-precision.star
+# declared E-DEC-PRECISION E-NUM-TRAILING-DOT
+# reported E-DEC-PRECISION E-NUM-TRAILING-DOT
+
+error: E-DEC-PRECISION: '1.5' has one fractional digit, and a decimal wants exactly three
+  --> tests/corpus/invalid/decimal-precision.star:8:14
+  |
+8 |     weight = 1.5
+  |              ^^^
+fix-it: pad to three fractional digits
+  replace tests/corpus/invalid/decimal-precision.star:8:14 with `1.500`
+
+error: E-NUM-TRAILING-DOT: '2.' trails off after the dot -- did you mean '2' or '2.000'?
+  --> tests/corpus/invalid/decimal-precision.star:9:14
+  |
+9 |     reach  = 2.
+  |              ^^
+fix-it: drop the trailing '.'
+  replace tests/corpus/invalid/decimal-precision.star:9:14 with `2`

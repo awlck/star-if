@@ -15,6 +15,7 @@ add_executable(stardata_unit_tests
     diagnostics/diagnostic_test.cpp
     diagnostics/render_test.cpp
     diagnostics/snapshot_test.cpp
+    diagnostics/corpus_snapshot_test.cpp
     lex/token_test.cpp
     lex/lexer_test.cpp
     lex/lexer_diagnostics_test.cpp
@@ -38,8 +39,9 @@ target_link_libraries(stardata_unit_tests
 target_include_directories(stardata_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Used by corpus_discovery_test.cpp so fixture discovery works regardless of
-# where the build directory lives; STARIF_UNIT_TEST_DIR does the same for
-# diagnostics/snapshot_test.cpp's checked-in snapshot files.
+# where the build directory lives, and by support/fixture.hpp to name corpus
+# files repo-relatively in diagnostics; STARIF_UNIT_TEST_DIR does the same
+# for the checked-in snapshot files under */snapshots/.
 target_compile_definitions(stardata_unit_tests PRIVATE
     STARIF_CORPUS_DIR="${CMAKE_SOURCE_DIR}/tests/corpus"
     STARIF_UNIT_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}"

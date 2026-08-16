@@ -1,6 +1,6 @@
 # tests/corpus/invalid/presence-portable.star
 # declared E-BLOCK-MIXED
-# reported E-BLOCK-MIXED
+# lexer and parser report E-BLOCK-MIXED
 
 error: E-BLOCK-MIXED: this block holds statements, and 'antecourt' is a bare value among them
   --> tests/corpus/invalid/presence-portable.star:9:20

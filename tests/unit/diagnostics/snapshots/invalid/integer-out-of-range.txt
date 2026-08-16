@@ -1,6 +1,6 @@
 # tests/corpus/invalid/integer-out-of-range.star
 # declared E-INT-RANGE
-# reported E-INT-RANGE
+# lexer and parser report E-INT-RANGE
 
 error: E-INT-RANGE: I can't hold '99999999999999999999' in an integer
   --> tests/corpus/invalid/integer-out-of-range.star:7:15

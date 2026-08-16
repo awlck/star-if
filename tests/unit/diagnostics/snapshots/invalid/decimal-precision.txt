@@ -1,6 +1,6 @@
 # tests/corpus/invalid/decimal-precision.star
 # declared E-DEC-PRECISION E-NUM-TRAILING-DOT
-# reported E-DEC-PRECISION E-NUM-TRAILING-DOT
+# lexer and parser report E-DEC-PRECISION E-NUM-TRAILING-DOT
 
 error: E-DEC-PRECISION: '1.5' has one fractional digit, and a decimal wants exactly three
   --> tests/corpus/invalid/decimal-precision.star:8:14

@@ -10,11 +10,18 @@
 // codes still match, the counts still match, and the only evidence is an
 // author eventually complaining. A golden turns that into a file diff.
 //
-// A fixture whose declared code belongs to a workstream that does not exist
-// yet -- the schema layer's, mostly -- gets a snapshot too, recording that
-// the front end presently says nothing about it. That is not a gap in the
-// test; it is the gap itself, written down. When workstream F lands, those
-// snapshots move, and somebody has to read the diff and agree with it.
+// A fixture whose declared code no pass here produces gets a snapshot too,
+// recording that the lexer and parser say nothing about it. That is not a
+// gap in the test; it is a record of which pass owns which fixture.
+//
+// Two different reasons a snapshot reads "(none)", and the difference
+// matters. Some fixtures are waiting on a workstream that does not exist
+// yet -- the schema layer's type checking, `failureMsg` placement -- and
+// those snapshots will move when it lands. Others are checked, just not
+// here: everything the schema layer owns is asserted from these same
+// fixtures in tests/unit/schema/corpus_test.cpp, which loads each one on
+// top of the core-owned set the way a library is loaded. This file is the
+// front end's account of the corpus, not the whole compiler's.
 #include <catch2/catch_test_macros.hpp>
 
 #include <filesystem>
@@ -96,7 +103,7 @@ std::string report(const ParsedFixture& fixture, const std::filesystem::path& pa
     std::ostringstream out;
     out << "# " << test::corpus_name(path) << '\n'
         << "# declared " << join(test::expected_codes(fixture.text)) << '\n'
-        << "# reported " << join(fixture.reported()) << "\n\n";
+        << "# lexer and parser report " << join(fixture.reported()) << "\n\n";
 
     if (fixture.sink.diagnostics().empty()) {
         out << "(no diagnostics)\n";

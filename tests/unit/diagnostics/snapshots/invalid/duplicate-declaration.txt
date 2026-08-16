@@ -1,0 +1,5 @@
+# tests/corpus/invalid/duplicate-declaration.star
+# declared E-SCHEMA-DUPLICATE
+# lexer and parser report (none)
+
+(no diagnostics)

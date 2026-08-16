@@ -1,0 +1,5 @@
+# tests/corpus/invalid/provides-schema-mismatch.star
+# declared W-PROVIDES-MISMATCH
+# lexer and parser report (none)
+
+(no diagnostics)

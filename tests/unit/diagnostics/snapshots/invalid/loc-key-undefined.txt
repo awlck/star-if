@@ -1,5 +1,5 @@
 # tests/corpus/invalid/loc-key-undefined.star
 # declared E-LOC-DUPLICATE E-LOC-UNDEFINED
-# reported (none)
+# lexer and parser report (none)
 
 (no diagnostics)

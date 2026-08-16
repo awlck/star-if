@@ -140,7 +140,7 @@ The standard library (`stdlib/`) is written in Stardata and Lua, not C++. This i
 
 The reason is that the alternative is a documented failure mode rather than a hypothetical one. ADRIFT 5 needs a library to create the location properties its engine uses; Inform 7 attaches special handling to the eighth action declared, expecting Going. In both, an engine depends on a convention while presenting the library as free to choose — and the dependency is invisible in the source until it breaks. Stating the floor and checking it is strictly better than hoping.
 
-The constraint that survives is the useful half: **`stdlib/core` gets no privileges the core doesn't grant every library.** `thing`, `person`, `container`, `door`, every action and every message are ordinary Stardata, replaceable wholesale.
+The constraint that survives is the useful half: **`stdlib` gets no privileges the core doesn't grant every library.** `thing`, `person`, `container`, `door`, every action and every message are ordinary Stardata, replaceable wholesale.
 
 **Recommended implementation.** Rather than hand-written C++ registration calls, keep the core definitions as Stardata in `libs/starcore/builtin/*.star` and **embed them into the binary at build time** via a CMake step that generates a string literal. One source of truth, readable and diffable, validated by the same tooling as everything else, and impossible to ship without. During Phase 0 the files are loaded from disk so the schema validator can be developed against them; the embedding step lands with Phase 1.
 
@@ -274,7 +274,7 @@ Duplicate keys within a block are permitted and meaningful for keys declared as 
 
 ### 4.4 The schema layer
 
-Every top-level statement kind (`enum`, `class`, `class_extension`, `action`, `rule`, `room`, …) is described by a **schema**: which child keys are allowed, their types, arity, and whether they are multi. Schemas are themselves declared in Stardata, in `stdlib/core/schema.star`, so libraries can add new top-level forms:
+Every top-level statement kind (`enum`, `class`, `class_extension`, `action`, `rule`, `room`, …) is described by a **schema**: which child keys are allowed, their types, arity, and whether they are multi. Schemas are themselves declared in Stardata, in `stdlib/stdlib/schema.star`, so libraries can add new top-level forms:
 
 ```stardata
 schema = {
@@ -392,7 +392,7 @@ successMsg = "You are already holding [the noun]."
 
 **In a locale file**, referenced by `$key`, for anything a translator should see:
 ```stardata
-# stdlib/core/loc/en.star
+# stdlib/stdlib/loc/en.star
 loc = {
     lang = en
     already_holding = "You are already holding [the noun]."
@@ -544,7 +544,7 @@ The others, briefly:
 | **Hunspell** | Has a generation API, but it is a spell checker; English dictionaries are not built for generation and results depend on affix flags never intended for it. Wrong tool, and the GPL/LGPL/MPL tri-licence adds friction for no gain. |
 | **SimpleNLG** | The classic surface realiser and conceptually the closest fit — but Java. A JNI dependency is incompatible with shipping Glk, WASM and mobile builds. Out. |
 
-**Recommendation:** a new `libs/starlang` holds the language-neutral lexicon and selector; `stdlib/core/lang/en/` holds a rule table ported from `inflect` plus the standard library's enumerated action verbs. No English knowledge in `starcore`.
+**Recommendation:** a new `libs/starlang` holds the language-neutral lexicon and selector; `stdlib/stdlib/lang/en/` holds a rule table ported from `inflect` plus the standard library's enumerated action verbs. No English knowledge in `starcore`.
 
 ---
 
@@ -893,9 +893,9 @@ Grammar lines compile into a **trie over word ids** with actions at the leaves, 
 
 `list-of-inform-commands.txt` is a good target for the stdlib's coverage. My recommendation on scope, per the notes' "we probably won't need to support quite all of these":
 
-**Ship in `stdlib/core` (the ~45 verbs that carry real weight):** take, drop, put in/on, examine, look, look under/behind, search, open, close, lock, unlock, go, enter, exit, climb, push, pull, turn, switch on/off, wear, take off, eat, drink, give, show, throw at, attack, touch, taste, smell, listen, read, consult about, wait, again, inventory, and the meta commands (save, restore, restart, quit, undo, score, verbose/brief, transcript, pronouns).
+**Ship in `stdlib` (the ~45 verbs that carry real weight):** take, drop, put in/on, examine, look, look under/behind, search, open, close, lock, unlock, go, enter, exit, climb, push, pull, turn, switch on/off, wear, take off, eat, drink, give, show, throw at, attack, touch, taste, smell, listen, read, consult about, wait, again, inventory, and the meta commands (save, restore, restart, quit, undo, score, verbose/brief, transcript, pronouns).
 
-**Ship in `stdlib/core` as *stubbed* actions** — recognised, with a graceful default refusal, so the player never gets "that's not a verb I recognise" for a reasonable attempt: burn, buy, cut, jump, kiss, pray, rub, sing, sleep, squeeze, swim, swing, tie, wake, wave, think, sorry, yes, no. Authors override the ones their game cares about.
+**Ship in `stdlib` as *stubbed* actions** — recognised, with a graceful default refusal, so the player never gets "that's not a verb I recognise" for a reasonable attempt: burn, buy, cut, jump, kiss, pray, rub, sing, sleep, squeeze, swim, swing, tie, wake, wave, think, sorry, yes, no. Authors override the ones their game cares about.
 
 **Do not ship:** the Inform legacy oddities (`nouns` as a synonym for `pronouns`, `verify`) and anything Z-machine specific.
 
@@ -904,7 +904,7 @@ Grammar lines compile into a **trie over word ids** with actions at the leaves, 
 - `talk to [someone]` — opens dialogue (§11); `topics` re-prints the current choices for single-window frontends.
 - `[someone], [command]` and `party, [command]` — ordering party members and companions (§9.5).
 - `status` / `journal` / `map` — the command-line equivalents of the dockable windows, for frontends that have none (§12.3).
-- When a ruleset is loaded: attack with, cast, use, equip, unequip, and the quest commands. These come from the ruleset's own grammar, not `stdlib/core`.
+- When a ruleset is loaded: attack with, cast, use, equip, unequip, and the quest commands. These come from the ruleset's own grammar, not `stdlib`.
 
 ### 6.4 Disambiguation
 
@@ -1351,7 +1351,7 @@ library = {
     id = starscape
     version = "1.0.0"
     display_name = $lib_rpg_name
-    requires = { star_core >= "1.0.0" }
+    requires = { stdlib >= "1.0.0" }
     uses_editor_feature = { rpg quests dialogue }
     # New top-level forms and classes this library contributes
     provides_schema = { stat_block combat_style loot_table }
@@ -2040,7 +2040,7 @@ Also note that game *mechanics* are not copyrightable in the US in the first pla
 | Component | Licence |
 |---|---|
 | `libs/`, `apps/` — engine, editor, runtime, compiler | Apache 2.0 |
-| `stdlib/core` — standard library | **MIT-0** (not CC0) |
+| `stdlib` — standard library | **MIT-0** (not CC0) |
 | `stdlib/starscape` — RPG library implementation | Apache 2.0 |
 | Starscape SRD — the rules as a document | **ORC License** (not OGL 1.0a), with Starscape and setting names as Reserved Material |
 | Documentation and author manual | CC-BY-4.0 |
@@ -2059,7 +2059,7 @@ Repo, CMake presets, CI on all three desktop platforms. `stardata`: lexer, lossl
 **Broken down in `docs/phase-0-backlog.md`** — 46 tasks with dependencies and acceptance criteria. That exercise puts the honest figure at **13 weeks**, not 6–8: the CST and the schema layer are a fortnight each, and this estimate treated diagnostics as a printf rather than as infrastructure. Deferring combination modes, suggestions, reference resolution and the VFS to Phase 1–2 — none of which the exit criterion requires — brings it back to 8–10 weeks. The backlog recommends taking both deferrals and treating Phase 0 as strictly "the format is real and tooled".
 
 ### Phase 1 — Minimal playable core (12–14 weeks)
-World store, containment, sectors (single sector only). Parser with grammar trie and scope. The full turn sequence of §7.1 including the actor loop and the named hook points — **this is built once, now, rather than retrofitted**, since §7.1's whole argument is that bolting an actor loop onto a player-only pipeline later is the mistake Inform authors have to work around. Rules with phase annotations, `try_action`, scripted rules. The tick clock and action durations (§5.6). Text VM, and `starlang` with the English rule table and adaptive-text substitutions (§4.10) — built here rather than later, because every stdlib message depends on it and retrofitting agreement into written messages is worse than writing them against it. Lua sandbox. `starhelm-cli`. A `stdlib/core` with ~20 verbs.
+World store, containment, sectors (single sector only). Parser with grammar trie and scope. The full turn sequence of §7.1 including the actor loop and the named hook points — **this is built once, now, rather than retrofitted**, since §7.1's whole argument is that bolting an actor loop onto a player-only pipeline later is the mistake Inform authors have to work around. Rules with phase annotations, `try_action`, scripted rules. The tick clock and action durations (§5.6). Text VM, and `starlang` with the English rule table and adaptive-text substitutions (§4.10) — built here rather than later, because every stdlib message depends on it and retrofitting agreement into written messages is worse than writing them against it. Lua sandbox. `starhelm-cli`. A `stdlib` with ~20 verbs.
 **Exit:** *Cloak of Darkness* (the IF community's canonical minimal game) is playable start to finish from source, and its transcript test passes in CI. Separately, a two-actor scratch test demonstrates the initiative loop.
 
 ### Phase 2 — The differentiator (8–10 weeks)

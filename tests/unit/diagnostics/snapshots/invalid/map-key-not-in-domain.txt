@@ -1,0 +1,16 @@
+# tests/corpus/invalid/map-key-not-in-domain.star
+# declared E-BLOCK-MIXED
+# lexer and parser report E-BLOCK-MIXED
+
+error: E-BLOCK-MIXED: this block holds statements, and 'stray' is a bare value among them
+  --> tests/corpus/invalid/map-key-not-in-domain.star:9:57
+  |
+9 |     conditions = { location = { exits.nrth == corridor  stray } }
+  |                                                         ^^^^^
+note: a block is either a list of values or a set of statements, never both (spec §5.2)
+  --> tests/corpus/invalid/map-key-not-in-domain.star:9:33
+  |
+9 |     conditions = { location = { exits.nrth == corridor  stray } }
+  |                                 ^^^^^^^^^^
+fix-it: if a '=' went missing, this is where it belongs
+  replace tests/corpus/invalid/map-key-not-in-domain.star:9:62 with ` = `

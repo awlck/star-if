@@ -1,0 +1,5 @@
+# tests/corpus/invalid/replaces-unknown-source.star
+# declared E-SCHEMA-INVALID
+# lexer and parser report (none)
+
+(no diagnostics)

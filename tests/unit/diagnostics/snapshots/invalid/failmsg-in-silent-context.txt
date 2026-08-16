@@ -1,5 +1,5 @@
 # tests/corpus/invalid/failmsg-in-silent-context.star
 # declared E-FAILMSG-SILENT
-# reported (none)
+# lexer and parser report (none)
 
 (no diagnostics)

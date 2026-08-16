@@ -1,6 +1,6 @@
 # tests/corpus/invalid/unicode-whitespace.star
 # declared E-UNICODE-WS
-# reported E-UNICODE-WS
+# lexer and parser report E-UNICODE-WS
 
 error: E-UNICODE-WS: U+2007 looks like a space, but it is not one
   --> tests/corpus/invalid/unicode-whitespace.star:7:7

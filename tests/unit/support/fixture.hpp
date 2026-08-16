@@ -23,6 +23,11 @@ namespace stardata::test {
     return contents.str();
 }
 
+// tests/corpus/, wherever the source tree happens to live.
+[[nodiscard]] inline std::filesystem::path corpus_dir() {
+    return std::filesystem::path(STARIF_CORPUS_DIR);
+}
+
 // The name a corpus file is registered under in a SourceManager.
 //
 // Always repo-relative and always forward-slashed, because diagnostics
@@ -37,6 +42,32 @@ namespace stardata::test {
         return path.filename().string();
     }
     return "tests/corpus/" + relative.generic_string();
+}
+
+// Whether a fixture asks to be loaded as `starcore`'s own, with
+// `# LOAD-AS core` in its header. The default is a library, which is what
+// nearly every negative fixture wants to be: the situation being tested is
+// usually somebody overstepping.
+//
+// The exception is a fixture about core getting its own house wrong -- a
+// requirement nothing satisfies, say -- which only means anything when core
+// is the one saying it.
+[[nodiscard]] inline bool loads_as_core(const std::string& contents) {
+    std::istringstream lines(contents);
+    std::string line;
+    while (std::getline(lines, line)) {
+        const std::size_t start = line.find_first_not_of(" \t");
+        if (start == std::string::npos) {
+            continue;
+        }
+        if (line[start] != '#') {
+            break; // the header ends at the first non-comment line
+        }
+        if (line.find("LOAD-AS core") != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // The codes a fixture declares with `# EXPECT <CODE>` in its header, using

@@ -87,6 +87,43 @@ CODES = {
     "W-PRAGMA-UNUSED":      "a '# check: allow' pragma that suppressed nothing",
     "E-PRAGMA-UNKNOWN":     "a '# check: allow' pragma naming an unknown code",
     "E-DOC-EXAMPLE":        "a ```stardata example in the docs does not parse",
+    # Schema layer (§7). Listed so a `# check: allow` pragma naming one is
+    # recognised; none is produced here — see NEEDS_SCHEMA_LAYER below.
+    "E-SCHEMA-INVALID":     "§7.2 a schema declaration the schema layer cannot use",
+    "E-SCHEMA-DUPLICATE":   "§7.6 two declarations share an id, without @replaces",
+    "E-SCHEMA-SEALED":      "§7.2.2 redefinition of a sealed core declaration",
+    "E-KEY-MISSING":        "§7.2 a required key is absent",
+    "E-CORE-REPARENT":      "§8.2 class_extension changes a class's of_class",
+    "E-CORE-REQUIREMENT":   "§7.2.5 something core requires is absent or wrong",
+    "E-CORE-RESERVED":      "§7.2.5.1 a reserved internal form declared by something other than starcore",
+    "W-PROVIDES-MISMATCH":  "§13.3 provides_schema disagrees with what the library declares",
+}
+
+# Codes this script structurally cannot produce, and the fixtures that
+# declare them are therefore skipped by --self-test rather than failed.
+#
+# Every one of these is a schema-layer diagnostic (spec §7.2, §7.2.2), and
+# the reason is not that the check is hard: it is that the check is
+# meaningless without the core-owned schema set. "This redefines a sealed
+# form" requires knowing which forms are sealed, which means loading
+# libs/starcore/builtin/ -- a validator, not a linter.
+#
+# The C++ suite asserts every one of them, from these same fixtures, in
+# tests/unit/schema/corpus_test.cpp. This list is the seam between the two
+# implementations described in tests/README.md, and it should shrink to
+# nothing the same way this whole script does: by being deleted once
+# Starforge can validate the corpus (backlog H2).
+NEEDS_SCHEMA_LAYER = {
+    "E-SCHEMA-INVALID",
+    "E-SCHEMA-DUPLICATE",
+    "E-SCHEMA-SEALED",
+    "E-KEY-MISSING",
+    "E-CORE-REPARENT",
+    "E-CORE-REQUIREMENT",
+    "E-PROPDEF-TYPE-MISMATCH",
+    "E-UNKNOWN-KEY",
+    "W-PROVIDES-MISMATCH",
+    "E-CORE-RESERVED",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:
@@ -98,7 +135,7 @@ PRAGMA_RE = re.compile(r"^\s*#\s*check:\s*allow\s+(.+)$")
 RESERVED_VALUES = {"true", "false"}
 VALID_ESCAPES = set('"\\nt[]$@u')
 
-# Keys whose value is a condition_block in stdlib/core. The checker has no
+# Keys whose value is a condition_block in stdlib/stdlib. The checker has no
 # schema layer, so this list stands in for one; it is the only place in this
 # script that hard-codes library knowledge.
 CONDITION_KEYS = {
@@ -770,10 +807,16 @@ def main():
             want = expectations(path)
             _t, _p, diags = check_file(path)
             got = {d.code for d in diags}
-            missing = [c for c in want if c not in got]
+            checkable = [c for c in want if c not in NEEDS_SCHEMA_LAYER]
+            missing = [c for c in checkable if c not in got]
             if not want:
                 print("  FAIL %s: fixture declares no EXPECT codes" % name)
                 failed = True
+            elif not checkable:
+                # Every code this fixture declares needs the schema layer.
+                # Asserted by the C++ suite instead -- see NEEDS_SCHEMA_LAYER.
+                print("  skip %s (%s: needs the schema layer)"
+                      % (name, ", ".join(sorted(want))))
             elif missing:
                 print("  FAIL %s: expected %s, got %s"
                       % (name, missing, sorted(got) or "nothing"))

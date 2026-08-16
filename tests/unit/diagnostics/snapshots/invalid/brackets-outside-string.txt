@@ -1,6 +1,6 @@
 # tests/corpus/invalid/brackets-outside-string.star
 # declared E-BRACKET-OUTSIDE
-# reported E-BRACE-UNBALANCED E-BRACKET-OUTSIDE E-STRAY-TOKEN E-VALUE-MISSING
+# lexer and parser report E-BRACE-UNBALANCED E-BRACKET-OUTSIDE E-STRAY-TOKEN E-VALUE-MISSING
 
 error: E-BRACKET-OUTSIDE: '[' belongs inside a string literal, not out here
   --> tests/corpus/invalid/brackets-outside-string.star:6:14

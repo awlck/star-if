@@ -1,0 +1,5 @@
+# tests/corpus/invalid/schema-extension-retype.star
+# declared E-PROPDEF-TYPE-MISMATCH
+# lexer and parser report (none)
+
+(no diagnostics)

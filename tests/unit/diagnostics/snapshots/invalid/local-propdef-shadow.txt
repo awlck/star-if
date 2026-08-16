@@ -1,6 +1,6 @@
 # tests/corpus/invalid/local-propdef-shadow.star
 # declared E-BLOCK-MIXED
-# reported E-BLOCK-MIXED
+# lexer and parser report E-BLOCK-MIXED
 
 error: E-BLOCK-MIXED: this block holds statements, and 'diagnostic_code' is a bare value among them
   --> tests/corpus/invalid/local-propdef-shadow.star:14:43

@@ -1,0 +1,5 @@
+# tests/corpus/invalid/core-retype-property.star
+# declared E-PROPDEF-TYPE-MISMATCH
+# lexer and parser report (none)
+
+(no diagnostics)

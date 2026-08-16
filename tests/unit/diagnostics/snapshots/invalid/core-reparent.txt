@@ -1,0 +1,5 @@
+# tests/corpus/invalid/core-reparent.star
+# declared E-CORE-REPARENT
+# lexer and parser report (none)
+
+(no diagnostics)

@@ -36,6 +36,11 @@ option(STARIF_ENABLE_TESTS "Build the test suite" ON)
 # each, no CMakeLists.txt) until their backlog workstream lands -- see
 # docs/phase-0-backlog.md and each directory's own README.md for when.
 #
+# libs/starcore is a half-exception: its C++ is Phase 1, but backlog F2 puts
+# the core-owned schema set in libs/starcore/builtin/ now, as Stardata. That
+# is data, so it needs no target -- the tests point at it through
+# STARIF_BUILTIN_DIR, and Phase 1 embeds it via a generated string literal.
+#
 #   libs/starcore    Phase 1        libs/stardebug   later (author's kit)
 #   libs/stardata    Phase 0 (D-F)  libs/starforge   Phase 4
 #   libs/starvfs     Phase 0 (G)    libs/startext    Phase 1

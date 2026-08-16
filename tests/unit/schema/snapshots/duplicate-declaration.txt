@@ -1,0 +1,26 @@
+# tests/corpus/invalid/duplicate-declaration.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-DUPLICATE: 'take' is declared twice
+  --> tests/corpus/invalid/duplicate-declaration.star:6:12
+  |
+6 | action = { id = take  match = { "take [something]" } }
+  |            ^^
+note: first declared here, by stdlib
+  --> /home/user/star-if/stdlib/stdlib/actions.star:16:5
+   |
+16 |     id    = take
+   |     ^^
+note: if the second one is meant to supersede the first, say so: `@replaces(stdlib)` (spec §7.6)
+
+error: E-SCHEMA-DUPLICATE: 'take' is declared twice
+  --> tests/corpus/invalid/duplicate-declaration.star:7:12
+  |
+7 | action = { id = take  match = { "grab [something]" } }
+  |            ^^
+note: first declared here, by stdlib
+  --> /home/user/star-if/stdlib/stdlib/actions.star:16:5
+   |
+16 |     id    = take
+   |     ^^
+note: if the second one is meant to supersede the first, say so: `@replaces(stdlib)` (spec §7.6)

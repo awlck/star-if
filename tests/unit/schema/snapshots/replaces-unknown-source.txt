@@ -1,0 +1,15 @@
+# tests/corpus/invalid/replaces-unknown-source.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-INVALID: 'take' doesn't come from no_such_library
+  --> tests/corpus/invalid/replaces-unknown-source.star:7:10
+  |
+7 | action = @replaces(no_such_library) {
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: it was declared by stdlib, so that is the name `@replaces` wants (spec §7.6)
+  --> /home/user/star-if/stdlib/stdlib/actions.star:16:5
+   |
+16 |     id    = take
+   |     ^^
+fix-it: name stdlib instead
+  replace tests/corpus/invalid/replaces-unknown-source.star:7:10 with `@replaces(stdlib)`

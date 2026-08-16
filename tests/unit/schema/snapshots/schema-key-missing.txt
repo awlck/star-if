@@ -1,0 +1,9 @@
+# tests/corpus/invalid/schema-key-missing.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-KEY-MISSING: this 'enum' has no 'values'
+  --> tests/corpus/invalid/schema-key-missing.star:5:8
+  |
+5 | enum = {
+  |        ^^^^^^^^^^^^^^^^^^^^^^
+note: 'values' is required on every 'enum' (spec §7.2)

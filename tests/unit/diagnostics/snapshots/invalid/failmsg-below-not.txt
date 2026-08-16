@@ -1,5 +1,6 @@
 # tests/corpus/invalid/failmsg-below-not.star
 # declared E-FAILMSG-UNREACHABLE
 # lexer and parser report (none)
+# E-FAILMSG-UNREACHABLE is not implemented yet
 
 (no diagnostics)

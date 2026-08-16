@@ -1,5 +1,6 @@
 # tests/corpus/invalid/placement-sugar-conflict.star
 # declared E-PLACEMENT-CONFLICT
 # lexer and parser report (none)
+# E-PLACEMENT-CONFLICT is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

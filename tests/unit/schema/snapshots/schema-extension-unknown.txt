@@ -1,0 +1,9 @@
+# tests/corpus/invalid/schema-extension-unknown.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-INVALID: I can't extend 'acton', because nothing declares it
+  --> tests/corpus/invalid/schema-extension-unknown.star:6:5
+  |
+6 |     of_schema = acton
+  |     ^^^^^^^^^
+note: a schema_extension names a form declared elsewhere -- in a library, or earlier in the load order (spec §7.5, §13.2)

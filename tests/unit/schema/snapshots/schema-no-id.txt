@@ -1,0 +1,16 @@
+# tests/corpus/invalid/schema-no-id.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-KEY-MISSING: this 'schema' has no 'id'
+  --> tests/corpus/invalid/schema-no-id.star:5:10
+  |
+5 | schema = {
+  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: 'id' is required on every 'schema' (spec §7.2)
+
+error: E-SCHEMA-INVALID: this schema has no 'id', so I don't know what it is meant to describe
+  --> tests/corpus/invalid/schema-no-id.star:5:1
+  |
+5 | schema = {
+  | ^^^^^^
+note: every schema declaration needs a 'id' (spec §7.2)

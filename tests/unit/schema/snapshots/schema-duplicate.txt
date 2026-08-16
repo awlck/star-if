@@ -1,0 +1,14 @@
+# tests/corpus/invalid/schema-duplicate.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-DUPLICATE: 'loot_table' is declared twice
+  --> tests/corpus/invalid/schema-duplicate.star:12:5
+   |
+12 |     id        = loot_table
+   |     ^^
+note: first declared here, by a library
+  --> tests/corpus/invalid/schema-duplicate.star:6:5
+  |
+6 |     id        = loot_table
+  |     ^^
+note: if the second one is meant to supersede the first, say so: `@replaces(a library)` (spec §7.6)

@@ -1,5 +1,6 @@
 # tests/corpus/invalid/duplicate-declaration.star
 # declared E-SCHEMA-DUPLICATE
 # lexer and parser report (none)
+# E-SCHEMA-DUPLICATE is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

@@ -1,0 +1,9 @@
+# tests/corpus/invalid/prop-marker-unknown.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-UNKNOWN-KEY: 'affect_scope' is not a marker I know
+  --> tests/corpus/invalid/prop-marker-unknown.star:9:36
+  |
+9 |         shuttered = { type = bool  affect_scope = yes }
+  |                                    ^^^^^^^^^^^^
+note: the markers are affects_scope, always_resident, save_exclude -- core acts on a declared set, and one it did not recognise would be a request nobody answered (spec §7.2.3)

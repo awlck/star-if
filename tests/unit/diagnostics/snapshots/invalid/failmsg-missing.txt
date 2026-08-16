@@ -1,5 +1,6 @@
 # tests/corpus/invalid/failmsg-missing.star
 # declared W-FAILMSG-MISSING
 # lexer and parser report (none)
+# W-FAILMSG-MISSING is not implemented yet
 
 (no diagnostics)

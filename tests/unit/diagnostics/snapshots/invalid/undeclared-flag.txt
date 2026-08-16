@@ -1,5 +1,6 @@
 # tests/corpus/invalid/undeclared-flag.star
 # declared E-FLAG-UNDECLARED
 # lexer and parser report (none)
+# E-FLAG-UNDECLARED is not implemented yet
 
 (no diagnostics)

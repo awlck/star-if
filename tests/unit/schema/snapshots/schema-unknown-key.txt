@@ -1,0 +1,9 @@
+# tests/corpus/invalid/schema-unknown-key.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-UNKNOWN-KEY: 'alwyas_resident' is not a key that 'sector' has
+  --> tests/corpus/invalid/schema-unknown-key.star:8:5
+  |
+8 |     alwyas_resident = yes
+  |     ^^^^^^^^^^^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)

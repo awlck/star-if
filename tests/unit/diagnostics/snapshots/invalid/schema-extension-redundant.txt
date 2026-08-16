@@ -1,0 +1,6 @@
+# tests/corpus/invalid/schema-extension-redundant.star
+# declared W-PROPDEF-REDUNDANT
+# lexer and parser report (none)
+# W-PROPDEF-REDUNDANT is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

@@ -1,0 +1,14 @@
+# tests/corpus/invalid/schema-extension-retype.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-PROPDEF-TYPE-MISMATCH: 'id' is already a identifier on 'action', and this would make it a int
+  --> tests/corpus/invalid/schema-extension-retype.star:7:13
+  |
+7 |     key = { name = id  type = int }
+  |             ^^^^
+note: declared here, by starcore
+  --> /home/user/star-if/libs/starcore/builtin/schema.star:143:13
+    |
+143 |     key = { name = id            type = identifier          required = yes  unique_in = action }
+    |             ^^^^
+note: an extension adds keys; changing one is a redefinition wearing an extension's clothes, and on a sealed form it is exactly what sealing exists to prevent (spec §7.5, §7.2.2)

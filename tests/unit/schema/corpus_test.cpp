@@ -33,25 +33,32 @@ namespace {
 // report today.
 const std::set<std::string>& schema_codes() {
     static const std::set<std::string> codes = {
-        "E-SCHEMA-INVALID",        "E-SCHEMA-DUPLICATE", "E-SCHEMA-SEALED",
-        "E-KEY-MISSING",           "E-CORE-REPARENT",    "E-CORE-REQUIREMENT",
-        "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",      "W-PROVIDES-MISMATCH"};
+        "E-SCHEMA-INVALID",    "E-SCHEMA-DUPLICATE", "E-SCHEMA-SEALED",         "E-KEY-MISSING",
+        "E-CORE-REPARENT",     "E-CORE-REQUIREMENT", "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",
+        "W-PROVIDES-MISMATCH", "E-CORE-RESERVED"};
     return codes;
 }
 
-// The real load order of spec §13.2 -- the built-in set, then stdlib/core,
+// The real load order of spec §13.2 -- the built-in set, then stdlib/stdlib,
 // then the fixture as a library on top -- followed by the two checks that run
 // once everything is loaded.
 //
 // Loading the whole stack rather than the built-in set alone matters for more
 // than realism: `@replaces(no_such_library)` can only report "that is not
 // where this came from" if the thing being replaced exists, which means
-// stdlib/core has to be there.
+// stdlib/stdlib has to be there.
 std::set<std::string> codes_for(const std::filesystem::path& path) {
+    const std::string contents = test::read_bytes(path);
+    // A fixture is a library unless it says otherwise with `# LOAD-AS core`.
+    // §7.2.5.1 makes that distinction load-bearing: the same declaration is a
+    // requirement when core writes it and an overstep when anything else does.
+    const bool as_core = test::loads_as_core(contents);
+
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_stdlib_core();
-    loaded.load_text(test::read_bytes(path), "a library", test::corpus_name(path));
+    loaded.load_stdlib();
+    loaded.load_text(contents, as_core ? "starcore" : "a library", test::corpus_name(path),
+                     as_core);
     schema::check_requirements(loaded.set, loaded.sink);
     schema::check_library_manifests(loaded.set, loaded.sink);
 
@@ -107,18 +114,18 @@ TEST_CASE("every schema-layer code has a fixture that provokes it", "[schema][co
 }
 
 TEST_CASE("stdlib core uses only mechanisms available to any library", "[schema][stdlib]") {
-    // Spec §7.2.4's last paragraph: "Everything else in stdlib/core --
+    // Spec §7.2.4's last paragraph: "Everything else in stdlib/stdlib --
     // thing, person, container, supporter, door, backdrop, every action,
     // every message -- is ordinary Stardata with no privileged status, and
     // could be replaced wholesale by a different library."
     //
     // That claim is only worth making if it is checked, and it is exactly
     // the claim ADRIFT 5 and Inform 7 make and do not keep. So: load the
-    // built-in set, load stdlib/core as an ordinary library on top of it,
+    // built-in set, load stdlib/stdlib as an ordinary library on top of it,
     // and require that nothing in it needed a privilege to load.
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_stdlib_core();
+    loaded.load_stdlib();
 
     for (const diag::Diagnostic& diagnostic : loaded.sink.diagnostics()) {
         INFO("unexpected " << diag::code_string(diagnostic.code()) << ": " << diagnostic.message());
@@ -132,23 +139,23 @@ TEST_CASE("stdlib core uses only mechanisms available to any library", "[schema]
     // by mistake would show up here.
     std::size_t from_library = 0;
     for (const schema::Schema& declared : loaded.set.schemas()) {
-        if (declared.owner != "star_core") {
+        if (declared.owner != "stdlib") {
             continue;
         }
         ++from_library;
-        INFO("form declared by stdlib/core: " << declared.id);
+        INFO("form declared by stdlib/stdlib: " << declared.id);
         CHECK_FALSE(declared.sealed);
     }
 
     for (const schema::ClassDecl& declared : loaded.set.classes()) {
-        if (declared.owner != "star_core") {
+        if (declared.owner != "stdlib") {
             continue;
         }
         ++from_library;
-        INFO("class or trait declared by stdlib/core: " << declared.id);
+        INFO("class or trait declared by stdlib/stdlib: " << declared.id);
         // Sealing is core's mechanism for data core reads and writes itself.
         // A library sealing its own declarations is not forbidden by §7.2.2,
-        // but stdlib/core doing it would blur exactly the boundary this test
+        // but stdlib/stdlib doing it would blur exactly the boundary this test
         // exists to keep sharp.
         CHECK_FALSE(declared.sealed);
         CHECK(declared.id.rfind("starcore.", 0) != 0);
@@ -162,6 +169,6 @@ TEST_CASE("stdlib core uses only mechanisms available to any library", "[schema]
     // the §7.2.2 boundary in one declaration.
     const schema::ClassDecl* room = loaded.set.find_class("room");
     REQUIRE(room != nullptr);
-    CHECK(room->owner == "star_core");
+    CHECK(room->owner == "stdlib");
     CHECK(room->of_class == "starcore.room");
 }

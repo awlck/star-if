@@ -1,5 +1,5 @@
 # =============================================================================
-#  stdlib/core — the standard library's own manifest
+#  stdlib — the standard library's own manifest
 # =============================================================================
 #
 #  Everything in this directory is ordinary Stardata with NO privileged status
@@ -16,7 +16,7 @@
 # =============================================================================
 
 library = {
-    id           = star_core
+    id           = stdlib
     version      = "0.1.0"
     display_name = "STAR IF core library"
     doc          = "Kinds, actions, parser grammar and default messages."

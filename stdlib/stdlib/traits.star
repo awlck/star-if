@@ -1,5 +1,5 @@
 # =============================================================================
-#  stdlib/core — traits
+#  stdlib — traits
 # =============================================================================
 #
 #  Orthogonal capabilities that cut across the class tree, which is exactly

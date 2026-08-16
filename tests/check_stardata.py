@@ -95,6 +95,7 @@ CODES = {
     "E-KEY-MISSING":        "§7.2 a required key is absent",
     "E-CORE-REPARENT":      "§8.2 class_extension changes a class's of_class",
     "E-CORE-REQUIREMENT":   "§7.2.5 something core requires is absent or wrong",
+    "E-CORE-RESERVED":      "§7.2.5.1 a reserved internal form declared by something other than starcore",
     "W-PROVIDES-MISMATCH":  "§13.3 provides_schema disagrees with what the library declares",
 }
 
@@ -122,6 +123,7 @@ NEEDS_SCHEMA_LAYER = {
     "E-PROPDEF-TYPE-MISMATCH",
     "E-UNKNOWN-KEY",
     "W-PROVIDES-MISMATCH",
+    "E-CORE-RESERVED",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:
@@ -133,7 +135,7 @@ PRAGMA_RE = re.compile(r"^\s*#\s*check:\s*allow\s+(.+)$")
 RESERVED_VALUES = {"true", "false"}
 VALID_ESCAPES = set('"\\nt[]$@u')
 
-# Keys whose value is a condition_block in stdlib/core. The checker has no
+# Keys whose value is a condition_block in stdlib/stdlib. The checker has no
 # schema layer, so this list stands in for one; it is the only place in this
 # script that hard-codes library knowledge.
 CONDITION_KEYS = {

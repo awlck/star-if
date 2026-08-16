@@ -14,19 +14,19 @@ implemented. A `.star` file parses to a tree and writes back byte for byte.
 The schema layer has begun: `libs/starcore/builtin/` holds the core-owned,
 sealed schema set of spec §7.2.2 (F2), the assertions that keep it sealed
 are enforced (F2a), `schema_extension`, `@replaces` and the no-duplicates
-rule are implemented (F2d), and `stdlib/core/` declares the rest with no
+rule are implemented (F2d), and `stdlib/stdlib/` declares the rest with no
 privileged status. Types, arity, combination modes and reference resolution
 (F3–F12) have not started, so nothing yet checks that a value matches its
 declared type.
 
 ## The sealing boundary
 
-`libs/starcore/builtin/` is core's, and sealed. `stdlib/core/` is a library
+`libs/starcore/builtin/` is core's, and sealed. `stdlib/stdlib/` is a library
 like any other. If you are adding something, the question is
 spec §7.2.4's, and it is narrow and mechanical: **does `starcore`'s own code
 read or write it?** If yes it belongs in `builtin/`, sealed, with a
 `core_requirement` naming what core depends on. If no — and this is almost
-everything — it belongs in `stdlib/core/`, where it has no more standing
+everything — it belongs in `stdlib/stdlib/`, where it has no more standing
 than a third-party library's declaration.
 
 Do not add a name to `builtin/` to make something convenient. §7.2.2 exists
@@ -42,6 +42,12 @@ worth keeping straight:
 | add a key to an existing form | `schema_extension` (§7.5) | yes |
 | add a property to an existing class | `class_extension` (§8.2) | yes |
 | supersede a whole declaration | `@replaces(lib)` (§7.6) | **no** |
+
+`core_requirement` is none of these either, and is not yours to write:
+§7.2.5.1 reserves it to `starcore`, and declaring one anywhere else is an
+error. Core needs it because its C++ reads the world store directly and the
+schema layer cannot see C++; a library has no such gap, because what a
+library depends on is checked by being used.
 
 `provides_schema` is none of these. It is a manifest field on `library` that
 lists the forms a library contributes, so the editor's browser and a reader
@@ -288,7 +294,7 @@ python3 scripts/spdx_header.py --template path/to/new_file.cpp
 
 prints the two lines to paste in, with the licence identifier appropriate
 to where the file lives (see [Licensing](#licensing) below — most of the
-tree is Apache-2.0, `stdlib/core/` is MIT-0). Run once, after cloning:
+tree is Apache-2.0, `stdlib/stdlib/` is MIT-0). Run once, after cloning:
 
 ```sh
 ./scripts/install-hooks.sh
@@ -305,7 +311,7 @@ summarised:
 | Path | Licence | File |
 |---|---|---|
 | `libs/`, `apps/`, `cmake/`, `scripts/`, `tests/` | Apache License 2.0 | [`LICENSE`](LICENSE) |
-| `stdlib/core/` | MIT No Attribution (MIT-0) | [`stdlib/LICENSE`](stdlib/LICENSE) |
+| `stdlib/stdlib/` | MIT No Attribution (MIT-0) | [`stdlib/LICENSE`](stdlib/LICENSE) |
 | `stdlib/starscape/` (implementation) | Apache License 2.0 | [`LICENSE`](LICENSE) |
 | `docs/` | Creative Commons Attribution 4.0 (CC-BY-4.0) | [`docs/LICENSE`](docs/LICENSE) |
 

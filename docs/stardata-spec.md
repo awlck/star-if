@@ -641,7 +641,7 @@ Libraries prefix their globals (`starscape.combat_round`, §6.4), which looks ex
 
 ### 7.1 Purpose
 
-Every top-level form and every key within it is described by a **schema**. Schemas are themselves written in Stardata, in `stdlib/core/schema.star`, and libraries MAY contribute more. The schema layer serves three purposes simultaneously, and this is the main reason it exists rather than the validation being hard-coded:
+Every top-level form and every key within it is described by a **schema**. Schemas are themselves written in Stardata — the core-owned ones in `libs/starcore/builtin/` (§7.2.2), the rest in the standard library — and libraries MAY contribute more. The schema layer serves three purposes simultaneously, and this is the main reason it exists rather than the validation being hard-coded:
 
 1. **Validation** with precise, span-accurate diagnostics.
 2. **Editor generation** — Starbase renders an inspector for any object by walking its schema, so a library that adds a form gets an editor for free.
@@ -750,7 +750,8 @@ The test is narrow and mechanical: **does `starcore`'s own code read or write it
 
 | Core-owned forms | Why |
 |---|---|
-| `schema`, `class`, `class_extension`, `trait`, `enum` | the schema layer itself |
+| `schema`, `schema_extension`, `class`, `class_extension`, `trait`, `enum` | the schema layer itself |
+| `core_requirement` | what core asserts about the data it is handed (§7.2.5); **reserved to `starcore`** |
 | `global`, `const` | save-state layout |
 | `action`, `rule`, `turn_hook` | the turn sequence and dispatch index |
 | `sector` | residency and streaming |
@@ -762,7 +763,7 @@ The test is narrow and mechanical: **does `starcore`'s own code read or write it
 | `starcore.room` | scope is computed from an actor's room; the `location` slot resolves to one |
 | `starcore.actor` (trait) | the actor loop iterates these, and `busy_until` lives on them |
 
-Everything else in `stdlib/core` — `thing`, `person`, `container`, `supporter`, `door`, `backdrop`, every action, every message — is ordinary Stardata with no privileged status, and could be replaced wholesale by a different library.
+Everything else in `stdlib` — `thing`, `person`, `container`, `supporter`, `door`, `backdrop`, every action, every message — is ordinary Stardata with no privileged status, and could be replaced wholesale by a different library.
 
 **[OPEN]** The exact membership of the second table is the part most worth arguing about. `starcore.room` and `starcore.actor` are included because the parser and turn loop are core and cannot function without the concepts. A narrower reading would make them markers instead (`is_location = yes`), at the cost of an indirection for two concepts that an IF system is never going to be without.
 
@@ -806,6 +807,10 @@ So the rule is self-limiting in a useful way: **if a library ever appeared to ne
 Your framing of the asymmetry is the other half, and it is the practical one: a game *can* replace a library's class, and should be expected to understand what depends on it. A game cannot replace anything `starcore` does without forking the project and shipping a custom runtime — so core's invariants are not things an author can reason about, negotiate with, or be warned about. They have to hold, and the only way to know they hold is to assert them.
 
 **One residual, recorded rather than solved.** A library whose behaviour lives in Lua reads properties dynamically (§12), so a hostile `@replaces` surfaces there at run time rather than at compile time. That is the accepted cost of the scripting escape hatch, and the answer is §8.8.4's catchable error naming the object, the property and the source location — not a declaration form that would only ever be used by the small number of libraries that are mostly script.
+
+**`core_requirement` is therefore a reserved internal form.** It is core-owned (§7.2.4), sealed like every other core-owned form, and additionally **restricted in use**: a `core_requirement` declared by anything other than `starcore` — a library, a ruleset, or a game — MUST be rejected, naming this section.
+
+The restriction is worth stating as a rule rather than leaving to convention, because the failure it prevents is the one this whole section is about. A library that could assert requirements would be asserting them *about other people's data*, at load, in core's voice, with no way for the author being refused to tell whose rule they had broken. That is the ADRIFT wart with the sign flipped: not an engine depending silently on a library, but a library conscripting the engine's authority. The form is core's because only core has a dependency the schema layer cannot otherwise see; anything else claiming one is either mistaken or overreaching, and both are worth a diagnostic.
 
 ### 7.3 Open and closed schemas
 
@@ -854,7 +859,7 @@ A `unique_in` key (§7.2) already makes two declarations of the same id an error
 **`@replaces` is how a later declaration supersedes an earlier one:**
 
 ```stardata
-action = @replaces(star_core) {
+action = @replaces(stdlib) {
     id    = take
     match = { "get/take/grab [something]" }
     # ...a complete declaration; nothing is merged from the original
@@ -1517,7 +1522,7 @@ Inside such a block, a key naming a property of that object with a comparison op
 | `any_actor` | `{ any_actor = { in_combat == yes } }` |
 | `script` | `{ fn = … }` |
 
-Libraries add predicates by declaring them; the list above is `stdlib/core` plus the entries `stdlib/starscape` contributes (`attitude`, `faction_alert`, `dead`, `any_actor`).
+Libraries add predicates by declaring them; the list above is `stdlib` plus the entries `stdlib/starscape` contributes (`attitude`, `faction_alert`, `dead`, `any_actor`).
 
 ### 10.5 `failureMsg`
 
@@ -1750,7 +1755,7 @@ The world clock is a signed 64-bit count of **ticks** since the calendar epoch. 
 
 There is exactly one clock. Locations do not experience differing elapsed durations. A sector MAY declare a `local_clock` — a calendar and an offset — which affects only the *display* of time and the compilation of `clock_time` values written in that sector's terms.
 
-Actions declare a `duration` in ticks; `default` takes the project's default (60 in `stdlib/core`). Actors carry a `busy_until` tick and are skipped in the actor loop until the clock reaches it.
+Actions declare a `duration` in ticks; `default` takes the project's default (60 in `stdlib`). Actors carry a `busy_until` tick and are skipped in the actor loop until the clock reaches it.
 
 ### 11.7 Party
 
@@ -1828,7 +1833,7 @@ project = {
     ifid = "8F4B2C1A-..."
     source_language = en
 
-    # Load order: stdlib/core is implicit and always first.
+    # Load order: stdlib/stdlib is implicit and always first.
     uses = { starscape }
 
     player        = pc
@@ -1854,7 +1859,7 @@ project = {
 
 Sources are loaded in this order, and later declarations win where §5.4's combination rules give a winner:
 
-1. `stdlib/core`
+1. `stdlib`
 2. libraries named in `uses`, in declaration order
 3. the project's own sources, in a deterministic traversal: `project.star` first, then remaining files sorted by path
 4. mods, in the player's configured order (runtime only)
@@ -1870,7 +1875,7 @@ library = {
     id = starscape
     version = "1.0.0"
     display_name = $lib_starscape_name
-    requires = { star_core >= "1.0.0" }
+    requires = { stdlib >= "1.0.0" }
     uses_editor_feature = { rpg quests dialogue }
     provides_schema = { stat_block combat_style loot_table }
 }
@@ -1933,6 +1938,7 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | `schema_extension` redeclaring an existing key identically (§7.5) | warning |
 | `schema_extension` naming a schema that does not exist (§7.5) | error |
 | An unmet `core_requirement` (§7.2.5) | error, naming the requirement and quoting its `doc` |
+| A `core_requirement` declared by anything but `starcore` (§7.2.5.1) | error, naming the section |
 | `provides_schema` not matching the schemas a library declares (§13.3) | warning |
 | No key of a required `exclusive_group` (§7.2.1) | error |
 | Property read that is definitely absent for the slot's static type (§8.8.2) | error |
@@ -1992,7 +1998,7 @@ The proposal left the following under-determined. This specification settles the
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |
 | A20 | An absent property raises rather than defaulting (§8.8.4) | A `0` that should have been an error yields a game that is subtly wrong, which is far harder to find than one that is obviously broken |
 | A31 | Core's requirements are declared as `core_requirement`, not implemented in silence (§7.2.5) | A rule enforced by code nobody can read is the ADRIFT/Inform wart wearing a different hat. A declared requirement fails by name |
-| A35 | The requirement form is core-only and stays so (§7.2.5.1) | A library's dependencies are checked by being used; core's live in C++, which the schema layer cannot see. A library appearing to need this would be evidence it had C++ in it, which §2.2 forbids |
+| A35 | The requirement form is core-only and stays so, and is **rejected** when anything else declares one (§7.2.5.1) | A library's dependencies are checked by being used; core's live in C++, which the schema layer cannot see. A library appearing to need this would be evidence it had C++ in it, which §2.2 forbids — and a library that could assert requirements would be conscripting the engine's authority over other people's data |
 | A32 | No declaration may be duplicated; `@replaces(lib)` is the deliberate form (§7.6) | Naming the source turns a typo or an upstream rename into a build failure, rather than a new declaration that silently never takes effect |
 | A33 | `@replaces` rather than reusing `@override` (§7.6) | `@override` combines a value within a key; this supersedes a whole declaration. One word for two operations would hide the difference |
 | A34 | `schema_extension` mirrors `class_extension`; `provides_schema` demoted to a checked manifest (§7.5, §13.3) | The spec previously pointed at a manifest field as though it were a mechanism, which it never was |
@@ -2016,7 +2022,7 @@ The proposal left the following under-determined. This specification settles the
 
 ## Appendix C — Standard top-level forms
 
-Forms supplied by `stdlib/core` unless noted. Libraries add more by declaring schemas (§7.2); this list is not closed.
+Forms supplied by `stdlib` unless noted. Libraries add more by declaring schemas (§7.2); this list is not closed.
 
 | Form | Purpose | Specified in |
 |---|---|---|

@@ -1,4 +1,5 @@
 # EXPECT E-CORE-REQUIREMENT
+# LOAD-AS core
 # spec §7.2.2 — "the absence of anything core requires" is reported at load,
 # naming the requirement, rather than surfacing much later as a failure
 # nobody can account for. Nothing declares `starcore.hovercraft`.

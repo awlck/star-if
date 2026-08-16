@@ -384,6 +384,25 @@ void fold_declaration(const ast::Statement& statement, const std::string& key,
         return;
     }
     if (key == "core_requirement") {
+        // §7.2.5.1: a reserved internal form. Core has a dependency the
+        // schema layer cannot otherwise see -- its C++ reads the containment
+        // tree directly -- and nothing else does. A library that could assert
+        // requirements would be asserting them about other people's data, at
+        // load, in core's voice, with no way for the author being refused to
+        // tell whose rule they had broken.
+        if (!options.is_core) {
+            Diagnostic diagnostic(Code::CoreReserved, statement.report_span(),
+                                  "'core_requirement' is starcore's alone, and this isn't "
+                                  "starcore");
+            diagnostic.with_note("core needs it because its C++ reads the world store directly, "
+                                 "and the schema layer cannot see C++. A library has no such gap: "
+                                 "what a library depends on is checked by being used (spec "
+                                 "§7.2.5.1)");
+            diagnostic.with_fix_it(statement.report_span(), "",
+                                   "remove the core_requirement declaration");
+            sink.report(std::move(diagnostic));
+            return;
+        }
         if (std::optional<CoreRequirement> requirement = read_core_requirement(statement, sink)) {
             set.add_requirement(*std::move(requirement));
         }

@@ -206,8 +206,8 @@ TEST_CASE("a class and a trait may share an id", "[schema][duplicate]") {
 TEST_CASE("@replaces supersedes a declaration from the named library", "[schema][replaces]") {
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_stdlib_core();
-    loaded.load_text("action = @replaces(star_core) {\n"
+    loaded.load_stdlib();
+    loaded.load_text("action = @replaces(stdlib) {\n"
                      "    id    = take\n"
                      "    match = { \"snaffle [something]\" }\n"
                      "}\n",
@@ -228,25 +228,25 @@ TEST_CASE("@replaces naming the wrong source is refused, and says the right one"
     // failures rather than a declaration that silently never takes effect.
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_stdlib_core();
+    loaded.load_stdlib();
     loaded.load_text("action = @replaces(starscape) {\n"
                      "    id    = take\n"
                      "    match = { \"take [something]\" }\n"
                      "}\n");
 
     CHECK(loaded.reported(diag::Code::SchemaInvalid));
-    CHECK(mentions(loaded, diag::Code::SchemaInvalid, "star_core"));
+    CHECK(mentions(loaded, diag::Code::SchemaInvalid, "stdlib"));
 
     const diag::Diagnostic* wrong = loaded.first(diag::Code::SchemaInvalid);
     REQUIRE(wrong != nullptr);
     REQUIRE_FALSE(wrong->fix_its().empty());
-    CHECK(wrong->fix_its().front().replacement == "@replaces(star_core)");
+    CHECK(wrong->fix_its().front().replacement == "@replaces(stdlib)");
 }
 
 TEST_CASE("@replaces with nothing to replace is refused", "[schema][replaces]") {
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_text("sector = @replaces(star_core) { id = nowhere }\n");
+    loaded.load_text("sector = @replaces(stdlib) { id = nowhere }\n");
 
     CHECK(loaded.reported(diag::Code::SchemaInvalid));
     CHECK(mentions(loaded, diag::Code::SchemaInvalid, "nowhere"));
@@ -342,12 +342,67 @@ TEST_CASE("a library that says nothing about its forms is not nagged", "[schema]
 TEST_CASE("stdlib core's own manifest agrees with what it declares", "[schema][manifest]") {
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_stdlib_core();
+    loaded.load_stdlib();
 
     diag::DiagnosticSink manifests;
     schema::check_library_manifests(loaded.set, manifests);
     for (const diag::Diagnostic& diagnostic : manifests.diagnostics()) {
         INFO("manifest mismatch: " << diagnostic.message());
         CHECK(false);
+    }
+}
+
+// --- core_requirement is reserved (spec 7.2.5.1) -----------------------
+
+TEST_CASE("a library declaring a core_requirement is refused", "[schema][reserved]") {
+    // §7.2.5.1 makes the form reserved to starcore, and the reason is not
+    // tidiness. Core has a dependency the schema layer cannot otherwise see
+    // -- its C++ reads the world store directly. A library has no such gap:
+    // what a library depends on is checked by being used. One that could
+    // assert requirements would be asserting them about other people's data,
+    // at load, in core's voice.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("core_requirement = { id = mine  requires = class  subject = weapon\n"
+                     "                     doc = \"A library overstepping.\" }\n");
+
+    CHECK(loaded.reported(diag::Code::CoreReserved));
+    CHECK(mentions(loaded, diag::Code::CoreReserved, "starcore's alone"));
+    CHECK(mentions(loaded, diag::Code::CoreReserved, "checked by being used"));
+
+    // And it did not register: a refused declaration asserts nothing.
+    for (const schema::CoreRequirement& requirement : loaded.set.requirements()) {
+        INFO("registered requirement: " << requirement.id);
+        CHECK(requirement.id != "mine");
+    }
+}
+
+TEST_CASE("core declaring one is exactly what the form is for", "[schema][reserved]") {
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    const std::size_t before = loaded.set.requirements().size();
+    loaded.load_text("core_requirement = { id = probe  requires = class\n"
+                     "                     subject = starcore.object\n"
+                     "                     doc = \"Core asserting what core reads.\" }\n",
+                     "starcore", "builtin.star", /*is_core=*/true);
+
+    CHECK_FALSE(loaded.reported(diag::Code::CoreReserved));
+    CHECK(loaded.set.requirements().size() == before + 1);
+}
+
+TEST_CASE("stdlib itself declares no core_requirement", "[schema][reserved]") {
+    // The standard library is a library, loaded as one, and would be refused
+    // if it tried -- which is the claim §7.2.4's last paragraph makes and
+    // this keeps honest from a second direction.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+
+    CHECK_FALSE(loaded.reported(diag::Code::CoreReserved));
+    for (const schema::CoreRequirement& requirement : loaded.set.requirements()) {
+        INFO("requirement: " << requirement.id);
+        const bool core_namespace = requirement.subject.rfind("starcore.", 0) == 0;
+        const bool declared_form = loaded.set.find(requirement.subject) != nullptr;
+        CHECK((core_namespace || declared_form));
     }
 }

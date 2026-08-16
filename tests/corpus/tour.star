@@ -52,7 +52,7 @@ project = {
     ifid    = "8F4B2C1A-0000-4000-8000-000000000001"
     source_language = en
 
-    # Load order: stdlib/core is implicit and always first.
+    # Load order: stdlib/stdlib is implicit and always first.
     uses = { starscape }
 
     player       = pc
@@ -1889,7 +1889,7 @@ library = {
     id           = starscape
     version      = "1.0.0"
     display_name = $lib_starscape_name
-    requires     = { star_core >= "1.0.0" }
+    requires     = { stdlib >= "1.0.0" }
     uses_editor_feature = { rpg quests dialogue }
     provides_schema     = { stat_block combat_style loot_table }
 }

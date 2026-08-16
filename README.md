@@ -61,7 +61,7 @@ What exists today:
   `schema_extension` and properties with `class_extension`, and may never
   redefine or supersede.
 
-- In `stdlib/core`: the kinds, traits and actions an author actually writes,
+- In `stdlib`: the kinds, traits and actions an author actually writes,
   with **no privileged status** — and a test that says so, by loading the
   directory as an ordinary library and requiring that nothing in it needed a
   privilege.
@@ -96,7 +96,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 Licensing is not uniform across the tree — see [`NOTICE`](NOTICE) for the
 full table and [`CONTRIBUTING.md`](CONTRIBUTING.md#licensing) for how it
 maps onto the directory layout. In short: engine and tooling code is
-Apache 2.0, `stdlib/core` is MIT-0, and documentation is CC-BY-4.0.
+Apache 2.0, `stdlib` is MIT-0, and documentation is CC-BY-4.0.
 
 The names STAR IF, Starbase, Starforge, Starhelm, Stardata, Starpak and
 Starscape are governed by [`TRADEMARKS.md`](TRADEMARKS.md), not by the code

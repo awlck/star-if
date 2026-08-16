@@ -61,6 +61,8 @@ std::string_view code_string(Code code) noexcept {
         return "E-CORE-REPARENT";
     case Code::CoreRequirement:
         return "E-CORE-REQUIREMENT";
+    case Code::CoreReserved:
+        return "E-CORE-RESERVED";
     case Code::ProvidesMismatch:
         return "W-PROVIDES-MISMATCH";
     case Code::BlockMixed:

@@ -85,7 +85,7 @@ on Linux and macOS run it under ASan and UBSan.
 | `unit/lex/` | Workstream D: the token and trivia model, the lexer, its diagnostics, and the fuzzer. |
 | `unit/cst/` | Workstream E: the green tree, cursors, the trivia attachment policy, the parser, the byte-exact round-trip, the edit API and the edit fuzzer. |
 | `unit/ast/` | Workstream F1: the typed view over the CST, including its tolerance of trees the parser recovered from. |
-| `unit/schema/` | Workstreams F2, F2a and F2d: the core-owned schema set, sealing, the core requirements, `schema_extension`, `@replaces`, the no-duplicates rule, and the claim that `stdlib/core` is unprivileged. |
+| `unit/schema/` | Workstreams F2, F2a and F2d: the core-owned schema set, sealing, the core requirements, `schema_extension`, `@replaces`, the no-duplicates rule, and the claim that `stdlib` is unprivileged. |
 | `unit/support/` | Shared helpers — corpus discovery, snapshot comparison, the token dump, the lexing and schema-loading harnesses. |
 
 ### Snapshots, and how to bless a change
@@ -175,6 +175,13 @@ skipped rather than asserted.
 | `corpus/tour.star` | The reference corpus. Exercises every construct in the spec. Must validate with zero errors and zero warnings. |
 | `corpus/lf.star`, `corpus/crlf.star` | The same small scenario, checked in with LF and CRLF line endings respectively (spec §2). `.gitattributes` marks `*.star` as `-text` so Git never rewrites either on checkout, and `unit/cst/roundtrip_test.cpp` asserts both survive parse-and-write byte for byte (backlog E6). See `CONTRIBUTING.md` ("Line endings"). |
 | `corpus/invalid/` | Negative fixtures — files that are invalid on purpose, each declaring the diagnostic codes it must provoke. Which pass asserts a fixture depends on its codes: lexical ones in `unit/lex/`, schema-layer ones in `unit/schema/`. |
+
+A schema-layer fixture is loaded as a **library**, on top of the core-owned
+set and `stdlib` — which is the situation nearly all of them test, somebody
+overstepping. A fixture about core getting its own house wrong says so with
+`# LOAD-AS core` in its header, because spec §7.2.5.1 makes the distinction
+load-bearing: the same `core_requirement` is a requirement when core writes
+it and an overstep when anything else does.
 
 ### Adding a rule to the specification
 

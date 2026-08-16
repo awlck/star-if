@@ -8,7 +8,7 @@ Licensing is not uniform across the tree; see the LICENSE file nearest
 the code in question, and CONTRIBUTING.md for the full table:
 
   libs/, apps/            Apache License, Version 2.0 (LICENSE)
-  stdlib/core             MIT No Attribution (stdlib/LICENSE)
+  stdlib/stdlib           MIT No Attribution (stdlib/LICENSE)
   stdlib/starscape         Apache License, Version 2.0 (LICENSE) — implementation
                            only; the Starscape SRD text, when published, carries
                            its own licence and reserves the Starscape name

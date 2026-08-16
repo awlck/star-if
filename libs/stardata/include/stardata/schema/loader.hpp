@@ -126,13 +126,19 @@ void validate_block(const ast::Block& block, const Schema& schema, diag::Diagnos
 // never read from the file, so that a library cannot claim to be `starcore`
 // by writing so.
 //
-// It is the **library id** -- `star_core`, `starscape` -- because that is
+// It is the **library id** -- `stdlib`, `starscape` -- because that is
 // the name `@replaces(lib)` uses (§7.6), and a diagnostic that named a path
 // would be telling an author something they cannot write. The built-in set's
 // owner is `starcore`, which is not a library, and so is a name no
 // `@replaces` can successfully claim.
 struct LoadOptions {
     std::string owner;
+
+    // Whether these files are `starcore`'s own. §7.2.5.1 reserves
+    // `core_requirement` to core, so the loader has to know -- and it is told
+    // rather than deciding, because `libs/stardata` does not know that a
+    // thing called `starcore` exists and should not learn.
+    bool is_core = false;
 };
 
 // Parses every `*.star` directly inside `directory`, in sorted order, and

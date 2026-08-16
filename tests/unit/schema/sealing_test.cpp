@@ -194,8 +194,8 @@ TEST_CASE("an absent core requirement is reported by name", "[schema][sealing]")
     // The `core_requirement` form is not declared here, so the top-level
     // check will complain about that too -- which is correct, and not what
     // this test is about.
-    schema::load_source(id, schema::LoadOptions{"starcore"}, loaded.sources, loaded.cache,
-                        loaded.set, loaded.sink);
+    schema::load_source(id, schema::LoadOptions{"starcore", /*is_core=*/true}, loaded.sources,
+                        loaded.cache, loaded.set, loaded.sink);
 
     diag::DiagnosticSink requirements;
     schema::check_requirements(loaded.set, requirements);
@@ -228,7 +228,7 @@ TEST_CASE("a core requirement catches a property that changed type", "[schema][s
                      "                     subject = probe.object  member = holder\n"
                      "                     type = ref<starcore.object>\n"
                      "                     doc = \"A stand-in for the real slot.\" }\n",
-                     "starcore");
+                     "starcore", "builtin.star", /*is_core=*/true);
 
     diag::DiagnosticSink requirements;
     schema::check_requirements(loaded.set, requirements);
@@ -293,7 +293,7 @@ TEST_CASE("instantiating a declared class is not an unknown key", "[schema][seal
     // §7.4: a statement whose key is a class id creates one of that class.
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_stdlib_core();
+    loaded.load_stdlib();
     loaded.load_text("thing = { id = brass_key  name = \"brass key\" }\n");
 
     CHECK_FALSE(loaded.reported(diag::Code::UnknownKey));

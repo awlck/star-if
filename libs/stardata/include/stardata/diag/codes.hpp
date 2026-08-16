@@ -62,6 +62,7 @@ enum class Code : std::uint8_t {
     KeyMissing,             // E-KEY-MISSING           §7.2    a required key is absent
     CoreReparent,           // E-CORE-REPARENT         §7.2.2  class_extension changes a class's of_class
     CoreRequirement,        // E-CORE-REQUIREMENT      §7.2.5  something core requires is absent or wrong
+    CoreReserved,           // E-CORE-RESERVED         §7.2.5.1 a reserved internal form declared by something other than starcore
     ProvidesMismatch,       // W-PROVIDES-MISMATCH     §13.3   provides_schema disagrees with what the library declares
 
     // Spec §14.3's required-diagnostics table, one entry per row.

@@ -1,5 +1,5 @@
 # =============================================================================
-#  stdlib/core — the kinds a game is built from
+#  stdlib — the kinds a game is built from
 # =============================================================================
 #
 #  Every class here derives, directly or eventually, from `starcore.object`

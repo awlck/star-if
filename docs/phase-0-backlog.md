@@ -379,7 +379,7 @@ Replaces the earlier "minimal schema-of-schemas, everything else in stdlib" plan
 - [x] Core definitions written as Stardata in `libs/starcore/builtin/*.star`: the forms of spec §7.2.4, plus `starcore.object`, `starcore.room` and the `starcore.actor` trait.
 - [x] Loaded from disk in Phase 0 so the validator can be developed against them. **Phase 1 embeds them into the binary** via a CMake-generated string literal, so they are one source of truth, diffable, and impossible to ship without.
 - [x] A minimal hard-coded schema-of-schemas, sufficient only to validate the builtin files themselves.
-- [x] `stdlib/core/*.star` declares everything else — `thing`, `person`, `container`, actions, messages — with **no privileged status**. A test asserts `stdlib/core` uses only mechanisms available to any library.
+- [x] `stdlib/stdlib/*.star` declares everything else — `thing`, `person`, `container`, actions, messages — with **no privileged status**. A test asserts `stdlib` uses only mechanisms available to any library.
 
 The requirement list is data too, in `builtin/requirements.star`, declared
 through the ordinary `schema` mechanism as a `core_requirement` form. That
@@ -439,9 +439,17 @@ structurally, which is to say on the two an author is least likely to
 duplicate by accident. The namespace comes from the schema's `unique_in`, so
 `rule` and `loc` are exempt without being named in the code.
 
-An owner is a **library id** (`star_core`, `starscape`), because that is the
+An owner is a **library id** (`stdlib`, `starscape`), because that is the
 name `@replaces(lib)` uses. The built-in set's owner is `starcore`, which is
 not a library and so is a name no `@replaces` can successfully claim.
+
+`core_requirement` is a reserved internal form (§7.2.5.1): declaring one
+outside `starcore` is `E-CORE-RESERVED`. The loader is *told* which files are
+core's, through `LoadOptions::is_core`, rather than recognising a name —
+`libs/stardata` does not know that a thing called `starcore` exists and
+should not learn. A negative fixture says which side it is on with
+`# LOAD-AS core` in its header, since the same declaration is a requirement
+when core writes it and an overstep when anything else does.
 
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2

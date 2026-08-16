@@ -16,7 +16,7 @@ WHAT THIS IS
 
 WHY PATH DETERMINES LICENCE
     The tree is not uniformly licensed (NOTICE, CONTRIBUTING.md):
-        stdlib/core/**        MIT-0
+        stdlib/stdlib/**        MIT-0
         stdlib/starscape/**   Apache-2.0
         everything else       Apache-2.0
     docs/ is prose, not source, and is excluded — its licence is CC-BY-4.0
@@ -61,7 +61,7 @@ NAMED_COMMENT_STYLES = {
 # Path-prefix rules, most specific first. The first match wins.
 LICENSE_RULES = [
     ("stdlib/starscape/", "Apache-2.0"),
-    ("stdlib/core/", "MIT-0"),
+    ("stdlib/stdlib/", "MIT-0"),
     ("stdlib/", "MIT-0"),
 ]
 DEFAULT_LICENSE = "Apache-2.0"

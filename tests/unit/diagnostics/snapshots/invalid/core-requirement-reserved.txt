@@ -1,0 +1,5 @@
+# tests/corpus/invalid/core-requirement-reserved.star
+# declared E-CORE-RESERVED
+# lexer and parser report (none)
+
+(no diagnostics)

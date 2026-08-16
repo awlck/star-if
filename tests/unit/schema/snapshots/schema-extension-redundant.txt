@@ -1,0 +1,16 @@
+# tests/corpus/invalid/schema-extension-redundant.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+warning: W-PROPDEF-REDUNDANT: 'always_resident' is already declared on 'sector', in just these words
+  --> tests/corpus/invalid/schema-extension-redundant.star:8:13
+  |
+8 |     key = { name = always_resident  type = bool }
+  |             ^^^^
+note: declared here, by starcore
+  --> libs/starcore/builtin/schema.star:201:13
+    |
+201 |     key = { name = always_resident  type = bool
+    |             ^^^^
+note: harmless, but the line does nothing -- an extension adds keys (spec §7.5)
+fix-it: remove the redundant key declaration
+  replace tests/corpus/invalid/schema-extension-redundant.star:8:13 with ``

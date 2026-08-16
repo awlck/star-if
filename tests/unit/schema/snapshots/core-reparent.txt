@@ -1,0 +1,13 @@
+# tests/corpus/invalid/core-reparent.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-CORE-REPARENT: a class_extension can't change what 'starcore.room' inherits from
+  --> tests/corpus/invalid/core-reparent.star:8:5
+  |
+8 |     of_class = starcore.actor
+  |     ^^^^^^^^
+note: extension adds to a class; changing its parent would silently rewrite every object of that class, including ones written by somebody else (spec §8.2)
+  --> libs/starcore/builtin/object.star:49:5
+   |
+49 |     id       = starcore.room
+   |     ^^

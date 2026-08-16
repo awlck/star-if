@@ -1,0 +1,14 @@
+# tests/corpus/invalid/core-retype-property.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-PROPDEF-TYPE-MISMATCH: 'holder' is already a ref<starcore.object> on starcore.object, and this would make it a int
+  --> tests/corpus/invalid/core-retype-property.star:8:9
+  |
+8 |         holder = int
+  |         ^^^^^^
+note: declared here, by starcore
+  --> libs/starcore/builtin/object.star:31:9
+   |
+31 |         holder      = ref<starcore.object>
+   |         ^^^^^^
+note: this is a sealed declaration: its properties are read and written by starcore at a known type, so retyping one would corrupt data rather than merely surprise somebody (spec §7.2.2)

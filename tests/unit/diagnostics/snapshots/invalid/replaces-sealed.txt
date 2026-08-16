@@ -1,5 +1,6 @@
 # tests/corpus/invalid/replaces-sealed.star
 # declared E-SCHEMA-SEALED
 # lexer and parser report (none)
+# E-SCHEMA-SEALED is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

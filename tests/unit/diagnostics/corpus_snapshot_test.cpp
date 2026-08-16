@@ -101,9 +101,27 @@ std::string join(const std::set<std::string>& codes) {
 // this yet" is otherwise invisible.
 std::string report(const ParsedFixture& fixture, const std::filesystem::path& path) {
     std::ostringstream out;
+    const std::set<std::string> declared = test::expected_codes(fixture.text);
+    const std::set<std::string> reported = fixture.reported();
+
     out << "# " << test::corpus_name(path) << '\n'
-        << "# declared " << join(test::expected_codes(fixture.text)) << '\n'
-        << "# lexer and parser report " << join(fixture.reported()) << "\n\n";
+        << "# declared " << join(declared) << '\n'
+        << "# lexer and parser report " << join(reported) << '\n';
+
+    // For every declared code this pass did not produce, say who owns it.
+    // "(none)" on its own cannot be told apart from "nothing checks this",
+    // and that is the first question a reader asks of one of these files.
+    for (const std::string& code : declared) {
+        if (reported.contains(code)) {
+            continue;
+        }
+        out << "# " << code
+            << (test::schema_layer_codes().contains(code)
+                    ? " is the schema layer's -- asserted in unit/schema/corpus_test.cpp"
+                    : " is not implemented yet")
+            << '\n';
+    }
+    out << '\n';
 
     if (fixture.sink.diagnostics().empty()) {
         out << "(no diagnostics)\n";

@@ -14,6 +14,10 @@
 
 namespace stardata::test {
 
+[[nodiscard]] inline std::filesystem::path source_dir() {
+    return std::filesystem::path(STARIF_SOURCE_DIR);
+}
+
 [[nodiscard]] inline std::filesystem::path builtin_dir() {
     return std::filesystem::path(STARIF_BUILTIN_DIR);
 }
@@ -36,7 +40,14 @@ public:
     LoadedSet& operator=(const LoadedSet&) = delete;
 
     // libs/starcore/builtin/, as `starcore` owns it.
-    void load_builtin() { load_from(builtin_dir(), "starcore", /*is_core=*/true); }
+    void load_builtin() {
+        load_from(builtin_dir(), "starcore", /*is_core=*/true);
+        // Standing in for what `starcore` does in Phase 1: naming the enum
+        // whose values are §8.5's placement keywords. `libs/stardata` does
+        // not know that placement exists, so somebody who owns the object
+        // model has to say.
+        set.set_relation_enum("relation_enum");
+    }
 
     // stdlib/stdlib/, which is ordinary Stardata with no privileged status.
     // Owned by `stdlib`, its own `library` id: an owner is the name
@@ -51,8 +62,8 @@ public:
     void load_text(std::string text, std::string owner = "a library",
                    std::string name = "library.star", bool is_core = false) {
         const diag::SourceId id = sources.add_file(std::move(name), std::move(text));
-        schema::load_source(id, schema::LoadOptions{std::move(owner), is_core}, sources, cache, set,
-                            sink);
+        schema::load_source(id, schema::LoadOptions{std::move(owner), is_core, {}}, sources, cache,
+                            set, sink);
     }
 
     [[nodiscard]] bool reported(diag::Code code) const {
@@ -84,8 +95,13 @@ public:
 private:
     void load_from(const std::filesystem::path& directory, std::string owner,
                    bool is_core = false) {
-        const std::vector<std::filesystem::path> loaded = schema::load_directory(
-            directory, schema::LoadOptions{std::move(owner), is_core}, sources, cache, set, sink);
+        // Names recorded relative to the repository root, so a diagnostic
+        // citing a built-in file reads the same in every checkout -- and a
+        // golden that captures one does not bake in the machine that wrote
+        // it. `source_dir()` is CMAKE_SOURCE_DIR.
+        const schema::LoadOptions options{std::move(owner), is_core, source_dir()};
+        const std::vector<std::filesystem::path> loaded =
+            schema::load_directory(directory, options, sources, cache, set, sink);
         files.insert(files.end(), loaded.begin(), loaded.end());
     }
 };

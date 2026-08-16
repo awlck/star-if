@@ -1,0 +1,16 @@
+# tests/corpus/invalid/provides-schema-mismatch.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+warning: W-PROVIDES-MISMATCH: ghost_forms lists 'stat_block' in provides_schema, and declares no such form
+  --> tests/corpus/invalid/provides-schema-mismatch.star:9:5
+  |
+9 |     provides_schema = { stat_block loot_table }
+  |     ^^^^^^^^^^^^^^^
+note: `provides_schema` is a manifest, so the editor's library browser and a reader can see a library's forms in one place -- it declares nothing itself (spec §13.3)
+
+warning: W-PROVIDES-MISMATCH: ghost_forms lists 'loot_table' in provides_schema, and declares no such form
+  --> tests/corpus/invalid/provides-schema-mismatch.star:9:5
+  |
+9 |     provides_schema = { stat_block loot_table }
+  |     ^^^^^^^^^^^^^^^
+note: `provides_schema` is a manifest, so the editor's library browser and a reader can see a library's forms in one place -- it declares nothing itself (spec §13.3)

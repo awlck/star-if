@@ -1,5 +1,6 @@
 # tests/corpus/invalid/core-reparent.star
 # declared E-CORE-REPARENT
 # lexer and parser report (none)
+# E-CORE-REPARENT is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

@@ -1,0 +1,13 @@
+# tests/corpus/invalid/replaces-sealed.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-SEALED: 'class' is sealed, so it can be added to but never replaced
+  --> tests/corpus/invalid/replaces-sealed.star:5:10
+  |
+5 | schema = @replaces(starcore) {
+  |          ^^^^^^^^^^^^^^^^^^^
+note: sealed means exactly this: extend freely, never supersede. Replacing it would change the shape of data starcore reads directly (spec §7.2.2, §7.6)
+  --> libs/starcore/builtin/schema.star:31:5
+   |
+31 |     id        = class
+   |     ^^

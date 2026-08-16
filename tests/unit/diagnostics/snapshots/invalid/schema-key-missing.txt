@@ -1,5 +1,6 @@
 # tests/corpus/invalid/schema-key-missing.star
 # declared E-KEY-MISSING
 # lexer and parser report (none)
+# E-KEY-MISSING is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

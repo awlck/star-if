@@ -1939,6 +1939,8 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | `schema_extension` naming a schema that does not exist (§7.5) | error |
 | An unmet `core_requirement` (§7.2.5) | error, naming the requirement and quoting its `doc` |
 | A `core_requirement` declared by anything but `starcore` (§7.2.5.1) | error, naming the section |
+| An unknown marker in a `prop_def` block (§7.2.3) | error, listing the markers |
+| A relation keyword and `holder`/`relation` in one block (§8.5) | error, citing both |
 | `provides_schema` not matching the schemas a library declares (§13.3) | warning |
 | No key of a required `exclusive_group` (§7.2.1) | error |
 | Property read that is definitely absent for the slot's static type (§8.8.2) | error |

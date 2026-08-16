@@ -1,0 +1,10 @@
+# tests/corpus/invalid/core-requirement-missing.star
+# loaded as starcore, on top of the core-owned set and stdlib
+
+error: E-CORE-REQUIREMENT: core needs a class called 'starcore.hovercraft', and nothing declares one
+  --> tests/corpus/invalid/core-requirement-missing.star:7:5
+  |
+7 |     id       = hovercraft_exists
+  |     ^^
+note: this is core requirement 'hovercraft_exists'; core checks what it depends on rather than assuming it (spec §7.2.2)
+note: A requirement nothing satisfies, so that the check itself is tested.

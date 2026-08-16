@@ -1,5 +1,6 @@
 # tests/corpus/invalid/core-requirement-reserved.star
 # declared E-CORE-RESERVED
 # lexer and parser report (none)
+# E-CORE-RESERVED is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

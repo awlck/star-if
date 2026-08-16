@@ -17,27 +17,24 @@
 #include <string>
 
 #include "stardata/diag/codes.hpp"
+#include "stardata/diag/render.hpp"
 #include "stardata/schema/loader.hpp"
 
 #include "support/corpus.hpp"
 #include "support/fixture.hpp"
 #include "support/schema_harness.hpp"
+#include "support/snapshot.hpp"
 
 using namespace stardata;
 
 namespace {
 
-// The codes this workstream is responsible for. A fixture may declare codes
-// belonging to a workstream that does not exist yet -- W-FAILMSG-MISSING is
-// F8's, E-FLAG-NOT-BOOL is F10's -- and those are not the schema layer's to
-// report today.
-const std::set<std::string>& schema_codes() {
-    static const std::set<std::string> codes = {
-        "E-SCHEMA-INVALID",    "E-SCHEMA-DUPLICATE", "E-SCHEMA-SEALED",         "E-KEY-MISSING",
-        "E-CORE-REPARENT",     "E-CORE-REQUIREMENT", "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",
-        "W-PROVIDES-MISMATCH", "E-CORE-RESERVED"};
-    return codes;
-}
+// The codes this workstream is responsible for -- shared with the front
+// end's snapshot, which names the owning pass for a code it does not itself
+// produce. A fixture may declare codes belonging to a workstream that does
+// not exist yet (W-FAILMSG-MISSING is F8's, E-FLAG-NOT-BOOL is F10's) and
+// those are not the schema layer's to report today.
+using test::schema_layer_codes;
 
 // The real load order of spec §13.2 -- the built-in set, then stdlib/stdlib,
 // then the fixture as a library on top -- followed by the two checks that run
@@ -79,7 +76,7 @@ TEST_CASE("each invalid fixture reports the schema-layer codes it declares", "[s
         const std::set<std::string> expected = test::expected_codes(test::read_bytes(path));
         bool relevant = false;
         for (const std::string& code : expected) {
-            relevant = relevant || schema_codes().contains(code);
+            relevant = relevant || schema_layer_codes().contains(code);
         }
         if (!relevant) {
             continue; // another workstream's fixture
@@ -88,12 +85,69 @@ TEST_CASE("each invalid fixture reports the schema-layer codes it declares", "[s
         INFO("invalid fixture: " << path.string());
         const std::set<std::string> reported = codes_for(path);
         for (const std::string& code : expected) {
-            if (!schema_codes().contains(code)) {
+            if (!schema_layer_codes().contains(code)) {
                 continue;
             }
             INFO("expected code: " << code);
             CHECK(reported.contains(code));
         }
+    }
+}
+
+TEST_CASE("each fixture's schema-layer diagnostics match its checked-in snapshot",
+          "[schema][corpus][snapshot]") {
+    // C4 for the schema layer. Its messages had no golden at all until now,
+    // which is the gap that made "nothing raises this?" a reasonable question
+    // to ask of the front end's snapshot: the answer lived only in a test
+    // that counted codes and never looked at what they said.
+    //
+    // Only fixtures the schema layer has something to say about get one --
+    // the rest are the front end's, and are pinned there.
+    for (const auto& path : test::corpus_files(test::corpus_dir() / "invalid")) {
+        const std::string contents = test::read_bytes(path);
+        bool relevant = false;
+        for (const std::string& code : test::expected_codes(contents)) {
+            relevant = relevant || test::schema_layer_codes().contains(code);
+        }
+        if (!relevant) {
+            continue;
+        }
+
+        INFO("invalid fixture: " << path.string());
+        const bool as_core = test::loads_as_core(contents);
+        test::LoadedSet loaded;
+        loaded.load_builtin();
+        loaded.load_stdlib();
+        const std::size_t before = loaded.sink.diagnostics().size();
+        loaded.load_text(contents, as_core ? "starcore" : "a library", test::corpus_name(path),
+                         as_core);
+        schema::check_requirements(loaded.set, loaded.sink);
+        schema::check_library_manifests(loaded.set, loaded.sink);
+
+        std::ostringstream out;
+        out << "# " << test::corpus_name(path) << '\n'
+            << "# loaded as " << (as_core ? "starcore" : "a library")
+            << ", on top of the core-owned set and stdlib\n\n";
+
+        // Everything after the stack itself loaded cleanly -- so the golden
+        // is what this fixture provoked, not what stdlib says about itself.
+        bool first = true;
+        for (std::size_t i = before; i < loaded.sink.diagnostics().size(); ++i) {
+            if (!first) {
+                out << '\n';
+            }
+            first = false;
+            diag::render_human(out, loaded.sink.diagnostics()[i], loaded.sources,
+                               /*use_color=*/false);
+        }
+        if (first) {
+            out << "(no diagnostics)\n";
+        }
+
+        const std::string name = path.stem().string() + ".txt";
+        CHECK(test::check_snapshot(std::filesystem::path(STARIF_UNIT_TEST_DIR) / "schema" /
+                                       "snapshots" / name,
+                                   out.str()));
     }
 }
 
@@ -107,7 +161,7 @@ TEST_CASE("every schema-layer code has a fixture that provokes it", "[schema][co
         }
     }
 
-    for (const std::string& code : schema_codes()) {
+    for (const std::string& code : schema_layer_codes()) {
         INFO("schema-layer code without a fixture: " << code);
         CHECK(covered.contains(code));
     }

@@ -410,16 +410,40 @@ on yet.
 
 Where core needs to know *which* property means something, the library declares it (spec §7.2.3) rather than core hard-coding a name.
 
-- [ ] `prop_def` accepts a block as well as a bare type.
-- [ ] `affects_scope`, `always_resident`, `save_exclude` parsed and exposed to `starcore`.
-- [ ] An unknown marker is an error, not ignored.
+- [x] `prop_def` accepts a block as well as a bare type.
+- [x] `affects_scope`, `always_resident`, `save_exclude` parsed and exposed to `starcore`.
+- [x] An unknown marker is an error, not ignored.
+
+The marker vocabulary is **declared**, as the `prop_marker` form in
+`libs/starcore/builtin/schema.star`, rather than being a list in C++ — and
+that has to hold for the *reader* as well as the validator. `PropMarkers` is
+a name-to-flag map, not named fields, and the reader takes whatever the form
+declares as a `bool`. Adding a marker is an edit to the schema and a line in
+`starcore` that acts on it; nothing in `libs/stardata` changes, which is what
+`a marker added to the schema is read with no code change` asserts by
+extending `prop_marker` with a marker the repository has never heard of.
 
 ### F2c · Placement sugar
 **Size:** S · **Depends on:** F2
 
-- [ ] `in` / `on` / `under` / `behind` / `carried` / `worn` / `part_of` desugar to `holder` + `relation` (spec §8.5).
-- [ ] Using a relation keyword together with `holder` or `relation` in one block is an error.
-- [ ] Round-trip (E5) preserves whichever spelling the author used — the sugar is expanded in the semantic view, never in the CST.
+- [x] `in` / `on` / `under` / `behind` / `carried` / `worn` / `part_of` desugar to `holder` + `relation` (spec §8.5).
+- [x] Using a relation keyword together with `holder` or `relation` in one block is an error (`E-PLACEMENT-CONFLICT`), citing both spans.
+- [x] Round-trip (E5) preserves whichever spelling the author used — the sugar is expanded in the semantic view, never in the CST.
+
+`Placement` keeps `from_sugar`, because an editor writing a file back needs
+to know which spelling it started as. Two relation keywords in one block are
+the same conflict wearing one spelling, and are reported too. On a conflict
+**neither** spelling wins: §8.5 says the precedence is not resolvable, and
+guessing would put the object somewhere the author did not ask for.
+
+The keywords are **the values of the enum `starcore.object.relation` is typed
+by**, read from the data rather than listed in the code — so `libs/stardata`
+holds no piece of the object model. Which enum that is, is named by whoever
+owns the object model (`starcore` in Phase 1, the test harness today) through
+`SchemaSet::set_relation_enum`. **[OPEN]** Whether the desugaring belongs in
+`stardata` at all, or moves up into `starcore` in Phase 1, is worth deciding
+before F3 — and whether a library may amend the relation set needs a spec
+mechanism, since there is no `enum_extension`.
 
 ### F2d · `schema_extension`, replacement, and the no-duplicates rule
 **Size:** M · **Depends on:** F2a

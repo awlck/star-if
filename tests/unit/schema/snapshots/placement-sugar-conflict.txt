@@ -1,0 +1,15 @@
+# tests/corpus/invalid/placement-sugar-conflict.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-PLACEMENT-CONFLICT: this object is placed twice, once with 'in' and once with 'holder'
+  --> tests/corpus/invalid/placement-sugar-conflict.star:8:5
+  |
+8 |     in       = ornate_box
+  |     ^^
+note: `in = ...` is shorthand for setting `holder` and `relation`, so these are the same two slots -- and there is no sensible precedence between them (spec §8.5)
+  --> tests/corpus/invalid/placement-sugar-conflict.star:9:5
+  |
+9 |     holder   = mess_table
+  |     ^^^^^^
+fix-it: keep one spelling and remove the other
+  replace tests/corpus/invalid/placement-sugar-conflict.star:9:5 with ``

@@ -97,6 +97,9 @@ CODES = {
     "E-CORE-REQUIREMENT":   "§7.2.5 something core requires is absent or wrong",
     "E-CORE-RESERVED":      "§7.2.5.1 a reserved internal form declared by something other than starcore",
     "W-PROVIDES-MISMATCH":  "§13.3 provides_schema disagrees with what the library declares",
+    "E-PLACEMENT-CONFLICT": "§8.5 a relation keyword and holder/relation in one block",
+    "E-PROPDEF-TYPE-MISMATCH": "§8.7 a redeclaration with a different type",
+    "W-PROPDEF-REDUNDANT":  "§8.7 a redeclaration with the same type",
 }
 
 # Codes this script structurally cannot produce, and the fixtures that
@@ -124,6 +127,8 @@ NEEDS_SCHEMA_LAYER = {
     "E-UNKNOWN-KEY",
     "W-PROVIDES-MISMATCH",
     "E-CORE-RESERVED",
+    "E-PLACEMENT-CONFLICT",
+    "W-PROPDEF-REDUNDANT",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:

@@ -1,5 +1,7 @@
 # tests/corpus/invalid/loc-key-undefined.star
 # declared E-LOC-DUPLICATE E-LOC-UNDEFINED
 # lexer and parser report (none)
+# E-LOC-DUPLICATE is not implemented yet
+# E-LOC-UNDEFINED is not implemented yet
 
 (no diagnostics)

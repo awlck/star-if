@@ -1,5 +1,6 @@
 # tests/corpus/invalid/schema-extension-retype.star
 # declared E-PROPDEF-TYPE-MISMATCH
 # lexer and parser report (none)
+# E-PROPDEF-TYPE-MISMATCH is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

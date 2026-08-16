@@ -86,16 +86,31 @@ public:
         bool declares_provides = false;
     };
 
+    bool declare_enum(EnumDecl decl, const std::optional<Replaces>& replaces,
+                      diag::DiagnosticSink& sink);
+
     void add_library(LibraryManifest manifest);
     void add_requirement(CoreRequirement requirement);
 
+    // Which enum's values are the placement keywords of §8.5.
+    //
+    // Named by whoever owns the object model -- `starcore` in Phase 1, the
+    // test harness today -- and not known here. `libs/stardata` has no
+    // business knowing that placement exists, let alone that its vocabulary
+    // is called `relation_enum`, so the one place that name could leak in is
+    // a setter the owner calls.
+    void set_relation_enum(std::string id) { relation_enum_ = std::move(id); }
+    [[nodiscard]] const std::vector<std::string>& relation_values() const noexcept;
+
     [[nodiscard]] const Schema* find(std::string_view id) const noexcept;
     [[nodiscard]] const ClassDecl* find_class(std::string_view id) const noexcept;
+    [[nodiscard]] const EnumDecl* find_enum(std::string_view id) const noexcept;
     [[nodiscard]] const Declaration* find_declaration(std::string_view space,
                                                       std::string_view id) const noexcept;
 
     [[nodiscard]] const std::vector<Schema>& schemas() const noexcept { return schemas_; }
     [[nodiscard]] const std::vector<ClassDecl>& classes() const noexcept { return classes_; }
+    [[nodiscard]] const std::vector<EnumDecl>& enums() const noexcept { return enums_; }
     [[nodiscard]] const std::vector<Declaration>& declarations() const noexcept {
         return declarations_;
     }
@@ -109,6 +124,8 @@ public:
 private:
     std::vector<Schema> schemas_;
     std::vector<ClassDecl> classes_;
+    std::vector<EnumDecl> enums_;
+    std::string relation_enum_;
     std::vector<Declaration> declarations_;
     std::vector<CoreRequirement> requirements_;
     std::vector<LibraryManifest> libraries_;
@@ -139,6 +156,17 @@ struct LoadOptions {
     // rather than deciding, because `libs/stardata` does not know that a
     // thing called `starcore` exists and should not learn.
     bool is_core = false;
+
+    // Record source paths relative to this directory, when they are under
+    // it. A diagnostic naming `libs/starcore/builtin/schema.star` is one an
+    // author can act on; the same diagnostic naming
+    // `/home/somebody/checkout/libs/...` is a path that means nothing to
+    // anyone but the machine that produced it, and bakes that machine into
+    // any golden that captures it.
+    //
+    // Empty means "record what you were given", which is the right default
+    // for a caller loading one absolute path it chose itself.
+    std::filesystem::path name_relative_to;
 };
 
 // Parses every `*.star` directly inside `directory`, in sorted order, and

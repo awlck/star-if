@@ -1,0 +1,11 @@
+# tests/corpus/invalid/core-requirement-reserved.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-CORE-RESERVED: 'core_requirement' is starcore's alone, and this isn't starcore
+  --> tests/corpus/invalid/core-requirement-reserved.star:7:1
+  |
+7 | core_requirement = {
+  | ^^^^^^^^^^^^^^^^
+note: core needs it because its C++ reads the world store directly, and the schema layer cannot see C++. A library has no such gap: what a library depends on is checked by being used (spec §7.2.5.1)
+fix-it: remove the core_requirement declaration
+  replace tests/corpus/invalid/core-requirement-reserved.star:7:1 with ``

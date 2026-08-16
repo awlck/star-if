@@ -1,5 +1,6 @@
 # tests/corpus/invalid/flag-wrong-type.star
 # declared E-FLAG-NOT-BOOL
 # lexer and parser report (none)
+# E-FLAG-NOT-BOOL is not implemented yet
 
 (no diagnostics)

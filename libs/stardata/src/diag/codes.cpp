@@ -65,6 +65,8 @@ std::string_view code_string(Code code) noexcept {
         return "E-CORE-RESERVED";
     case Code::ProvidesMismatch:
         return "W-PROVIDES-MISMATCH";
+    case Code::PlacementConflict:
+        return "E-PLACEMENT-CONFLICT";
     case Code::BlockMixed:
         return "E-BLOCK-MIXED";
     case Code::DuplicateKey:

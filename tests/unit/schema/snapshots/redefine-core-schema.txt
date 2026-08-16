@@ -1,0 +1,14 @@
+# tests/corpus/invalid/redefine-core-schema.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-SEALED: 'class' already has a perfectly good definition, and it belongs to starcore
+  --> tests/corpus/invalid/redefine-core-schema.star:7:5
+  |
+7 |     id        = class
+  |     ^^
+note: a sealed declaration describes data starcore reads and writes itself, so redefining it would leave the two disagreeing about the same bytes (spec §7.2.2)
+  --> libs/starcore/builtin/schema.star:31:5
+   |
+31 |     id        = class
+   |     ^^
+note: you can still add to it: `schema_extension` contributes new keys to an existing form, and `class_extension` new properties to an existing class (spec §7.5, §8.2)

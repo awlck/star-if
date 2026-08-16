@@ -1,5 +1,6 @@
 # tests/corpus/invalid/core-requirement-missing.star
 # declared E-CORE-REQUIREMENT
 # lexer and parser report (none)
+# E-CORE-REQUIREMENT is the schema layer's -- asserted in unit/schema/corpus_test.cpp
 
 (no diagnostics)

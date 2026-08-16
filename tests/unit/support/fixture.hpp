@@ -44,6 +44,23 @@ namespace stardata::test {
     return "tests/corpus/" + relative.generic_string();
 }
 
+// The diagnostic codes the schema layer owns.
+//
+// Shared, because two tests need the same answer for opposite reasons: the
+// schema-layer corpus test asserts these fire, and the front end's snapshot
+// says so in its header when a fixture declares one the front end does not
+// produce. Without that, a snapshot reading "(none)" cannot be told apart
+// from one nothing checks at all -- which is exactly the question a reader
+// asks of it first.
+[[nodiscard]] inline const std::set<std::string>& schema_layer_codes() {
+    static const std::set<std::string> codes = {
+        "E-SCHEMA-INVALID",        "E-SCHEMA-DUPLICATE",   "E-SCHEMA-SEALED",
+        "E-KEY-MISSING",           "E-CORE-REPARENT",      "E-CORE-REQUIREMENT",
+        "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",        "W-PROVIDES-MISMATCH",
+        "E-CORE-RESERVED",         "E-PLACEMENT-CONFLICT", "W-PROPDEF-REDUNDANT"};
+    return codes;
+}
+
 // Whether a fixture asks to be loaded as `starcore`'s own, with
 // `# LOAD-AS core` in its header. The default is a library, which is what
 // nearly every negative fixture wants to be: the situation being tested is

@@ -26,10 +26,20 @@ using diag::Diagnostic;
     return contents.str();
 }
 
-// A path as the SourceManager should record it: forward-slashed, so that a
-// diagnostic reads the same on every platform.
-[[nodiscard]] std::filesystem::path source_name(const std::filesystem::path& path) {
-    return std::filesystem::path(path.generic_string());
+// A path as the SourceManager should record it: relative to the caller's
+// base when it is under one, and forward-slashed either way, so that a
+// diagnostic reads the same on every platform and in every checkout.
+[[nodiscard]] std::filesystem::path source_name(const std::filesystem::path& path,
+                                                const std::filesystem::path& base) {
+    if (base.empty()) {
+        return std::filesystem::path(path.generic_string());
+    }
+    std::error_code ec;
+    const std::filesystem::path relative = std::filesystem::relative(path, base, ec);
+    if (ec || relative.empty() || *relative.begin() == "..") {
+        return std::filesystem::path(path.generic_string());
+    }
+    return std::filesystem::path(relative.generic_string());
 }
 
 // The forms this loader understands structurally, as opposed to the forms it
@@ -37,7 +47,7 @@ using diag::Diagnostic;
 // layer, so the layer has to read it itself.
 [[nodiscard]] bool is_structural_form(std::string_view key) noexcept {
     return key == "schema" || key == "class" || key == "trait" || key == "class_extension" ||
-           key == "schema_extension" || key == "core_requirement";
+           key == "schema_extension" || key == "core_requirement" || key == "enum";
 }
 
 } // namespace
@@ -51,6 +61,24 @@ const Schema* SchemaSet::find(std::string_view id) const noexcept {
         }
     }
     return nullptr;
+}
+
+const EnumDecl* SchemaSet::find_enum(std::string_view id) const noexcept {
+    for (const EnumDecl& decl : enums_) {
+        if (decl.id == id) {
+            return &decl;
+        }
+    }
+    return nullptr;
+}
+
+const std::vector<std::string>& SchemaSet::relation_values() const noexcept {
+    static const std::vector<std::string> none;
+    if (relation_enum_.empty()) {
+        return none;
+    }
+    const EnumDecl* declared = find_enum(relation_enum_);
+    return declared != nullptr ? declared->values : none;
 }
 
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
@@ -199,6 +227,23 @@ bool SchemaSet::declare_class(ClassDecl decl, const std::optional<Replaces>& rep
         }
     }
     classes_.push_back(std::move(decl));
+    return true;
+}
+
+bool SchemaSet::declare_enum(EnumDecl decl, const std::optional<Replaces>& replaces,
+                             diag::DiagnosticSink& sink) {
+    const Outcome outcome = offer(
+        Declaration{"enum", decl.id, decl.owner, /*sealed=*/false, decl.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
+        return false;
+    }
+    for (EnumDecl& existing : enums_) {
+        if (existing.id == decl.id) {
+            existing = std::move(decl);
+            return true;
+        }
+    }
+    enums_.push_back(std::move(decl));
     return true;
 }
 
@@ -364,14 +409,19 @@ struct LoadedFile {
 void fold_declaration(const ast::Statement& statement, const std::string& key,
                       const std::optional<Replaces>& replaces, const LoadOptions& options,
                       SchemaSet& set, diag::DiagnosticSink& sink) {
+    // The marker vocabulary of §7.2.3, if it has been declared yet. Passing
+    // it rather than looking it up keeps `read_class` below the registry.
+    const Schema* markers = set.find("prop_marker");
+
     if (key == "class" || key == "trait") {
-        if (std::optional<ClassDecl> decl = read_class(statement, options.owner, sink)) {
+        if (std::optional<ClassDecl> decl = read_class(statement, options.owner, markers, sink)) {
             set.declare_class(*std::move(decl), replaces, sink);
         }
         return;
     }
     if (key == "class_extension") {
-        if (const std::optional<ExtensionDecl> decl = read_class_extension(statement, sink)) {
+        if (const std::optional<ExtensionDecl> decl =
+                read_class_extension(statement, markers, sink)) {
             set.apply_extension(*decl, sink);
         }
         return;
@@ -380,6 +430,12 @@ void fold_declaration(const ast::Statement& statement, const std::string& key,
         if (const std::optional<SchemaExtensionDecl> decl =
                 read_schema_extension(statement, sink)) {
             set.apply_schema_extension(*decl, sink);
+        }
+        return;
+    }
+    if (key == "enum") {
+        if (std::optional<EnumDecl> decl = read_enum(statement, options.owner, sink)) {
+            set.declare_enum(*std::move(decl), replaces, sink);
         }
         return;
     }
@@ -458,7 +514,13 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
         if (set.find_class(key) != nullptr) {
             // §7.4: a statement whose key names a class instantiates one.
             // Checking the keys inside against the class's property set is
-            // backlog F3 and F11, once property resolution exists.
+            // backlog F3 and F11, once property resolution exists -- but the
+            // placement is checkable now, and is written on nearly every
+            // object in a game (§8.5, backlog F2c).
+            const std::optional<ast::Value> value = statement.value();
+            if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
+                (void)read_placement(*block, set.relation_values(), sink);
+            }
             return;
         }
         Diagnostic diagnostic(Code::UnknownKey, statement.report_span(),
@@ -591,7 +653,7 @@ void load_files(const std::vector<std::filesystem::path>& files, const LoadOptio
     loaded.reserve(files.size());
     for (const std::filesystem::path& path : files) {
         LoadedFile file;
-        file.id = sources.add_file(source_name(path), read_bytes(path));
+        file.id = sources.add_file(source_name(path, options.name_relative_to), read_bytes(path));
         file.green = cst::parse(sources, file.id, cache, sink);
         loaded.push_back(std::move(file));
     }

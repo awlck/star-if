@@ -85,7 +85,7 @@ on Linux and macOS run it under ASan and UBSan.
 | `unit/lex/` | Workstream D: the token and trivia model, the lexer, its diagnostics, and the fuzzer. |
 | `unit/cst/` | Workstream E: the green tree, cursors, the trivia attachment policy, the parser, the byte-exact round-trip, the edit API and the edit fuzzer. |
 | `unit/ast/` | Workstream F1: the typed view over the CST, including its tolerance of trees the parser recovered from. |
-| `unit/schema/` | Workstreams F2, F2a and F2d: the core-owned schema set, sealing, the core requirements, `schema_extension`, `@replaces`, the no-duplicates rule, and the claim that `stdlib` is unprivileged. |
+| `unit/schema/` | Workstreams F2, F2a, F2b, F2c and F2d: the core-owned schema set, sealing, the core requirements, `schema_extension`, `@replaces`, the no-duplicates rule, property markers, the placement sugar, and the claim that `stdlib` is unprivileged. |
 | `unit/support/` | Shared helpers — corpus discovery, snapshot comparison, the token dump, the lexing and schema-loading harnesses. |
 
 ### Snapshots, and how to bless a change
@@ -130,6 +130,7 @@ Current snapshots:
 | `unit/diagnostics/snapshots/duplicate-key.*.txt` | The human and machine rendering of one hand-built multi-span diagnostic. |
 | `unit/diagnostics/snapshots/invalid/*.txt` | Everything the front end says about each fixture in `corpus/invalid/`, rendered as an author reads it. |
 | `unit/diagnostics/snapshots/invalid.machine.txt` | The same diagnostics as one greppable line each — the whole invalid corpus on one screen. |
+| `unit/schema/snapshots/*.txt` | What the **schema layer** says about each fixture it owns, loaded on top of the core set and `stdlib`. |
 
 ### The invalid-corpus snapshots
 
@@ -148,14 +149,20 @@ Each file opens with a three-line header derived from the fixture:
 `declared` is the fixture's own `# EXPECT` lines; the third line is what the
 lexer and parser actually produced.
 
-Where they differ, there are two possible reasons and it is worth knowing
-which. The fixture may be waiting on a workstream that does not exist yet —
-`E-FLAG-NOT-BOOL` is F10's — in which case the snapshot moves when it lands.
-Or it may be checked by a later pass: everything the **schema layer** owns is
-asserted from these same fixtures in `unit/schema/corpus_test.cpp`, which
-loads each one on top of the core-owned set the way a library is loaded.
-These snapshots are the front end's account of the corpus, not the whole
-compiler's.
+Where they differ, the header says which of two reasons applies, one line
+per declared code the front end did not produce:
+
+```
+# W-FAILMSG-MISSING is not implemented yet
+# E-PLACEMENT-CONFLICT is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+```
+
+The first moves when its workstream lands. The second is checked already,
+just not here — and its **rendered output has its own golden**, under
+`unit/schema/snapshots/`, which is where to look for what the schema layer
+actually says. These snapshots are the front end's account of the corpus, not
+the whole compiler's, and saying so in the file itself is the point: "(none)"
+on its own cannot be told apart from "nothing checks this".
 
 Expect cascades. One stray `[` in `brackets-outside-string.star` yields nine
 diagnostics, because recovery keeps going and says what it finds. That is

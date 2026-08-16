@@ -1,0 +1,9 @@
+# tests/corpus/invalid/exclusive-group-none.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-EXCLUSIVE-MISSING: this 'salvage_table' sets none of 'drops' or 'copies'
+  --> tests/corpus/invalid/exclusive-group-none.star:22:17
+   |
+22 | salvage_table = {
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: exactly one of them belongs in every 'salvage_table' (spec §7.2.1)

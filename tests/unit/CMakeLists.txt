@@ -22,6 +22,7 @@ add_executable(stardata_unit_tests
     schema/corpus_test.cpp
     schema/extension_test.cpp
     schema/markers_test.cpp
+    schema/keys_test.cpp
     lex/token_test.cpp
     lex/lexer_test.cpp
     lex/lexer_diagnostics_test.cpp

@@ -100,6 +100,9 @@ CODES = {
     "E-PLACEMENT-CONFLICT": "§8.5 a relation keyword and holder/relation in one block",
     "E-PROPDEF-TYPE-MISMATCH": "§8.7 a redeclaration with a different type",
     "W-PROPDEF-REDUNDANT":  "§8.7 a redeclaration with the same type",
+    "E-DUP-KEY":            "§5.3 a second binding of a key whose arity is one",
+    "E-EXCLUSIVE-GROUP":    "§7.2.1 two or more keys of one exclusive_group in a block",
+    "E-EXCLUSIVE-MISSING":  "§7.2.1 no key of a required exclusive_group",
 }
 
 # Codes this script structurally cannot produce, and the fixtures that
@@ -129,6 +132,9 @@ NEEDS_SCHEMA_LAYER = {
     "E-CORE-RESERVED",
     "E-PLACEMENT-CONFLICT",
     "W-PROPDEF-REDUNDANT",
+    "E-DUP-KEY",
+    "E-EXCLUSIVE-GROUP",
+    "E-EXCLUSIVE-MISSING",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:

@@ -92,7 +92,7 @@ TEST_CASE("a library cannot redefine a sealed core trait", "[schema][sealing]") 
     loaded.load_text("trait = { id = starcore.actor  prop_def = { busy_until = text } }\n");
 
     CHECK(loaded.reported(diag::Code::SchemaSealed));
-    const schema::ClassDecl* actor = loaded.set.find_class("starcore.actor");
+    const schema::ClassDecl* actor = loaded.set.find_trait("starcore.actor");
     REQUIRE(actor != nullptr);
     CHECK(actor->find_property("busy_until")->type.to_string() == "int");
 }

@@ -67,6 +67,10 @@ std::string_view code_string(Code code) noexcept {
         return "W-PROVIDES-MISMATCH";
     case Code::PlacementConflict:
         return "E-PLACEMENT-CONFLICT";
+    case Code::ExclusiveGroup:
+        return "E-EXCLUSIVE-GROUP";
+    case Code::ExclusiveMissing:
+        return "E-EXCLUSIVE-MISSING";
     case Code::BlockMixed:
         return "E-BLOCK-MIXED";
     case Code::DuplicateKey:

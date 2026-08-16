@@ -262,9 +262,16 @@ public:
     [[nodiscard]] std::string_view op_text() const;
     [[nodiscard]] std::optional<Value> value() const;
 
-    // True for `=` alone. §5.3 turns on this: `+=`, `-=` and `?=` modify a
-    // key without being binding occurrences of it, so they do not collide
-    // under `arity = one`.
+    // True for `=` and `?=`. §5.3 turns on this: "arity counts binding
+    // occurrences only -- those using `=` or `?=`", while `+=` and `-=`
+    // transform whatever value is in effect and so never collide under
+    // `arity = one`.
+    //
+    // `?=` binds, despite reading like a modifier, and that is the spec's
+    // choice rather than an accident of wording. A block whose only mention
+    // of a key is `x ?= 1` has given `x` a value; a block whose only mention
+    // is `x += { a }` has not. Counting `?=` as a non-binding would make the
+    // first indistinguishable from the second.
     [[nodiscard]] bool is_binding() const;
 
     // The span to point a diagnostic at: the key if there is one, otherwise

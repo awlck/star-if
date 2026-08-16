@@ -481,10 +481,46 @@ when core writes it and an overstep when anything else does.
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2
 
-- [ ] Registry keyed by form id; libraries may contribute (spec §13.3).
-- [ ] Unknown key in a closed schema → error; `open = yes` permits and retains.
-- [ ] Arity: duplicate under `arity = one` cites both spans; `arity = many` preserves order.
-- [ ] `+=` / `-=` / `?=` do not count as binding occurrences (spec §5.3).
+- [x] Registry keyed by form id; libraries may contribute (spec §13.3).
+- [x] Unknown key in a closed schema → error; `open = yes` permits and retains.
+- [x] Arity: duplicate under `arity = one` cites both spans; `arity = many` preserves order.
+- [x] `+=` / `-=` do not count as binding occurrences (spec §5.3). **`?=` does** — see below.
+- [x] Exclusive groups (§7.2.1): two or more members in a block is an error naming the group's members; zero is an error when a member is `required`.
+
+**`?=` binds, and this bullet used to say otherwise.** Spec §5.3 has read
+"arity counts binding occurrences only — those using `=` or `?=`" since the
+first commit; F1 implemented `is_binding()` as `=` alone, and this line said
+the same. The spec is right and both were wrong: a block whose only mention of
+a key is `x ?= 1` has given `x` a value, and one whose only mention is
+`x += { a }` has not. Counting `?=` as a non-binding makes those two
+indistinguishable. Corrected in `ast::Statement::is_binding` and its test.
+
+The **registry** is a hash index kept beside the declaration-order vector
+rather than instead of it: order is load order (§13.2), which is what a reader
+and a diagnostic both expect, and no hash map's iteration order is anybody's.
+Building it surfaced two lookup bugs a linear scan had been hiding — `class`
+and `trait` are separate `unique_in` namespaces (§7.2.4) and a single scan
+returned whichever was declared first, and §7.4's instantiation rule names a
+*class*, so a top-level statement naming a trait was being accepted as an
+object of a kind that cannot exist. Hence `find_class`, `find_trait` and
+`find_class_or_trait` rather than one function guessing.
+
+`arity` is checked only for keys the schema declares. §5.3 states arity as
+something "declared by the schema", and the open forms are open precisely
+because their other keys are property defaults — whose shape is F11's
+question, not this pass's.
+
+Still parsed into `KeyDecl` and still acted on by nobody: `default` (F5's),
+`editor` (the inspector's), and **`deprecated`**, which §7.2 says "produces a
+warning carrying this message" and §14.3's table has no row for. That last one
+is a five-line check and a new code, and is left out only because it is not on
+this task's list — say the word and it goes in with a §14.3 row.
+
+**[OPEN]** §7.2.1 allows a group to declare a `fix_hint` "so the error can
+point at the right construct rather than merely refusing", and nothing says
+where a group declares anything: a group is not a declaration, only a name
+repeated across the keys that belong to it. Left unimplemented pending a
+spelling.
 
 ### F4 · Type checking
 **Size:** M · **Depends on:** F3

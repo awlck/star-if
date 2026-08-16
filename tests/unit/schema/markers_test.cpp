@@ -79,7 +79,7 @@ TEST_CASE("a property declares its markers, and they reach the engine", "[schema
                      "}\n");
 
     CHECK(loaded.sink.error_count() == 0);
-    const schema::ClassDecl* trait = loaded.set.find_class("shuttered");
+    const schema::ClassDecl* trait = loaded.set.find_trait("shuttered");
     REQUIRE(trait != nullptr);
 
     // The marker form and the bare form declare the same thing about the
@@ -153,7 +153,7 @@ TEST_CASE("an unknown marker is refused, not ignored", "[schema][markers]") {
 
     // The property still exists, at its declared type: one bad marker is not
     // a reason to lose the declaration.
-    const schema::ClassDecl* trait = loaded.set.find_class("shuttered");
+    const schema::ClassDecl* trait = loaded.set.find_trait("shuttered");
     REQUIRE(trait != nullptr);
     REQUIRE(trait->find_property("shuttered") != nullptr);
     CHECK(trait->find_property("shuttered")->type.to_string() == "bool");
@@ -306,7 +306,7 @@ TEST_CASE("a marker added to the schema is read with no code change", "[schema][
                      "}\n");
 
     CHECK(loaded.sink.error_count() == 0);
-    const schema::ClassDecl* trait = loaded.set.find_class("psychic");
+    const schema::ClassDecl* trait = loaded.set.find_trait("psychic");
     REQUIRE(trait != nullptr);
     REQUIRE(trait->find_property("thoughts") != nullptr);
     CHECK(trait->find_property("thoughts")->markers.is_set("telepathic"));

@@ -1,0 +1,14 @@
+# tests/corpus/invalid/exclusive-group-both.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-EXCLUSIVE-GROUP: this 'rule' sets both 'of_action' and 'of_event'
+  --> tests/corpus/invalid/exclusive-group-both.star:13:5
+   |
+13 |     of_event  = bell_rang
+   |     ^^^^^^^^
+note: 'of_action' is set here
+  --> tests/corpus/invalid/exclusive-group-both.star:12:5
+   |
+12 |     of_action = polish_the_bell
+   |     ^^^^^^^^^
+note: a 'rule' takes 'of_action' or 'of_event' -- they are alternative answers to one question, so having both leaves nothing to decide between them (spec §7.2.1)

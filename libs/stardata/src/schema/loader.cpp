@@ -364,14 +364,19 @@ struct LoadedFile {
 void fold_declaration(const ast::Statement& statement, const std::string& key,
                       const std::optional<Replaces>& replaces, const LoadOptions& options,
                       SchemaSet& set, diag::DiagnosticSink& sink) {
+    // The marker vocabulary of §7.2.3, if it has been declared yet. Passing
+    // it rather than looking it up keeps `read_class` below the registry.
+    const Schema* markers = set.find("prop_marker");
+
     if (key == "class" || key == "trait") {
-        if (std::optional<ClassDecl> decl = read_class(statement, options.owner, sink)) {
+        if (std::optional<ClassDecl> decl = read_class(statement, options.owner, markers, sink)) {
             set.declare_class(*std::move(decl), replaces, sink);
         }
         return;
     }
     if (key == "class_extension") {
-        if (const std::optional<ExtensionDecl> decl = read_class_extension(statement, sink)) {
+        if (const std::optional<ExtensionDecl> decl =
+                read_class_extension(statement, markers, sink)) {
             set.apply_extension(*decl, sink);
         }
         return;
@@ -458,7 +463,13 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
         if (set.find_class(key) != nullptr) {
             // §7.4: a statement whose key names a class instantiates one.
             // Checking the keys inside against the class's property set is
-            // backlog F3 and F11, once property resolution exists.
+            // backlog F3 and F11, once property resolution exists -- but the
+            // placement is checkable now, and is written on nearly every
+            // object in a game (§8.5, backlog F2c).
+            const std::optional<ast::Value> value = statement.value();
+            if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
+                (void)read_placement(*block, sink);
+            }
             return;
         }
         Diagnostic diagnostic(Code::UnknownKey, statement.report_span(),

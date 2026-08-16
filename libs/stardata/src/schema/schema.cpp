@@ -143,10 +143,42 @@ void report_missing(const ast::Statement& statement, std::string_view form, std:
     return decl;
 }
 
+// One marker block, checked against the `prop_marker` form.
+//
+// This is `validate_block` in miniature rather than a call to it, because
+// the two live on opposite sides of the loader boundary -- and because the
+// message wants to say "marker" rather than "key". §7.2.3's whole argument
+// is that the marker vocabulary is a closed, checkable set, so an unknown
+// one has to be refused: silently ignoring `affect_scope` would leave an
+// author certain they had asked for something they had not.
+void validate_marker_block(const ast::Block& block, const Schema& markers,
+                           diag::DiagnosticSink& sink) {
+    for (const ast::Statement& statement : block.statements()) {
+        const std::optional<std::string> name = statement.key_name();
+        if (!name || name->empty() || markers.find_key(*name) != nullptr) {
+            continue;
+        }
+        Diagnostic diagnostic(Code::UnknownKey, statement.report_span(),
+                              "'" + *name + "' is not a marker I know");
+        std::string known;
+        for (const KeyDecl& key : markers.keys) {
+            if (key.name == "type") {
+                continue;
+            }
+            known += known.empty() ? "" : ", ";
+            known += key.name;
+        }
+        diagnostic.with_note("the markers are " + known +
+                             " -- core acts on a declared set, and one it did not recognise "
+                             "would be a request nobody answered (spec §7.2.3)");
+        sink.report(std::move(diagnostic));
+    }
+}
+
 // A `prop_def` block: each statement maps a property name either to a bare
 // type or to a block carrying markers (§7.2.3).
-void read_prop_defs(const ast::Block& owner_block, std::vector<PropDecl>& out,
-                    diag::DiagnosticSink& sink) {
+void read_prop_defs(const ast::Block& owner_block, const Schema* markers,
+                    std::vector<PropDecl>& out, diag::DiagnosticSink& sink) {
     for (const ast::Statement& prop_def : owner_block.find_all("prop_def")) {
         const std::optional<ast::Value> value = prop_def.value();
         const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
@@ -176,13 +208,21 @@ void read_prop_defs(const ast::Block& owner_block, std::vector<PropDecl>& out,
             if (const std::optional<ast::TypeRef> bare = prop_value->as_type()) {
                 decl.type = *bare;
             } else if (const std::optional<ast::Block> marked = prop_value->as_block()) {
-                // The marker form of §7.2.3. The markers themselves are F2b;
-                // the type is what F2a's assertions turn on, so it is read now.
+                // The marker form of §7.2.3. Validated against the
+                // `prop_marker` form, so an unknown marker is refused by the
+                // ordinary closed-schema check rather than by a list here --
+                // and adding a marker stays a data change.
+                if (markers != nullptr) {
+                    validate_marker_block(*marked, *markers, sink);
+                }
                 if (const std::optional<ast::Value> type = marked->value_of("type")) {
                     if (const std::optional<ast::TypeRef> lowered = type->as_type()) {
                         decl.type = *lowered;
                     }
                 }
+                decl.markers.affects_scope = flag_of(*marked, "affects_scope");
+                decl.markers.always_resident = flag_of(*marked, "always_resident");
+                decl.markers.save_exclude = flag_of(*marked, "save_exclude");
             }
 
             if (decl.type.name.empty()) {
@@ -313,7 +353,7 @@ std::optional<Schema> read_schema(const ast::Statement& statement, std::string_v
 }
 
 std::optional<ClassDecl> read_class(const ast::Statement& statement, std::string_view owner,
-                                    diag::DiagnosticSink& sink) {
+                                    const Schema* markers, diag::DiagnosticSink& sink) {
     const std::optional<std::string> form = statement.key_name();
     const std::optional<ast::Value> value = statement.value();
     const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
@@ -361,11 +401,12 @@ std::optional<ClassDecl> read_class(const ast::Statement& statement, std::string
         decl.of_class.clear();
     }
 
-    read_prop_defs(*block, decl.properties, sink);
+    read_prop_defs(*block, markers, decl.properties, sink);
     return decl;
 }
 
 std::optional<ExtensionDecl> read_class_extension(const ast::Statement& statement,
+                                                  const Schema* markers,
                                                   diag::DiagnosticSink& sink) {
     const std::optional<ast::Value> value = statement.value();
     const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
@@ -398,7 +439,7 @@ std::optional<ExtensionDecl> read_class_extension(const ast::Statement& statemen
         decl.reparent_span = targets[1].report_span();
     }
 
-    read_prop_defs(*block, decl.properties, sink);
+    read_prop_defs(*block, markers, decl.properties, sink);
     return decl;
 }
 
@@ -485,6 +526,100 @@ std::optional<CoreRequirement> read_core_requirement(const ast::Statement& state
         requirement.type = type->as_type();
     }
     return requirement;
+}
+
+// --- placement (spec 8.5) ----------------------------------------------
+
+const std::vector<std::string>& relation_keywords() {
+    static const std::vector<std::string> keywords = {"in",      "on",   "under",  "behind",
+                                                      "carried", "worn", "part_of"};
+    return keywords;
+}
+
+bool is_relation_keyword(std::string_view key) noexcept {
+    for (const std::string& keyword : relation_keywords()) {
+        if (keyword == key) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::optional<Placement> read_placement(const ast::Block& block, diag::DiagnosticSink& sink) {
+    // The long form first: `holder` and `relation` are what the two slots
+    // actually are (§8.1.1), and the keywords are shorthand for setting them.
+    const std::optional<ast::Statement> holder = block.find("holder");
+    const std::optional<ast::Statement> relation = block.find("relation");
+
+    std::vector<ast::Statement> sugar;
+    for (const ast::Statement& statement : block.statements()) {
+        const std::optional<std::string> key = statement.key_name();
+        if (key && is_relation_keyword(*key)) {
+            sugar.push_back(statement);
+        }
+    }
+
+    // §8.5: writing both spellings assigns the same two slots twice, and the
+    // conflict is not resolvable by precedence -- so neither wins here
+    // either. Guessing would put the object somewhere the author did not ask
+    // for, which is worse than refusing.
+    if (!sugar.empty() && (holder || relation)) {
+        const ast::Statement& other = holder ? *holder : *relation;
+        Diagnostic diagnostic(Code::PlacementConflict, sugar.front().report_span(),
+                              "this object is placed twice, once with '" +
+                                  *sugar.front().key_name() + "' and once with '" +
+                                  *other.key_name() + "'");
+        diagnostic.with_note("`" + *sugar.front().key_name() +
+                                 " = ...` is shorthand for setting `holder` and `relation`, so "
+                                 "these are the same two slots -- and there is no sensible "
+                                 "precedence between them (spec §8.5)",
+                             other.report_span());
+        diagnostic.with_fix_it(other.report_span(), "", "keep one spelling and remove the other");
+        sink.report(std::move(diagnostic));
+        return std::nullopt;
+    }
+
+    // Two relation keywords are the same conflict wearing one spelling.
+    if (sugar.size() > 1) {
+        Diagnostic diagnostic(Code::PlacementConflict, sugar[1].report_span(),
+                              "this object is placed twice, with '" + *sugar[0].key_name() +
+                                  "' and with '" + *sugar[1].key_name() + "'");
+        diagnostic.with_note("an object has at most one parent, and one relation to it "
+                             "(spec §8.5)",
+                             sugar[0].report_span());
+        sink.report(std::move(diagnostic));
+        return std::nullopt;
+    }
+
+    const auto target_of = [](const ast::Statement& statement) -> std::string {
+        const std::optional<ast::Value> value = statement.value();
+        const std::optional<ast::Scalar> scalar = value ? value->as_scalar() : std::nullopt;
+        const std::optional<std::string_view> id = scalar ? scalar->as_identifier() : std::nullopt;
+        return id ? std::string(*id) : std::string();
+    };
+
+    if (!sugar.empty()) {
+        Placement placement;
+        placement.relation = *sugar.front().key_name();
+        placement.holder = target_of(sugar.front());
+        placement.from_sugar = true;
+        placement.span = sugar.front().report_span();
+        return placement;
+    }
+
+    if (!holder && !relation) {
+        return std::nullopt; // a root object, or one placed at run time
+    }
+
+    Placement placement;
+    placement.span = holder ? holder->report_span() : relation->report_span();
+    if (holder) {
+        placement.holder = target_of(*holder);
+    }
+    if (relation) {
+        placement.relation = target_of(*relation);
+    }
+    return placement;
 }
 
 // --- the bootstrap -----------------------------------------------------

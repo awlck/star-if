@@ -1,0 +1,5 @@
+# tests/corpus/invalid/prop-marker-unknown.star
+# declared E-UNKNOWN-KEY
+# lexer and parser report (none)
+
+(no diagnostics)

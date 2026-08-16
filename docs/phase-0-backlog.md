@@ -410,16 +410,29 @@ on yet.
 
 Where core needs to know *which* property means something, the library declares it (spec §7.2.3) rather than core hard-coding a name.
 
-- [ ] `prop_def` accepts a block as well as a bare type.
-- [ ] `affects_scope`, `always_resident`, `save_exclude` parsed and exposed to `starcore`.
-- [ ] An unknown marker is an error, not ignored.
+- [x] `prop_def` accepts a block as well as a bare type.
+- [x] `affects_scope`, `always_resident`, `save_exclude` parsed and exposed to `starcore`.
+- [x] An unknown marker is an error, not ignored.
+
+The marker vocabulary is **declared**, as the `prop_marker` form in
+`libs/starcore/builtin/schema.star`, rather than being a list in C++. So an
+unknown marker is refused by the ordinary closed-schema check (`E-UNKNOWN-KEY`),
+and adding a marker is a data change plus a line in `starcore` that acts on
+it. Hard-coding the set would have reproduced, one level down, exactly the
+thing §7.2.3 exists to avoid.
 
 ### F2c · Placement sugar
 **Size:** S · **Depends on:** F2
 
-- [ ] `in` / `on` / `under` / `behind` / `carried` / `worn` / `part_of` desugar to `holder` + `relation` (spec §8.5).
-- [ ] Using a relation keyword together with `holder` or `relation` in one block is an error.
-- [ ] Round-trip (E5) preserves whichever spelling the author used — the sugar is expanded in the semantic view, never in the CST.
+- [x] `in` / `on` / `under` / `behind` / `carried` / `worn` / `part_of` desugar to `holder` + `relation` (spec §8.5).
+- [x] Using a relation keyword together with `holder` or `relation` in one block is an error (`E-PLACEMENT-CONFLICT`), citing both spans.
+- [x] Round-trip (E5) preserves whichever spelling the author used — the sugar is expanded in the semantic view, never in the CST.
+
+`Placement` keeps `from_sugar`, because an editor writing a file back needs
+to know which spelling it started as. Two relation keywords in one block are
+the same conflict wearing one spelling, and are reported too. On a conflict
+**neither** spelling wins: §8.5 says the precedence is not resolvable, and
+guessing would put the object somewhere the author did not ask for.
 
 ### F2d · `schema_extension`, replacement, and the no-duplicates rule
 **Size:** M · **Depends on:** F2a

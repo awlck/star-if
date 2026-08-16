@@ -72,12 +72,31 @@ struct Schema {
     [[nodiscard]] const KeyDecl* find_key(std::string_view name) const noexcept;
 };
 
-// One entry of a `prop_def` block (§8.1). The marker form of §7.2.3 --
-// `open = { type = bool  affects_scope = yes }` -- parses here as the type
-// plus, for now, nothing else: the markers themselves are backlog F2b.
+// What a property tells the engine about itself (§7.2.3, backlog F2b).
+//
+// The point of markers is that core depends on *declared, checkable*
+// facts rather than on names it has memorised. The engine never learns that
+// a property called `open` affects what is in scope; it learns that some
+// properties do, and is told which. A ruleset whose equivalent is called
+// `shuttered` gets the same behaviour by declaring the same marker, which is
+// the whole difference between this and the ADRIFT failure of §7.2.2.
+//
+// The vocabulary is core's, and is declared as the `prop_marker` form in
+// `libs/starcore/builtin/schema.star` rather than hard-coded here -- so an
+// unknown marker is refused by the ordinary closed-schema check, and a new
+// one is a data change.
+struct PropMarkers {
+    bool affects_scope = false;   // invalidate the scope cache when this changes
+    bool always_resident = false; // never streamed out with its sector
+    bool save_exclude = false;    // derived state; not written to the save
+};
+
+// One entry of a `prop_def` block (§8.1), written either as a bare type or
+// as a block carrying markers (§7.2.3).
 struct PropDecl {
     std::string name;
     ast::TypeRef type;
+    PropMarkers markers;
     diag::Span span;
 };
 
@@ -169,10 +188,17 @@ struct CoreRequirement {
                                                 std::string_view owner, diag::DiagnosticSink& sink);
 
 // `class` and `trait` both, distinguished by the statement's key.
-[[nodiscard]] std::optional<ClassDecl>
-read_class(const ast::Statement& statement, std::string_view owner, diag::DiagnosticSink& sink);
+//
+// `markers` is the `prop_marker` schema, used to check the marker block of
+// §7.2.3. It is passed rather than looked up because the readers run below
+// the registry; a null one skips marker checking, which is what the
+// bootstrap needs before the form is declared.
+[[nodiscard]] std::optional<ClassDecl> read_class(const ast::Statement& statement,
+                                                  std::string_view owner, const Schema* markers,
+                                                  diag::DiagnosticSink& sink);
 
 [[nodiscard]] std::optional<ExtensionDecl> read_class_extension(const ast::Statement& statement,
+                                                                const Schema* markers,
                                                                 diag::DiagnosticSink& sink);
 
 [[nodiscard]] std::optional<SchemaExtensionDecl>
@@ -180,6 +206,38 @@ read_schema_extension(const ast::Statement& statement, diag::DiagnosticSink& sin
 
 [[nodiscard]] std::optional<CoreRequirement> read_core_requirement(const ast::Statement& statement,
                                                                    diag::DiagnosticSink& sink);
+
+// Where an object starts out (§8.5, backlog F2c).
+//
+// Every object has at most one parent, and the parent link carries a
+// relation. `in = ornate_box` is sugar for `holder = ornate_box  relation =
+// in`, and both spellings produce identical data -- the sugar exists because
+// placement is written for nearly every object in a game, the long form
+// because it is what the two slots actually are and because a computed
+// placement has no keyword to use.
+//
+// THE SUGAR IS EXPANDED HERE AND NEVER IN THE TREE. §14.2 requires that a
+// round-trip reproduce what the author wrote, so `in = box` has to still say
+// `in = box` after a parse and a write. This is the semantic view; the CST
+// keeps the spelling.
+struct Placement {
+    std::string holder;   // the id of the containing object
+    std::string relation; // in | on | under | behind | carried | worn | part_of
+    bool from_sugar = false;
+    diag::Span span; // the key that established it
+};
+
+// The seven relation keywords of §8.5, in the order the spec lists them.
+[[nodiscard]] const std::vector<std::string>& relation_keywords();
+[[nodiscard]] bool is_relation_keyword(std::string_view key) noexcept;
+
+// The placement an object instantiation block declares, if any.
+//
+// Reports when a block writes both spellings: they are the same two slots,
+// and §8.5 says the conflict is not resolvable by precedence -- so neither
+// wins, and nothing is returned.
+[[nodiscard]] std::optional<Placement> read_placement(const ast::Block& block,
+                                                      diag::DiagnosticSink& sink);
 
 // --- the bootstrap -----------------------------------------------------
 

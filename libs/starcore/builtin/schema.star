@@ -11,8 +11,8 @@
 #  convention while pretending the library is free.
 #
 #  So: every schema here is `sealed = yes`. A library may add keys to one
-#  through `provides_schema` (§13.3) and properties to a core class through
-#  `class_extension` (§8.2). It may not redefine, retype or remove.
+#  through `schema_extension` (§7.5) and properties to a core class through
+#  `class_extension` (§8.2). It may not redefine, retype, remove or supersede.
 #
 #  The one schema NOT in this file is the schema for `schema` itself, which
 #  is hard-coded in libs/stardata/src/schema/schema.cpp because it is what
@@ -275,6 +275,29 @@ schema = {
     sealed = yes
     open   = yes  # a map from property name to type, not a fixed set of keys
     doc    = "Property declarations: each key is a property name (§8.1, §7.2.3)."
+}
+
+# The marker vocabulary of §7.2.3, written down rather than hard-coded, so
+# that core depends on a declared and checkable set. The engine never learns
+# that a property called `open` affects scope; it learns that some properties
+# do and is told which, which is what lets a ruleset with a `shuttered`
+# property get the same behaviour for free.
+#
+# An unknown marker is refused by the ordinary closed-schema check. Adding a
+# marker is an edit to this block and a line in starcore that acts on it.
+schema = {
+    id     = prop_marker
+    sealed = yes
+    doc    = "The markers a property may carry (§7.2.3)."
+
+    key = { name = type             type = type_expr  required = yes
+            doc  = "The property's declared type, as in the bare form." }
+    key = { name = affects_scope    type = bool
+            doc  = "Invalidate the scope cache when this property changes (proposal §5.4)." }
+    key = { name = always_resident  type = bool
+            doc  = "Never streamed out with its sector (proposal §5.3)." }
+    key = { name = save_exclude     type = bool
+            doc  = "Derived state; not written to the save file." }
 }
 
 schema = {

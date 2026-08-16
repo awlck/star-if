@@ -64,6 +64,7 @@ enum class Code : std::uint8_t {
     CoreRequirement,        // E-CORE-REQUIREMENT      §7.2.5  something core requires is absent or wrong
     CoreReserved,           // E-CORE-RESERVED         §7.2.5.1 a reserved internal form declared by something other than starcore
     ProvidesMismatch,       // W-PROVIDES-MISMATCH     §13.3   provides_schema disagrees with what the library declares
+    PlacementConflict,      // E-PLACEMENT-CONFLICT    §8.5    a relation keyword and holder/relation in one block
 
     // Spec §14.3's required-diagnostics table, one entry per row.
     BlockMixed,             // E-BLOCK-MIXED           §5.2    mixed list/record contents in one block

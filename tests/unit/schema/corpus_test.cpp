@@ -35,7 +35,7 @@ const std::set<std::string>& schema_codes() {
     static const std::set<std::string> codes = {
         "E-SCHEMA-INVALID",    "E-SCHEMA-DUPLICATE", "E-SCHEMA-SEALED",         "E-KEY-MISSING",
         "E-CORE-REPARENT",     "E-CORE-REQUIREMENT", "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",
-        "W-PROVIDES-MISMATCH", "E-CORE-RESERVED"};
+        "W-PROVIDES-MISMATCH", "E-CORE-RESERVED",    "E-PLACEMENT-CONFLICT"};
     return codes;
 }
 

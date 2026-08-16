@@ -14,10 +14,10 @@ implemented. A `.star` file parses to a tree and writes back byte for byte.
 The schema layer has begun: `libs/starcore/builtin/` holds the core-owned,
 sealed schema set of spec §7.2.2 (F2), the assertions that keep it sealed
 are enforced (F2a), `schema_extension`, `@replaces` and the no-duplicates
-rule are implemented (F2d), and `stdlib/stdlib/` declares the rest with no
-privileged status. Types, arity, combination modes and reference resolution
-(F3–F12) have not started, so nothing yet checks that a value matches its
-declared type.
+rule are implemented (F2d), markers and the placement sugar are read (F2b,
+F2c), and `stdlib/stdlib/` declares the rest with no privileged status.
+Types, arity, combination modes and reference resolution (F3–F12) have not
+started, so nothing yet checks that a value matches its declared type.
 
 ## The sealing boundary
 

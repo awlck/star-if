@@ -25,7 +25,6 @@ tests/corpus/invalid/multiline-string.star:6:19: error: E-STR-MULTILINE: this st
 tests/corpus/invalid/multiline-string.star:7:70: error: E-STR-MULTILINE: this string opens here, but the line ends before it closes
 tests/corpus/invalid/multiline-string.star:7:47: error: E-STRAY-TOKEN: I don't know what ',' is doing here
 tests/corpus/invalid/multiline-string.star:5:5: error: E-BLOCK-MIXED: this block holds bare values, and 'id' is a statement among them
-tests/corpus/invalid/placement-sugar-conflict.star:11:5: error: E-BLOCK-MIXED: this block holds statements, and 'stray' is a bare value among them
 tests/corpus/invalid/presence-portable.star:9:20: error: E-BLOCK-MIXED: this block holds statements, and 'antecourt' is a bare value among them
 tests/corpus/invalid/reserved-words.star:6:12: error: E-RESERVED-WORD: 'true' is a word I know, but not a value I take
 tests/corpus/invalid/side-state-leak.star:9:59: error: E-BLOCK-MIXED: this block holds statements, and 'locked' is a bare value among them

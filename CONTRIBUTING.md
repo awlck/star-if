@@ -7,10 +7,31 @@ Phase 0 (Foundations) is in progress — see
 [`docs/README.md`](docs/README.md) for the rest of the documentation. The
 build skeleton (workstream B) exists: CMake, presets, a dependency manifest,
 compiler warnings and sanitisers. Inside `libs/stardata`, the diagnostics
-layer (C), the lexer (D) and the lossless CST — green tree, cursors, parser,
-writer and edit API (E) — are implemented. A `.star` file parses to a tree
-and writes back byte for byte. The schema layer (F) has not started, so
-nothing yet knows what any of it *means*.
+layer (C), the lexer (D), the lossless CST — green tree, cursors, parser,
+writer and edit API (E) — and the typed AST view over it (F1) are
+implemented. A `.star` file parses to a tree and writes back byte for byte.
+
+The schema layer has begun: `libs/starcore/builtin/` holds the core-owned,
+sealed schema set of spec §7.2.2 (F2), the assertions that keep it sealed
+are enforced (F2a), and `stdlib/core/` declares the rest with no privileged
+status. Types, arity, combination modes and reference resolution (F3–F12)
+have not started, so nothing yet checks that a value matches its declared
+type.
+
+## The sealing boundary
+
+`libs/starcore/builtin/` is core's, and sealed. `stdlib/core/` is a library
+like any other. If you are adding something, the question is
+spec §7.2.4's, and it is narrow and mechanical: **does `starcore`'s own code
+read or write it?** If yes it belongs in `builtin/`, sealed, with a
+`core_requirement` naming what core depends on. If no — and this is almost
+everything — it belongs in `stdlib/core/`, where it has no more standing
+than a third-party library's declaration.
+
+Do not add a name to `builtin/` to make something convenient. §7.2.2 exists
+because ADRIFT 5 and Inform 7 both grew engine dependencies on library
+conventions that nobody could see in the source, and every one of those
+started as a convenience.
 
 ## Build
 

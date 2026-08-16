@@ -147,10 +147,14 @@ Spec §15 lists the required diagnostics; `tests/check_stardata.py` already defi
 - [x] `--update-snapshots` regenerates; CI fails on any diff.
 - [x] This is what stops error messages silently degrading, which is otherwise invisible until an author complains.
 
-A fixture whose declared code belongs to the schema layer gets a snapshot
-too, recording that the front end presently says nothing about it. That is
-the gap written down rather than a hole in the test: when F lands, those
-snapshots move and somebody has to read the diff.
+A fixture whose declared code no pass produces gets a snapshot too, recording
+that the lexer and parser say nothing about it. That is a record of which
+pass owns which fixture, not a hole in the test — and the two reasons a
+snapshot reads "(none)" are worth keeping apart. Some fixtures wait on a
+workstream that does not exist yet, and those snapshots move when it lands.
+Others are checked elsewhere: everything the schema layer owns is asserted
+from the same fixtures in `tests/unit/schema/corpus_test.cpp`, which loads
+each one on top of the core-owned set the way a library is loaded.
 
 ### C5 · Point diagnostics at the author manual — **blocked until the manual exists**
 **Size:** S · **Depends on:** the author manual of proposal §2.1
@@ -364,28 +368,42 @@ Proposal §16.1 names round-trip degradation as a high risk; this is the mitigat
 ### F1 · Typed AST view
 **Size:** M · **Depends on:** E4
 
-- [ ] Typed accessors over the CST (`Statement::key()`, `Value::as_block()`), no separate tree.
-- [ ] Tolerates missing and malformed children, returning optionals rather than asserting.
+- [x] Typed accessors over the CST (`Statement::key()`, `Value::as_block()`), no separate tree.
+- [x] Tolerates missing and malformed children, returning optionals rather than asserting.
 
 ### F2 · The core-owned schema set and root class
 **Size:** M · **Depends on:** F1
 
 Replaces the earlier "minimal schema-of-schemas, everything else in stdlib" plan. Some schemas describe `starcore`'s own data and cannot be a library's to define; spec §7.2.2 and §8.1.1 say which and why.
 
-- [ ] Core definitions written as Stardata in `libs/starcore/builtin/*.star`: the forms of spec §7.2.4, plus `starcore.object`, `starcore.room` and the `starcore.actor` trait.
-- [ ] Loaded from disk in Phase 0 so the validator can be developed against them. **Phase 1 embeds them into the binary** via a CMake-generated string literal, so they are one source of truth, diffable, and impossible to ship without.
-- [ ] A minimal hard-coded schema-of-schemas, sufficient only to validate the builtin files themselves.
-- [ ] `stdlib/core/*.star` declares everything else — `thing`, `person`, `container`, actions, messages — with **no privileged status**. A test asserts `stdlib/core` uses only mechanisms available to any library.
+- [x] Core definitions written as Stardata in `libs/starcore/builtin/*.star`: the forms of spec §7.2.4, plus `starcore.object`, `starcore.room` and the `starcore.actor` trait.
+- [x] Loaded from disk in Phase 0 so the validator can be developed against them. **Phase 1 embeds them into the binary** via a CMake-generated string literal, so they are one source of truth, diffable, and impossible to ship without.
+- [x] A minimal hard-coded schema-of-schemas, sufficient only to validate the builtin files themselves.
+- [x] `stdlib/core/*.star` declares everything else — `thing`, `person`, `container`, actions, messages — with **no privileged status**. A test asserts `stdlib/core` uses only mechanisms available to any library.
+
+The requirement list is data too, in `builtin/requirements.star`, declared
+through the ordinary `schema` mechanism as a `core_requirement` form. That
+keeps every requirement visible, named and diffable rather than buried in
+C++ — and it keeps `libs/stardata` free of IF concepts, which the layering
+of proposal §2.1 requires. Spec §7.2.4's table does not yet mention the
+form; whether it should is a spec question, not a code one.
 
 ### F2a · Sealing and assertions — **the anti-wart task**
 **Size:** S · **Depends on:** F2
 
 The point of F2 is not that core owns some schemas; it is that core *checks* rather than hopes. ADRIFT 5 needs the library to create its location properties, and Inform 7 attaches special handling to the eighth action declared. Both fail bewilderingly and invisibly when the expectation is not met.
 
-- [ ] `sealed` on a schema: redefinition is an error naming the owner.
-- [ ] `class_extension` may add to a core class; retyping or removing a core property, or changing `of_class`, is an error.
-- [ ] Every core requirement is checked at load and reported by name — no requirement is left implicit.
-- [ ] A fixture per assertion in `tests/corpus/invalid/`.
+- [x] `sealed` on a schema: redefinition is an error naming the owner.
+- [x] `class_extension` may add to a core class; retyping or removing a core property, or changing `of_class`, is an error.
+- [x] Every core requirement is checked at load and reported by name — no requirement is left implicit.
+- [x] A fixture per assertion in `tests/corpus/invalid/`.
+
+F2 landed the part of F3's key validation the bootstrap needed — unknown key
+in a closed schema, and a required key that is absent — because the builtin
+files cannot be validated without it. Arity, duplicate keys, exclusive
+groups, `+=`/`-=`/`?=` and the registry proper remain F3's; `arity` and
+`combine` are already parsed into the key declaration and simply not acted
+on yet.
 
 ### F2b · Markers
 **Size:** S · **Depends on:** F2

@@ -17,6 +17,9 @@ add_library(stardata STATIC
     src/cst/parser.cpp
     src/cst/writer.cpp
     src/cst/edit.cpp
+    src/ast/ast.cpp
+    src/schema/schema.cpp
+    src/schema/loader.cpp
 )
 add_library(stardata::stardata ALIAS stardata)
 

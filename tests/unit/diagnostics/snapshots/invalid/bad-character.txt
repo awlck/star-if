@@ -1,6 +1,6 @@
 # tests/corpus/invalid/bad-character.star
 # declared E-BAD-CHAR
-# reported E-BAD-CHAR E-BLOCK-MIXED E-STRAY-TOKEN
+# lexer and parser report E-BAD-CHAR E-BLOCK-MIXED E-STRAY-TOKEN
 
 error: E-BAD-CHAR: '*=' is spoken for: it is held back for a later version of the format
   --> tests/corpus/invalid/bad-character.star:8:12

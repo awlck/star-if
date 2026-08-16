@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "stardata/ast/ast.hpp"
 #include "stardata/cst/parser.hpp"
 #include "stardata/cst/writer.hpp"
 #include "stardata/diag/codes.hpp"
@@ -26,6 +27,8 @@ public:
     Parsed& operator=(const Parsed&) = delete;
 
     [[nodiscard]] const diag::SourceManager& sources() const noexcept { return sources_; }
+    [[nodiscard]] diag::SourceId id() const noexcept { return id_; }
+    [[nodiscard]] ast::File ast() const { return ast::File::from(root(), id_); }
     [[nodiscard]] const diag::DiagnosticSink& sink() const noexcept { return sink_; }
     [[nodiscard]] cst::GreenCache& cache() noexcept { return cache_; }
     [[nodiscard]] const cst::GreenNodePtr& green() const noexcept { return green_; }

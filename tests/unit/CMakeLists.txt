@@ -16,6 +16,10 @@ add_executable(stardata_unit_tests
     diagnostics/render_test.cpp
     diagnostics/snapshot_test.cpp
     diagnostics/corpus_snapshot_test.cpp
+    ast/ast_test.cpp
+    schema/builtin_test.cpp
+    schema/sealing_test.cpp
+    schema/corpus_test.cpp
     lex/token_test.cpp
     lex/lexer_test.cpp
     lex/lexer_diagnostics_test.cpp
@@ -45,6 +49,8 @@ target_include_directories(stardata_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 target_compile_definitions(stardata_unit_tests PRIVATE
     STARIF_CORPUS_DIR="${CMAKE_SOURCE_DIR}/tests/corpus"
     STARIF_UNIT_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    STARIF_BUILTIN_DIR="${CMAKE_SOURCE_DIR}/libs/starcore/builtin"
+    STARIF_STDLIB_DIR="${CMAKE_SOURCE_DIR}/stdlib"
 )
 
 starif_set_warnings(stardata_unit_tests)

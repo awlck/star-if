@@ -1,0 +1,5 @@
+# tests/corpus/invalid/schema-sealed-form.star
+# declared E-SCHEMA-SEALED
+# lexer and parser report (none)
+
+(no diagnostics)

@@ -1,6 +1,6 @@
 # tests/corpus/invalid/unbalanced-braces.star
 # declared E-BRACE-UNBALANCED
-# reported E-BRACE-UNBALANCED
+# lexer and parser report E-BRACE-UNBALANCED
 
 error: E-BRACE-UNBALANCED: this block is never closed
   --> tests/corpus/invalid/unbalanced-braces.star:4:8

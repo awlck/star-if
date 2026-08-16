@@ -1,0 +1,5 @@
+# tests/corpus/invalid/core-requirement-missing.star
+# declared E-CORE-REQUIREMENT
+# lexer and parser report (none)
+
+(no diagnostics)

@@ -1,6 +1,6 @@
 # tests/corpus/invalid/multiline-string.star
 # declared E-STR-MULTILINE
-# reported E-BLOCK-MIXED E-STR-MULTILINE E-STRAY-TOKEN
+# lexer and parser report E-BLOCK-MIXED E-STR-MULTILINE E-STRAY-TOKEN
 
 error: E-STR-MULTILINE: this string opens here, but the line ends before it closes
   --> tests/corpus/invalid/multiline-string.star:6:19

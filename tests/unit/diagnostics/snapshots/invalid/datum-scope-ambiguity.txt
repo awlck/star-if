@@ -1,6 +1,6 @@
 # tests/corpus/invalid/datum-scope-ambiguity.star
 # declared E-BLOCK-MIXED
-# reported E-BLOCK-MIXED
+# lexer and parser report E-BLOCK-MIXED
 
 error: E-BLOCK-MIXED: this block holds statements, and 'extra' is a bare value among them
   --> tests/corpus/invalid/datum-scope-ambiguity.star:18:72

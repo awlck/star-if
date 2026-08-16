@@ -1,6 +1,6 @@
 # tests/corpus/invalid/string-bad-escape.star
 # declared E-STR-ESCAPE
-# reported E-STR-ESCAPE
+# lexer and parser report E-STR-ESCAPE
 
 error: E-STR-ESCAPE: I don't recognise the escape '\U'
   --> tests/corpus/invalid/string-bad-escape.star:7:54

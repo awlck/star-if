@@ -56,6 +56,15 @@ resolution, trait conflicts, containment cycles. It also does not build a
 lossless CST, so it cannot verify the round-trip property of §14.2. Those
 belong to the real parser.
 
+Since the C++ schema layer landed, some fixtures under `corpus/invalid/`
+declare codes this script structurally cannot produce — "this redefines a
+sealed form" means nothing without loading `libs/starcore/builtin/`, which
+is a validator's job and not a linter's. Those are listed in
+`NEEDS_SCHEMA_LAYER` and reported as `skip` by `--self-test`, and asserted
+instead by `unit/schema/corpus_test.cpp`. That list is the seam between the
+two implementations, and it should shrink to nothing the same way this whole
+script does — by being deleted.
+
 Doc-example extraction sees fenced blocks only. Snippets inside Markdown table
 cells and inline code spans are not extracted, so those still need care — the
 `count_of = { ... } >= 2` mistake that prompted this check lived in a table.
@@ -75,7 +84,9 @@ on Linux and macOS run it under ASan and UBSan.
 | `unit/diagnostics/` | Workstream C: source manager, spans, the diagnostic model, the human and machine renderers, and the rendered-output goldens for every fixture in `corpus/invalid/`. |
 | `unit/lex/` | Workstream D: the token and trivia model, the lexer, its diagnostics, and the fuzzer. |
 | `unit/cst/` | Workstream E: the green tree, cursors, the trivia attachment policy, the parser, the byte-exact round-trip, the edit API and the edit fuzzer. |
-| `unit/support/` | Shared helpers — corpus discovery, snapshot comparison, the token dump, the lexing harness. |
+| `unit/ast/` | Workstream F1: the typed view over the CST, including its tolerance of trees the parser recovered from. |
+| `unit/schema/` | Workstream F2 and F2a: the core-owned schema set, sealing, the core requirements, and the claim that `stdlib/core` is unprivileged. |
+| `unit/support/` | Shared helpers — corpus discovery, snapshot comparison, the token dump, the lexing and schema-loading harnesses. |
 
 ### Snapshots, and how to bless a change
 
@@ -131,14 +142,20 @@ Each file opens with a three-line header derived from the fixture:
 ```
 # tests/corpus/invalid/decimal-precision.star
 # declared E-DEC-PRECISION E-NUM-TRAILING-DOT
-# reported E-DEC-PRECISION E-NUM-TRAILING-DOT
+# lexer and parser report E-DEC-PRECISION E-NUM-TRAILING-DOT
 ```
 
-`declared` is the fixture's own `# EXPECT` lines; `reported` is what the
-lexer and parser actually produced. Where they differ — `reported (none)`
-against a declared `E-FLAG-NOT-BOOL`, say — the fixture is waiting on the
-schema layer, and the snapshot records that rather than hiding it. Those
-snapshots will move when workstream F lands, which is the point.
+`declared` is the fixture's own `# EXPECT` lines; the third line is what the
+lexer and parser actually produced.
+
+Where they differ, there are two possible reasons and it is worth knowing
+which. The fixture may be waiting on a workstream that does not exist yet —
+`E-FLAG-NOT-BOOL` is F10's — in which case the snapshot moves when it lands.
+Or it may be checked by a later pass: everything the **schema layer** owns is
+asserted from these same fixtures in `unit/schema/corpus_test.cpp`, which
+loads each one on top of the core-owned set the way a library is loaded.
+These snapshots are the front end's account of the corpus, not the whole
+compiler's.
 
 Expect cascades. One stray `[` in `brackets-outside-string.star` yields nine
 diagnostics, because recovery keeps going and says what it finds. That is
@@ -157,7 +174,7 @@ skipped rather than asserted.
 |---|---|
 | `corpus/tour.star` | The reference corpus. Exercises every construct in the spec. Must validate with zero errors and zero warnings. |
 | `corpus/lf.star`, `corpus/crlf.star` | The same small scenario, checked in with LF and CRLF line endings respectively (spec §2). `.gitattributes` marks `*.star` as `-text` so Git never rewrites either on checkout, and `unit/cst/roundtrip_test.cpp` asserts both survive parse-and-write byte for byte (backlog E6). See `CONTRIBUTING.md` ("Line endings"). |
-| `corpus/invalid/` | Negative fixtures — files that are invalid on purpose, each declaring the diagnostic codes it must provoke. |
+| `corpus/invalid/` | Negative fixtures — files that are invalid on purpose, each declaring the diagnostic codes it must provoke. Which pass asserts a fixture depends on its codes: lexical ones in `unit/lex/`, schema-layer ones in `unit/schema/`. |
 
 ### Adding a rule to the specification
 

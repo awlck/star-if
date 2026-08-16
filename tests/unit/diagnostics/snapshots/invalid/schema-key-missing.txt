@@ -1,0 +1,5 @@
+# tests/corpus/invalid/schema-key-missing.star
+# declared E-KEY-MISSING
+# lexer and parser report (none)
+
+(no diagnostics)

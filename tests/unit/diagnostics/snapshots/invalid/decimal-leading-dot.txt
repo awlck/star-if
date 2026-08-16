@@ -1,6 +1,6 @@
 # tests/corpus/invalid/decimal-leading-dot.star
 # declared E-DEC-LEADING-DOT
-# reported E-DEC-LEADING-DOT
+# lexer and parser report E-DEC-LEADING-DOT
 
 error: E-DEC-LEADING-DOT: '.5' is missing its leading digit
   --> tests/corpus/invalid/decimal-leading-dot.star:5:16

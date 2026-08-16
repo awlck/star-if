@@ -1,0 +1,5 @@
+# tests/corpus/invalid/schema-no-id.star
+# declared E-SCHEMA-INVALID
+# lexer and parser report (none)
+
+(no diagnostics)

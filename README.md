@@ -41,10 +41,11 @@ What exists today:
   vcpkg manifest, compiler warnings-as-errors, and ASan/UBSan in Debug.
 - In `libs/stardata`: the diagnostics layer (source manager, spans,
   diagnostic model, human and machine renderers), the **lexer** — tokens and
-  retained trivia for every rule of the specification's §3 — and the
-  **lossless CST**: a green/red syntax tree, a parser for the grammar of §4
+  retained trivia for every rule of the specification's §3 — the
+  **lossless CST** (a green/red syntax tree, a parser for the grammar of §4
   with error recovery, a writer, and an edit API that shares untouched
-  subtrees.
+  subtrees), a **typed AST view** over that tree, and the beginnings of the
+  **schema layer**.
 
   `tests/corpus/tour.star` — 63 KB exercising every construct in the spec —
   parses with zero diagnostics and writes back **byte for byte**, CRLF and
@@ -52,8 +53,19 @@ What exists today:
   `tests/corpus/invalid/`, because recovery has to be lossless too. That is
   the round-trip property of spec §14.2, and the Phase 0 exit criterion.
 
-  Not yet: the schema layer, so nothing knows what any of it *means* — no
-  types, no arity, no reference resolution.
+- In `libs/starcore/builtin`: the **core-owned schema set** (spec §7.2.2),
+  written as Stardata — the forms `starcore` reads and writes itself,
+  `starcore.object` and its six slots, and the list of what core depends on,
+  stated as data so that a failure is a named diagnostic at load rather than
+  a crash much later. All of it sealed; a library may add, never redefine.
+
+- In `stdlib/core`: the kinds, traits and actions an author actually writes,
+  with **no privileged status** — and a test that says so, by loading the
+  directory as an ordinary library and requiring that nothing in it needed a
+  privilege.
+
+  Not yet: types, arity, combination modes, reference resolution. Nothing
+  yet checks that a value matches its declared type.
 
 Not yet started: the actual engine (the rest of `libs/`, all of `apps/`).
 Nothing here plays a game yet.

@@ -23,6 +23,11 @@ namespace stardata::test {
     return contents.str();
 }
 
+// tests/corpus/, wherever the source tree happens to live.
+[[nodiscard]] inline std::filesystem::path corpus_dir() {
+    return std::filesystem::path(STARIF_CORPUS_DIR);
+}
+
 // The name a corpus file is registered under in a SourceManager.
 //
 // Always repo-relative and always forward-slashed, because diagnostics

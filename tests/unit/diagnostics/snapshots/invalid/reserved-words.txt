@@ -1,6 +1,6 @@
 # tests/corpus/invalid/reserved-words.star
 # declared E-RESERVED-WORD
-# reported E-RESERVED-WORD
+# lexer and parser report E-RESERVED-WORD
 
 error: E-RESERVED-WORD: 'true' is a word I know, but not a value I take
   --> tests/corpus/invalid/reserved-words.star:6:12

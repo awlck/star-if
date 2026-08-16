@@ -1,6 +1,6 @@
 # tests/corpus/invalid/string-unterminated.star
 # declared E-STR-UNTERMINATED
-# reported E-BRACE-UNBALANCED E-STR-UNTERMINATED
+# lexer and parser report E-BRACE-UNBALANCED E-STR-UNTERMINATED
 
 error: E-STR-UNTERMINATED: this string opens here, and then the file simply ends
   --> tests/corpus/invalid/string-unterminated.star:7:19

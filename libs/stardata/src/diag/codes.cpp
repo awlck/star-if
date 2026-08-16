@@ -49,6 +49,18 @@ std::string_view code_string(Code code) noexcept {
         return "E-STRAY-TOKEN";
     case Code::ValueMissing:
         return "E-VALUE-MISSING";
+    case Code::SchemaInvalid:
+        return "E-SCHEMA-INVALID";
+    case Code::SchemaDuplicate:
+        return "E-SCHEMA-DUPLICATE";
+    case Code::SchemaSealed:
+        return "E-SCHEMA-SEALED";
+    case Code::KeyMissing:
+        return "E-KEY-MISSING";
+    case Code::CoreReparent:
+        return "E-CORE-REPARENT";
+    case Code::CoreRequirement:
+        return "E-CORE-REQUIREMENT";
     case Code::BlockMixed:
         return "E-BLOCK-MIXED";
     case Code::DuplicateKey:

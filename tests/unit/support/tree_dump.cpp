@@ -3,6 +3,7 @@
 #include "support/tree_dump.hpp"
 
 #include <cstdio>
+#include <map>
 #include <sstream>
 #include <string_view>
 
@@ -77,6 +78,23 @@ void dump(const cst::SyntaxNode& node, int depth, std::ostringstream& out) {
 }
 
 } // namespace
+
+std::string summarise_tree(const cst::SyntaxNode& root) {
+    std::map<std::string_view, std::size_t> census;
+    for (const cst::SyntaxNode& node : root.descendants()) {
+        ++census[cst::to_string(node.kind())];
+        for (const cst::SyntaxToken& token : node.child_tokens()) {
+            ++census[cst::to_string(token.kind())];
+        }
+    }
+
+    std::ostringstream out;
+    out << "bytes " << root.text_length() << '\n';
+    for (const auto& [kind, count] : census) {
+        out << kind << ' ' << count << '\n';
+    }
+    return out.str();
+}
 
 std::string dump_tree(const cst::SyntaxNode& root) {
     std::ostringstream out;

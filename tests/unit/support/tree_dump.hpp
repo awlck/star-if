@@ -21,4 +21,14 @@ namespace stardata::test {
 // different tree.
 [[nodiscard]] std::string dump_tree(const cst::SyntaxNode& root);
 
+// A one-line-per-kind census of a tree: how many nodes and leaves of each
+// kind it holds, and how many bytes it covers.
+//
+// This is the golden for a file whose full tree dump would be too large to
+// read -- tour.star's runs to tens of thousands of lines. It still moves when
+// the parser's shape changes or the corpus grows, which is the point, and it
+// blesses through the same --update-snapshots path as every other snapshot
+// rather than being a number somebody has to edit by hand.
+[[nodiscard]] std::string summarise_tree(const cst::SyntaxNode& root);
+
 } // namespace stardata::test

@@ -56,6 +56,18 @@ Both run in CI (backlog B5, B6). See [`tests/README.md`](tests/README.md)
 for what the Python checker checks and doesn't, and for the suppression
 syntax.
 
+If you edit `tests/corpus/tour.star`, expect the snapshot tests to fail —
+that is what they are for. Regenerate them and **read the diff** before
+committing:
+
+```sh
+./build/linux-gcc-debug/tests/unit/stardata_unit_tests --update-snapshots
+```
+
+[`tests/README.md`](tests/README.md#snapshots-and-how-to-bless-a-change) has
+the detail, including what a suspicious diff looks like and which assertions
+deliberately cannot be blessed away.
+
 ## The spec + corpus + fixture rule
 
 This is the **Definition of Done** for every task in the backlog, and it's

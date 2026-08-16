@@ -7,14 +7,9 @@
 // fixtures' own `# EXPECT` lines, so the two cannot drift apart.
 #include <catch2/catch_test_macros.hpp>
 
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
 #include <set>
-#include <sstream>
 #include <string>
-#include <string_view>
-#include <vector>
 
 #include "stardata/diag/codes.hpp"
 #include "stardata/diag/sink.hpp"
@@ -22,6 +17,7 @@
 #include "stardata/lex/lexer.hpp"
 
 #include "support/corpus.hpp"
+#include "support/fixture.hpp"
 #include "support/snapshot.hpp"
 #include "support/token_dump.hpp"
 
@@ -37,45 +33,8 @@ std::filesystem::path snapshot_dir() {
     return std::filesystem::path(STARIF_UNIT_TEST_DIR) / "lex" / "snapshots";
 }
 
-// Reads a file as bytes. The corpus is deliberately not line-ending
-// normalised (backlog A4, .gitattributes marks *.star as -text), so reading
-// in text mode would defeat the CRLF fixture on Windows.
-std::string read_bytes(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    std::ostringstream contents;
-    contents << in.rdbuf();
-    return contents.str();
-}
-
-// The codes a fixture declares with `# EXPECT <CODE>` in its header, using
-// the same convention as tests/check_stardata.py --self-test.
-std::set<std::string> expected_codes(const std::string& contents) {
-    std::set<std::string> codes;
-    std::istringstream lines(contents);
-    std::string line;
-    while (std::getline(lines, line)) {
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
-        const std::size_t hash = line.find_first_not_of(" \t");
-        if (hash == std::string::npos) {
-            continue;
-        }
-        if (line[hash] != '#') {
-            break; // the header ends at the first non-comment line
-        }
-        const std::size_t marker = line.find("EXPECT");
-        if (marker == std::string::npos) {
-            continue;
-        }
-        std::istringstream rest(line.substr(marker + 6));
-        std::string code;
-        if (rest >> code) {
-            codes.insert(code);
-        }
-    }
-    return codes;
-}
+using test::expected_codes;
+using test::read_bytes;
 
 // The codes this workstream is responsible for. A fixture may declare codes
 // belonging to later workstreams -- E-BLOCK-MIXED is the parser's, and

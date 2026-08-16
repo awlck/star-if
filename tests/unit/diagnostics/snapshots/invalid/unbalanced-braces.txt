@@ -1,0 +1,12 @@
+# tests/corpus/invalid/unbalanced-braces.star
+# declared E-BRACE-UNBALANCED
+# reported E-BRACE-UNBALANCED
+
+error: E-BRACE-UNBALANCED: this block is never closed
+  --> tests/corpus/invalid/unbalanced-braces.star:4:8
+  |
+4 | room = {
+  |        ^
+note: the file ends with the block still open (spec §4)
+fix-it: add the closing '}'
+  replace tests/corpus/invalid/unbalanced-braces.star:8:1 with `}`

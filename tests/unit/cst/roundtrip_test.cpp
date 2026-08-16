@@ -7,8 +7,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <filesystem>
-#include <fstream>
-#include <sstream>
 #include <string>
 
 #include "stardata/cst/parser.hpp"
@@ -18,6 +16,7 @@
 #include "stardata/diag/source_manager.hpp"
 
 #include "support/corpus.hpp"
+#include "support/fixture.hpp"
 #include "support/snapshot.hpp"
 #include "support/tree_dump.hpp"
 
@@ -33,16 +32,7 @@ std::filesystem::path snapshot_dir() {
     return std::filesystem::path(STARIF_UNIT_TEST_DIR) / "cst" / "snapshots";
 }
 
-// Binary, never text mode: the corpus is deliberately not line-ending
-// normalised (backlog A4), and reading it as text on Windows would quietly
-// turn the CRLF fixture into the LF one and make this test pass for the
-// wrong reason.
-std::string read_bytes(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    std::ostringstream contents;
-    contents << in.rdbuf();
-    return contents.str();
-}
+using test::read_bytes;
 
 struct ParsedFile {
     diag::SourceManager sources;

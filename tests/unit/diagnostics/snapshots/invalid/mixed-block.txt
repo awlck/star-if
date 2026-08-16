@@ -1,0 +1,16 @@
+# tests/corpus/invalid/mixed-block.star
+# declared E-BLOCK-MIXED
+# reported E-BLOCK-MIXED
+
+error: E-BLOCK-MIXED: this block holds statements, and 'openable' is a bare value among them
+  --> tests/corpus/invalid/mixed-block.star:6:16
+  |
+6 |     traits = { openable  lockable = yes }
+  |                ^^^^^^^^
+note: a block is either a list of values or a set of statements, never both (spec §5.2)
+  --> tests/corpus/invalid/mixed-block.star:6:26
+  |
+6 |     traits = { openable  lockable = yes }
+  |                          ^^^^^^^^
+fix-it: if a '=' went missing, this is where it belongs
+  replace tests/corpus/invalid/mixed-block.star:6:24 with ` = `

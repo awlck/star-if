@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2026 Adrian Welcker
 //
-// Exercises the snapshot harness end to end (backlog C4). This does not run
-// against tests/corpus/invalid/ yet -- producing real diagnostics from
-// those files needs the lexer (workstream D), which does not exist yet.
-// Until then, this proves the harness itself: render a diagnostic, compare
-// it to a checked-in snapshot file, and fail loudly on drift. D3's lexical
-// diagnostics are expected to wire the real corpus through this same
-// check_snapshot() once they exist, one fixture at a time.
+// Exercises the snapshot harness against a hand-built diagnostic (backlog
+// C4). corpus_snapshot_test.cpp is the corpus-wide half of C4; this file
+// stays because the fixture it renders cannot be produced from a .star file
+// at all yet: E-DUP-KEY is the schema layer's, and it is the running example
+// of spec §5.3's "cite both spans" requirement, so the multi-span rendering
+// has a golden before workstream F exists to provoke it.
 #include <catch2/catch_test_macros.hpp>
 
 #include <filesystem>

@@ -1,0 +1,28 @@
+# tests/corpus/invalid/string-bad-escape.star
+# declared E-STR-ESCAPE
+# reported E-STR-ESCAPE
+
+error: E-STR-ESCAPE: I don't recognise the escape '\U'
+  --> tests/corpus/invalid/string-bad-escape.star:7:54
+  |
+7 |     bad_escape  = "A path written the Windows way: C:\Users\vex"
+  |                                                      ^^
+note: the whole set is \" \\ \n \t \[ \] \$ \@ and \uXXXX. It is closed on purpose, so that a new escape can be added later without changing what files written today mean (spec §3.5)
+fix-it: if you meant a backslash of your own, double it
+  replace tests/corpus/invalid/string-bad-escape.star:7:54 with `\\`
+
+error: E-STR-ESCAPE: I don't recognise the escape '\v'
+  --> tests/corpus/invalid/string-bad-escape.star:7:60
+  |
+7 |     bad_escape  = "A path written the Windows way: C:\Users\vex"
+  |                                                            ^^
+note: the whole set is \" \\ \n \t \[ \] \$ \@ and \uXXXX. It is closed on purpose, so that a new escape can be added later without changing what files written today mean (spec §3.5)
+fix-it: if you meant a backslash of your own, double it
+  replace tests/corpus/invalid/string-bad-escape.star:7:60 with `\\`
+
+error: E-STR-ESCAPE: '\ud800' is half of a character, not a character
+  --> tests/corpus/invalid/string-bad-escape.star:8:57
+  |
+8 |     bad_unicode = "A surrogate half is not a character: \ud800"
+  |                                                         ^^^^^^
+note: write the character itself instead -- the file is UTF-8, so it can hold it directly, and it will be far easier to read next year (spec §3.5)

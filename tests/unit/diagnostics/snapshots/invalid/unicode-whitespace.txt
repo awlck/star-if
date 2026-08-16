@@ -1,0 +1,21 @@
+# tests/corpus/invalid/unicode-whitespace.star
+# declared E-UNICODE-WS
+# reported E-UNICODE-WS
+
+error: E-UNICODE-WS: U+2007 looks like a space, but it is not one
+  --> tests/corpus/invalid/unicode-whitespace.star:7:7
+  |
+7 |     id = pasted_from_a_web_page
+  |       ^
+note: only tab, newline, carriage return and the plain space separate tokens; a lookalike almost always arrives by copy-and-paste (spec §3.1)
+fix-it: use a plain space
+  replace tests/corpus/invalid/unicode-whitespace.star:7:7 with ` `
+
+error: E-UNICODE-WS: U+00A0 looks like a space, but it is not one
+  --> tests/corpus/invalid/unicode-whitespace.star:8:15
+  |
+8 |     short_name = "Cargo Bay"
+  |               ^
+note: only tab, newline, carriage return and the plain space separate tokens; a lookalike almost always arrives by copy-and-paste (spec §3.1)
+fix-it: use a plain space
+  replace tests/corpus/invalid/unicode-whitespace.star:8:15 with ` `

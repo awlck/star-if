@@ -1,0 +1,16 @@
+# tests/corpus/invalid/datum-scope-ambiguity.star
+# declared E-BLOCK-MIXED
+# reported E-BLOCK-MIXED
+
+error: E-BLOCK-MIXED: this block holds statements, and 'extra' is a bare value among them
+  --> tests/corpus/invalid/datum-scope-ambiguity.star:18:72
+   |
+18 |         noun = { includes = { collection = waypoints  value = storage  extra } }
+   |                                                                        ^^^^^
+note: a block is either a list of values or a set of statements, never both (spec §5.2)
+  --> tests/corpus/invalid/datum-scope-ambiguity.star:18:31
+   |
+18 |         noun = { includes = { collection = waypoints  value = storage  extra } }
+   |                               ^^^^^^^^^^
+fix-it: if a '=' went missing, this is where it belongs
+  replace tests/corpus/invalid/datum-scope-ambiguity.star:18:77 with ` = `

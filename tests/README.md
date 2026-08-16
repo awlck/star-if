@@ -72,7 +72,7 @@ on Linux and macOS run it under ASan and UBSan.
 
 | Path | Covers |
 |---|---|
-| `unit/diagnostics/` | Workstream C: source manager, spans, the diagnostic model, the human and machine renderers. |
+| `unit/diagnostics/` | Workstream C: source manager, spans, the diagnostic model, the human and machine renderers, and the rendered-output goldens for every fixture in `corpus/invalid/`. |
 | `unit/lex/` | Workstream D: the token and trivia model, the lexer, its diagnostics, and the fuzzer. |
 | `unit/cst/` | Workstream E: the green tree, cursors, the trivia attachment policy, the parser, the byte-exact round-trip, the edit API and the edit fuzzer. |
 | `unit/support/` | Shared helpers — corpus discovery, snapshot comparison, the token dump, the lexing harness. |
@@ -103,7 +103,8 @@ What to look for in the diff:
   added to the corpus.
 
 The snapshots are not the real test. `every corpus file round-trips byte for
-byte`, `parses with no diagnostic at all` and the error-node count are
+byte`, `parses with no diagnostic at all`, the error-node count, and `every
+diagnostic over the invalid corpus points inside the file it came from` are
 asserted outright, precisely so they cannot be blessed away — if a corpus
 edit breaks one of those, regenerating snapshots will not silence it, and it
 should not.
@@ -115,7 +116,34 @@ Current snapshots:
 | `unit/lex/snapshots/*.tokens.txt` | The token stream of each corpus file. |
 | `unit/cst/snapshots/lf.tree.txt`, `crlf.tree.txt` | The full parse tree, including where trivia attached. |
 | `unit/cst/snapshots/tour.census.txt` | A per-kind census of `tour.star`, whose full tree would run to tens of thousands of lines. |
-| `unit/diagnostics/snapshots/*.txt` | Rendered diagnostics, human and machine form. |
+| `unit/diagnostics/snapshots/duplicate-key.*.txt` | The human and machine rendering of one hand-built multi-span diagnostic. |
+| `unit/diagnostics/snapshots/invalid/*.txt` | Everything the front end says about each fixture in `corpus/invalid/`, rendered as an author reads it. |
+| `unit/diagnostics/snapshots/invalid.machine.txt` | The same diagnostics as one greppable line each — the whole invalid corpus on one screen. |
+
+### The invalid-corpus snapshots
+
+`unit/diagnostics/snapshots/invalid/` is backlog C4, and it is the only test
+that notices an error message getting worse. Codes and counts survive a
+message losing the detail that made it useful; a golden does not.
+
+Each file opens with a three-line header derived from the fixture:
+
+```
+# tests/corpus/invalid/decimal-precision.star
+# declared E-DEC-PRECISION E-NUM-TRAILING-DOT
+# reported E-DEC-PRECISION E-NUM-TRAILING-DOT
+```
+
+`declared` is the fixture's own `# EXPECT` lines; `reported` is what the
+lexer and parser actually produced. Where they differ — `reported (none)`
+against a declared `E-FLAG-NOT-BOOL`, say — the fixture is waiting on the
+schema layer, and the snapshot records that rather than hiding it. Those
+snapshots will move when workstream F lands, which is the point.
+
+Expect cascades. One stray `[` in `brackets-outside-string.star` yields nine
+diagnostics, because recovery keeps going and says what it finds. That is
+honest output, and having it written down is what would make a later pass at
+recovery quality measurable.
 
 The lexer suite reads `corpus/` directly: every file must lex without a
 diagnostic, every file's token stream is pinned by a golden, and every

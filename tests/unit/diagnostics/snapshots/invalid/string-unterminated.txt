@@ -1,0 +1,20 @@
+# tests/corpus/invalid/string-unterminated.star
+# declared E-STR-UNTERMINATED
+# reported E-BRACE-UNBALANCED E-STR-UNTERMINATED
+
+error: E-STR-UNTERMINATED: this string opens here, and then the file simply ends
+  --> tests/corpus/invalid/string-unterminated.star:7:19
+  |
+7 |     description = "A small brass key, worn smooth.
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+fix-it: add the closing quote
+  replace tests/corpus/invalid/string-unterminated.star:7:51 with `"`
+
+error: E-BRACE-UNBALANCED: this block is never closed
+  --> tests/corpus/invalid/string-unterminated.star:5:9
+  |
+5 | thing = {
+  |         ^
+note: the file ends with the block still open (spec §4)
+fix-it: add the closing '}'
+  replace tests/corpus/invalid/string-unterminated.star:7:51 with `}`

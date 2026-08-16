@@ -1,0 +1,5 @@
+# tests/corpus/invalid/failmsg-missing.star
+# declared W-FAILMSG-MISSING
+# reported (none)
+
+(no diagnostics)

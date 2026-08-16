@@ -1,0 +1,5 @@
+# tests/corpus/invalid/undeclared-style.star
+# declared E-STYLE-UNDECLARED
+# reported (none)
+
+(no diagnostics)

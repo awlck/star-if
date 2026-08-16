@@ -1,0 +1,12 @@
+# tests/corpus/invalid/reserved-words.star
+# declared E-RESERVED-WORD
+# reported E-RESERVED-WORD
+
+error: E-RESERVED-WORD: 'true' is a word I know, but not a value I take
+  --> tests/corpus/invalid/reserved-words.star:6:12
+  |
+6 |     open = true
+  |            ^^^^
+note: the booleans here are 'yes' and 'no'. 'true' and 'false' are reserved for no other purpose than to make this message possible, rather than leave you with an unknown identifier (spec §3.9)
+fix-it: use 'yes'
+  replace tests/corpus/invalid/reserved-words.star:6:12 with `yes`

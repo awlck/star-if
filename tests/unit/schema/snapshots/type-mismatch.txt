@@ -1,0 +1,9 @@
+# tests/corpus/invalid/type-mismatch.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-TYPE-MISMATCH: 'always_resident' is declared bool, and this is a whole number
+  --> tests/corpus/invalid/type-mismatch.star:9:23
+  |
+9 |     always_resident = 3
+  |                       ^
+note: bool takes yes or no (spec §6.2)

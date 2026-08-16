@@ -8,6 +8,7 @@
 
 #include "stardata/cst/parser.hpp"
 #include "stardata/diag/diagnostic.hpp"
+#include "stardata/schema/types.hpp"
 
 namespace stardata::schema {
 
@@ -506,7 +507,8 @@ void check_exclusive_groups(const ast::Block& block, const Schema& schema,
 
 } // namespace
 
-void validate_block(const ast::Block& block, const Schema& schema, diag::DiagnosticSink& sink) {
+void validate_block(const ast::Block& block, const Schema& schema, const SchemaSet* set,
+                    diag::DiagnosticSink& sink) {
     const std::vector<ast::Statement> statements = block.statements();
 
     for (const ast::Statement& statement : statements) {
@@ -532,6 +534,24 @@ void validate_block(const ast::Block& block, const Schema& schema, diag::Diagnos
     }
 
     check_arity(statements, schema, sink);
+
+    // §6.2, backlog F4. Every value whose key the schema declares is checked
+    // against the declared type -- for every operator, because §6.3 gives
+    // `+=` and `-=` the same collection shape the binding has.
+    if (set != nullptr) {
+        for (const ast::Statement& statement : statements) {
+            const std::optional<std::string> name = statement.key_name();
+            if (!name || name->empty()) {
+                continue;
+            }
+            const KeyDecl* declared = schema.find_key(*name);
+            const std::optional<ast::Value> value = statement.value();
+            if (declared == nullptr || !value) {
+                continue;
+            }
+            check_value("'" + *name + "'", *value, declared->type, *set, sink);
+        }
+    }
 
     for (const KeyDecl& key : schema.keys) {
         if (!key.required || block.find(key.name)) {
@@ -687,6 +707,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
                 (void)read_placement(*block, set.relation_values(), sink);
+                check_instantiation(*block, *set.find_class(key), set, sink);
             }
             return;
         }
@@ -712,7 +733,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
 
     const std::optional<ast::Value> value = statement.value();
     if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-        validate_block(*block, *schema, sink);
+        validate_block(*block, *schema, &set, sink);
     }
 }
 
@@ -769,12 +790,12 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
         for (const ast::Statement& statement : view.find_all("schema")) {
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-                validate_block(*block, schema_of_schemas(), sink);
+                validate_block(*block, schema_of_schemas(), &set, sink);
                 for (const ast::Statement& key : block->find_all("key")) {
                     const std::optional<ast::Value> key_value = key.value();
                     if (const std::optional<ast::Block> key_block =
                             key_value ? key_value->as_block() : std::nullopt) {
-                        validate_block(*key_block, key_schema(), sink);
+                        validate_block(*key_block, key_schema(), &set, sink);
                     }
                 }
             }

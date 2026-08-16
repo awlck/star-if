@@ -103,6 +103,7 @@ CODES = {
     "E-DUP-KEY":            "§5.3 a second binding of a key whose arity is one",
     "E-EXCLUSIVE-GROUP":    "§7.2.1 two or more keys of one exclusive_group in a block",
     "E-EXCLUSIVE-MISSING":  "§7.2.1 no key of a required exclusive_group",
+    "E-TYPE-MISMATCH":      "§6.2 a value that does not match its declared type",
 }
 
 # Codes this script structurally cannot produce, and the fixtures that
@@ -135,6 +136,7 @@ NEEDS_SCHEMA_LAYER = {
     "E-DUP-KEY",
     "E-EXCLUSIVE-GROUP",
     "E-EXCLUSIVE-MISSING",
+    "E-TYPE-MISMATCH",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:

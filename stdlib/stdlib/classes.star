@@ -14,6 +14,22 @@
 #  the library owns the thing authors use.
 # =============================================================================
 
+# The ways out of a room. Spec §6.6.1 writes `exits` as `map<direction, ref<room>>`
+# and reads `location.exits.north` as a map key, which only works if `direction`
+# is a declared enum — `exits.nrth` is a compile error naming this set rather
+# than a door that silently is not there.
+#
+# The twelve below are the conventional set; a ruleset wanting shipboard
+# `fore` and `aft` declares its own `direction` and replaces this one, which
+# is what a library owning a vocabulary means.
+enum = {
+    id     = direction
+    values = { north south east west
+               northeast northwest southeast southwest
+               up down in out }
+    doc    = "A way out of a room (§6.6.1)."
+}
+
 class = {
     id       = room
     of_class = starcore.room
@@ -21,7 +37,7 @@ class = {
 
     prop_def = {
         dark       = bool
-        exits      = block<exits>
+        exits      = map<direction, ref<room>>
         first_seen = bool
     }
     dark = no

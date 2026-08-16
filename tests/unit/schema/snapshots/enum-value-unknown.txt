@@ -1,0 +1,13 @@
+# tests/corpus/invalid/enum-value-unknown.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-TYPE-MISMATCH: 'sometimes' is not one of advances_turn_enum's values
+  --> tests/corpus/invalid/enum-value-unknown.star:9:21
+  |
+9 |     advances_turn = sometimes
+  |                     ^^^^^^^^^
+note: advances_turn_enum is on_success, always, never (spec §6.2)
+  --> libs/starcore/builtin/schema.star:141:5
+    |
+141 |     id     = advances_turn_enum
+    |     ^^

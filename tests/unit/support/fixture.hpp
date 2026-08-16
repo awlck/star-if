@@ -67,7 +67,8 @@ namespace stardata::test {
                                                 "W-PROPDEF-REDUNDANT",
                                                 "E-DUP-KEY",
                                                 "E-EXCLUSIVE-GROUP",
-                                                "E-EXCLUSIVE-MISSING"};
+                                                "E-EXCLUSIVE-MISSING",
+                                                "E-TYPE-MISMATCH"};
     return codes;
 }
 

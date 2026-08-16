@@ -134,6 +134,15 @@ schema = {
 
 # --- The turn sequence and dispatch index ------------------------------------
 
+# Proposal §7.2: an action either consumes a round when it succeeds, always,
+# or never. `never` is what "out of world" actions are — checking your
+# inventory does not give the enemy a free swing.
+enum = {
+    id     = advances_turn_enum
+    values = { on_success always never }
+    doc    = "Whether an action consumes a round (proposal §7.2)."
+}
+
 schema = {
     id        = action
     top_level = yes
@@ -305,4 +314,48 @@ schema = {
     sealed = yes
     open   = yes  # a map from contested property name to the trait it comes from
     doc    = "Resolves a trait conflict explicitly, per §8.3."
+}
+
+# The three nested shapes the manifests use (§13.1, §13.3). Each was named by
+# a `block<...>` type before it was declared, which is a key nothing could
+# ever check — the type checker of §6.2 reports exactly that, and this is the
+# other half of the fix.
+
+schema = {
+    id     = project_defaults
+    sealed = yes
+    doc    = "Game-level defaults a project sets once, per §13.1."
+
+    key = { name = action_duration  type = duration
+            doc  = "The duration an action takes when it declares none." }
+    key = { name = advances_turn    type = enum<advances_turn_enum>
+            doc  = "The default for an action that does not say (proposal §7.2)." }
+}
+
+schema = {
+    id     = project_simulation
+    sealed = yes
+    doc    = "How much the world simulates while the player is elsewhere (§13.1)."
+
+    # `offstage_default` is an identifier and not an enum because one of its
+    # four values is `none`, which §3.9 reserves — so the set cannot be
+    # declared as an enum until that is resolved.
+    key = { name = offstage_default         type = identifier
+            doc  = "none, catch_up, simulate or continuous (proposal §5.3)." }
+    key = { name = simulate_max_rounds      type = int
+            doc  = "Beyond this many rounds, fall back to catch_up." }
+    key = { name = simulate_time_budget_ms  type = int }
+    key = { name = simulate_progress        type = bool }
+    # A value of whatever enum the ruleset declares for it. Core does not own
+    # that vocabulary, so it does not type it.
+    key = { name = default_combat_response  type = identifier }
+}
+
+schema = {
+    id     = version_constraints
+    sealed = yes
+    # Each key is a library id and each value a version comparison, so the key
+    # set is whatever libraries exist rather than anything core can list.
+    open   = yes
+    doc    = "A library's version requirements, one per library id (§13.3)."
 }

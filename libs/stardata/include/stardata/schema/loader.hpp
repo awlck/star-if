@@ -179,13 +179,18 @@ private:
     std::string relation_enum_;
 };
 
-// Validates one record block against a schema.
+// Validates one record block against a schema: unknown keys (§7.3), required
+// keys (§7.2), arity (§5.3), exclusive groups (§7.2.1) and the declared type
+// of every value (§6.2).
 //
-// F2's share of key validation, and no more: an unknown key in a closed
-// schema, and a required key that is absent. Arity and duplicate keys are
-// F3, types are F4, combination modes are F5, exclusive groups are F3 --
-// each is read into the KeyDecl already, and none is acted on here.
-void validate_block(const ast::Block& block, const Schema& schema, diag::DiagnosticSink& sink);
+// `set` is the registry the type checker resolves `enum<E>`, `ref<C>` and
+// `block<S>` against, and may be null -- which is what the bootstrap needs,
+// since the first schema block is validated before anything is registered.
+// A null set checks everything except types.
+//
+// Combination modes are F5's, and are read into the KeyDecl already.
+void validate_block(const ast::Block& block, const Schema& schema, const SchemaSet* set,
+                    diag::DiagnosticSink& sink);
 
 // Who a set of files is loaded on behalf of. The owner is assigned here and
 // never read from the file, so that a library cannot claim to be `starcore`

@@ -495,6 +495,16 @@ a key is `x ?= 1` has given `x` a value, and one whose only mention is
 `x += { a }` has not. Counting `?=` as a non-binding makes those two
 indistinguishable. Corrected in `ast::Statement::is_binding` and its test.
 
+**[OPEN] `?=` may not be worth keeping.** Whether it binds is genuinely hard
+to answer, because whether it *does* anything depends on what else is
+declared, at any inheritance level and in any file — so the static question
+("is this a binding occurrence?") and the dynamic one ("did this bind?") have
+different answers and both are reasonable readings of the operator. It is a
+plausible candidate for removal in favour of `@replaces` (§7.6), which says
+the same thing with an owner named and a load-order-independent meaning.
+Recorded now because everything downstream of §5.3 — arity, combination modes
+(F5), and the save-state layout — inherits the ambiguity.
+
 The **registry** is a hash index kept beside the declaration-order vector
 rather than instead of it: order is load order (§13.2), which is what a reader
 and a diagnostic both expect, and no hash map's iteration order is anybody's.
@@ -525,9 +535,48 @@ spelling.
 ### F4 · Type checking
 **Size:** M · **Depends on:** F3
 
-- [ ] Every type of spec §6.2, including `TypeExpr` parsing and the bare-enum shorthand (§4.2).
-- [ ] Coercion from lexical kind to declared type, with a precise error when it fails.
-- [ ] `dice`, `clock_time`, `resource`, `duration` sub-grammars validated at compile time.
+- [x] Every type of spec §6.2, including `TypeExpr` parsing and the bare-enum shorthand (§4.2).
+- [x] Coercion from lexical kind to declared type, with a precise error when it fails.
+- [x] `dice`, `clock_time`, `duration` sub-grammars validated at compile time. `resource` is checked as a string; **its existence is workstream G's**, since there is no VFS to ask yet.
+
+Three parts, and only the first is §6.2's table read back.
+
+**The declared-type check paid for itself immediately.** Asking whether a type
+*expression* means anything — as opposed to whether a value fits it — found
+five keys whose declared type nothing declared: `advances_turn_enum` on
+`action`, `block<project_defaults>` and `block<project_simulation>` on
+`project`, `block<version_constraints>` on `library`, and `block<exits>` on
+stdlib's `room`. Every one of them looked checked and was not. All five are
+now declared, taking their content from where the documents already give it:
+§13.1's project manifest, §13.3's library manifest, proposal §7.2 for
+`advances_turn_enum`, and §6.6.1 for `exits`, which the spec writes as
+`map<direction, ref<room>>` and which needed a `direction` enum in stdlib to
+be that. It is reported at the key, once, rather than at every value written
+against it.
+
+Two things it turned up that are the spec's to settle rather than the code's:
+
+- **`ref<C>` names a form as often as a class.** §6.2 defines it as "a
+  reference to an object of class `C`", and the built-in set writes
+  `ref<action>` and `ref<sector>`, which are references to declared *forms*.
+  Both resolve here. §6.2 should probably say so.
+- **`offstage_default` cannot be an enum**, because one of its four values
+  (proposal §5.3) is `none`, which §3.9 reserves. It is typed `identifier`
+  with the four listed in its `doc`, which is the wrong shape for a closed
+  set and the only one available.
+
+**`clock_time` is checked for shape and not for range.** §6.2 resolves it
+"against the sector's calendar" and §11.6 lets a sector declare a
+`local_clock`, so whether hour 30 exists is not this pass's question —
+rejecting it would leave an author with a thirty-hour day no way to say so.
+
+**Instantiations (§7.4) are type-checked against the class's property set**,
+walking `of_class` for inherited properties, which is what makes §14.3's
+`exits.nrth` case actually fire. A key naming no property is left alone:
+which keys are *permitted* inside an instantiation needs the object-local
+`prop_def` of F11. **Traits are not in that walk**, because `read_class` does
+not read the `traits` key into `ClassDecl` at all — a property arriving only
+through a trait is not yet type-checked on an instantiation.
 
 ### F5 · Combination modes
 **Size:** M · **Depends on:** F3

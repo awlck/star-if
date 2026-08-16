@@ -1,0 +1,13 @@
+# tests/corpus/invalid/map-key-unknown.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-TYPE-MISMATCH: 'nrth' is not one of direction's values
+  --> tests/corpus/invalid/map-key-unknown.star:11:15
+   |
+11 |     exits = { nrth = corridor }
+   |               ^^^^
+note: this map is keyed by direction, which is north, south, east, west, northeast, northwest, southeast, southwest, ... (spec §6.2, §6.6.1)
+  --> stdlib/stdlib/classes.star:26:5
+   |
+26 |     id     = direction
+   |     ^^

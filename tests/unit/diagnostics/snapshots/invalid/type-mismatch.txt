@@ -1,0 +1,6 @@
+# tests/corpus/invalid/type-mismatch.star
+# declared E-TYPE-MISMATCH
+# lexer and parser report (none)
+# E-TYPE-MISMATCH is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

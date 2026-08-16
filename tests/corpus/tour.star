@@ -246,6 +246,13 @@ schema = {
     key = { name = conditions  type = condition_block }
 }
 
+# Adding a key to an EXISTING form — including a sealed core one. Sealing
+# prevents redefinition, not extension (spec §7.5).
+schema_extension = {
+    of_schema = action
+    key = { name = stamina_cost  type = int  default = 0 }
+}
+
 # ...and an instance of the form the schema just declared.
 loot_table = {
     id    = derelict_locker
@@ -1894,6 +1901,21 @@ action = {
     match    = { "z/wait" }
     effects  = { }
     successMsg = "Time passes."
+}
+
+# --- 18.8 Superseding a declaration ------------------------ (spec §7.6) ---
+# No declaration may be duplicated. `@replaces` is the deliberate form, and
+# naming the SOURCE is what makes it useful: if the stdlib stopped shipping
+# a `wait` action, or renamed it, this becomes a build failure rather than a
+# second declaration that silently never takes effect.
+#
+# Replacement is total — nothing is merged from the original. Merging is what
+# class_extension and schema_extension are for.
+action = @replaces(stdlib) {
+    id         = wait
+    match      = { "wait for/until [text]" }
+    effects    = { }
+    successMsg = "You wait."
 }
 
 # =============================================================================

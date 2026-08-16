@@ -357,6 +357,7 @@ Multiple annotations MAY be applied; they are processed left to right. Contradic
 | `@debug` | any | Present only in development builds; the compiler strips it from a release build |
 | `@platform(id, …)` | any | Present only on the listed frontends (`qt`, `web`, `glk`, `cli`, `mobile`) |
 | `@style(id)` | string | The string's default text style (§9.3) |
+| `@replaces(lib)` | a whole top-level declaration | This declaration supersedes the one of the same id from library `lib` (§7.6) |
 
 `@debug` and `@platform` are **conditional presence** annotations: they do not modify combination, they determine whether the statement exists at all in a given build. A statement removed by `@debug` or `@platform` MUST behave exactly as though it had not been written, including for arity checking.
 
@@ -721,7 +722,9 @@ Concretely, an implementation MUST reject:
 - a `prop_def` that redeclares a core property name with a different type;
 - the absence of anything core requires — reported at load, naming the requirement, rather than surfacing as a failure later.
 
-Adding is always permitted: new keys on a core schema through `provides_schema` (§13.3), new properties on a core class through `class_extension` (§8.2), new subclasses, new traits.
+Adding is always permitted, and **sealing prevents redefinition, not extension**: new keys on a core schema through `schema_extension` (§7.5), new properties on a core class through `class_extension` (§8.2), new subclasses, new traits.
+
+*(An earlier draft named `provides_schema` here. That was simply wrong — `provides_schema` is a manifest field on `library`, not a mechanism. §7.5 is the mechanism.)*
 
 #### 7.2.3 Markers, not magic names
 
@@ -763,6 +766,47 @@ Everything else in `stdlib/core` — `thing`, `person`, `container`, `supporter`
 
 **[OPEN]** The exact membership of the second table is the part most worth arguing about. `starcore.room` and `starcore.actor` are included because the parser and turn loop are core and cannot function without the concepts. A narrower reading would make them markers instead (`is_location = yes`), at the cost of an indirection for two concepts that an IF system is never going to be without.
 
+#### 7.2.5 `core_requirement` — how core asserts
+
+§7.2.2's rule is only as good as its enforcement, so the requirements are **declared, not implemented in silence**. A `core_requirement` names one thing `starcore` depends on, and failing it is a diagnostic at load carrying that name.
+
+```stardata
+core_requirement = {
+    id       = object_holder
+    requires = property
+    subject  = starcore.object
+    member   = holder
+    type     = ref<starcore.object>
+    doc      = "Containment is a field of the world store; C++ reads it directly."
+}
+```
+
+| `requires` | Satisfied when |
+|---|---|
+| `form` | a schema with id `subject` is registered, and sealed |
+| `class` | a class with id `subject` exists, and is sealed |
+| `trait` | a trait with id `subject` exists, and is sealed |
+| `property` | `subject` declares `member`, at `type` if one is given |
+| `parent` | `subject` derives from `member` |
+
+- Requirements are checked **after all files load**, against everything loaded, and before any pass that depends on them.
+- The diagnostic names the requirement's `id` and quotes its `doc`, so an unmet requirement reads as a sentence rather than as a missing symbol.
+- Because they are checked against the whole program, they guard the built-in files against their own edits as much as against a library's: deleting a property from the core object model fails the build here, by name, rather than in a later phase when something reads it.
+
+#### 7.2.5.1 Why this is core-only, and stays that way
+
+It is tempting to generalise the form — to let any library assert what it depends on — and that would be a mistake. The name `core_requirement` is correct, not merely conventional, and the reason is structural rather than a judgement about how often it would be useful.
+
+**A library's dependencies are already checked by being used.** A ruleset that needs a `weapon` class declares one, and everything that reads `weapon.damage` is statically checked against it (§8.8). If a game `@replaces` that class with an incompatible shape, every rule, template and condition touching the missing property fails at compile time, at the exact site that cares. A `requirement` restating "weapon must have damage" would add a second, weaker report of something the type system already catches precisely.
+
+**Core has a boundary no library has.** `starcore`'s C++ reads the containment tree, the relation enum and the class table directly, and the schema layer cannot see C++. Nothing about `holder` being a `ref` is checked by anything, because the code that depends on it is not written in Stardata. `core_requirement` exists to bridge exactly that gap — and by §2.2 of the proposal, no library has such a gap, because a library is data and script all the way down.
+
+So the rule is self-limiting in a useful way: **if a library ever appeared to need this mechanism, that would be evidence the library had C++ in it**, which the architecture does not allow. The form staying core-only is a constraint worth keeping rather than an asymmetry to apologise for.
+
+Your framing of the asymmetry is the other half, and it is the practical one: a game *can* replace a library's class, and should be expected to understand what depends on it. A game cannot replace anything `starcore` does without forking the project and shipping a custom runtime — so core's invariants are not things an author can reason about, negotiate with, or be warned about. They have to hold, and the only way to know they hold is to assert them.
+
+**One residual, recorded rather than solved.** A library whose behaviour lives in Lua reads properties dynamically (§12), so a hostile `@replaces` surfaces there at run time rather than at compile time. That is the accepted cost of the scripting escape hatch, and the answer is §8.8.4's catchable error naming the object, the property and the source location — not a declaration form that would only ever be used by the small number of libraries that are mostly script.
+
 ### 7.3 Open and closed schemas
 
 A schema is **closed** by default: an unknown key MUST be an error, with a "did you mean …?" suggestion computed by edit distance against the declared keys.
@@ -780,6 +824,50 @@ room = { id = your_cell  exits = { north = corridor } }
 The class name is on the left and the object's id inside. This is deliberate and MUST NOT be reversed: it is what allows the schema layer to dispatch on the left-hand key, it groups a file by kind for scanning and outlining, and it makes every top-level statement uniform in shape.
 
 The keys permitted inside an instantiation block are those of the class's property set (§8), plus the universal keys `id`, `traits`, `in`, `on`, `part_of`, and `sector`.
+
+### 7.5 `schema_extension`
+
+A library adding a key to an existing form needs a mechanism, and §7.2.2 previously pointed at a manifest field that is not one. `schema_extension` mirrors `class_extension` (§8.2) and reads the same way:
+
+```stardata
+schema_extension = {
+    of_schema = action
+    key = { name = stamina_cost  type = int  default = 0 }
+    key = { name = combat_style  type = ref<combat_style> }
+}
+```
+
+Semantics:
+
+- **Adds keys only.** A key whose `name` already exists is a redefinition, not an extension: identical redeclaration is a warning (redundant), any difference is an error. This mirrors §8.7's rule for object-local `prop_def`.
+- **Works on sealed schemas.** This is the point of the distinction in §7.2.2 — a ruleset may add `stamina_cost` to the core `action` form, and may not change what `id` means.
+- **Applies in load order**, after the base schema is registered. Extending a schema that does not exist is an error naming it, rather than quietly creating one.
+- **Changing an existing key is out of scope.** Altering a default belongs in the project's `defaults` (§13.1); altering anything else means replacing the whole schema, which §7.6 covers and sealing forbids.
+- An extension MAY add a key to an existing `exclusive_group` (§7.2.1); the group's check then applies to the merged set.
+
+### 7.6 Duplicate declarations and `@replaces`
+
+A `unique_in` key (§7.2) already makes two declarations of the same id an error. What was missing is the deliberate case: an author who wants the standard library's `take` to behave differently has no way to say "replace that one", and no mechanism at all for forms that lack a `class_extension` equivalent.
+
+**No declaration may be duplicated.** For any form whose schema declares a `unique_in` key, two declarations sharing that key's value are an error citing both spans. (`rule` and `loc` are unaffected: neither declares a unique id, so several are normal.)
+
+**`@replaces` is how a later declaration supersedes an earlier one:**
+
+```stardata
+action = @replaces(star_core) {
+    id    = take
+    match = { "get/take/grab [something]" }
+    # ...a complete declaration; nothing is merged from the original
+}
+```
+
+- The argument names the **library id** whose declaration is being superseded, not a file. The project's own id is legal.
+- **It is an error if there is no such declaration from that source.** This is the whole value of naming it: a typo, or an upstream rename, or a library that stopped shipping the thing you were patching, all become build failures instead of a silently-new declaration that never takes effect.
+- Replacement is **total**. The new declaration stands alone. Merging is what `class_extension` and `schema_extension` are for, and conflating the two is how you get declarations that are half one thing and half another.
+- A library may only replace something loaded **before** it (§13.2).
+- **`@replaces` on a sealed declaration is an error.** That is precisely what sealing means (§7.2.2): extend freely, never supersede.
+
+`@replaces` is deliberately not spelled `@override`. §5.4.1's `@override` combines a *value within a key*; this supersedes a *whole declaration*. Reusing the word would make two quite different operations look alike.
 
 ---
 
@@ -1740,7 +1828,8 @@ project = {
     ifid = "8F4B2C1A-..."
     source_language = en
 
-    uses = { star_core starscape }
+    # Load order: stdlib/core is implicit and always first.
+    uses = { starscape }
 
     player        = pc
     start_room    = your_cell
@@ -1786,6 +1875,8 @@ library = {
     provides_schema = { stat_block combat_style loot_table }
 }
 ```
+
+`provides_schema` is a **manifest**, listing the new top-level forms this library contributes so that the editor's library browser and a reader can see them in one place. It declares nothing and creates nothing; a mismatch against the schemas the library actually declares is a warning. Adding keys to an *existing* form is `schema_extension` (§7.5), which is a different operation and was at one point wrongly described here.
 
 `uses_editor_feature` toggles editor panels. The *content* of those panels comes from the library's schema declarations (§7.1), not from editor code — so a ruleset with an `insight` stat and no `strength` gets a correct editor with no editor changes.
 
@@ -1835,6 +1926,14 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | `includes` with a `key` argument on a non-map collection (§6.5.1) | error, naming the collection's declared type |
 | `includes` with both `key` and `value` (§6.5.1) | error, suggesting the path form or `map_get` |
 | Two or more keys of one `exclusive_group` in a block (§7.2.1) | error, naming the group's members |
+| Two declarations sharing a `unique_in` value, without `@replaces` (§7.6) | error, citing both spans |
+| `@replaces` naming a source that declared no such thing (§7.6) | error, with a suggestion |
+| `@replaces` on a sealed declaration (§7.2.2, §7.6) | error |
+| `schema_extension` redeclaring an existing key with a different declaration (§7.5) | error |
+| `schema_extension` redeclaring an existing key identically (§7.5) | warning |
+| `schema_extension` naming a schema that does not exist (§7.5) | error |
+| An unmet `core_requirement` (§7.2.5) | error, naming the requirement and quoting its `doc` |
+| `provides_schema` not matching the schemas a library declares (§13.3) | warning |
 | No key of a required `exclusive_group` (§7.2.1) | error |
 | Property read that is definitely absent for the slot's static type (§8.8.2) | error |
 | Property read that is possibly absent and not narrowed (§8.8.3), with a `has_prop` fix-it | error |
@@ -1892,6 +1991,11 @@ The proposal left the following under-determined. This specification settles the
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |
 | A20 | An absent property raises rather than defaulting (§8.8.4) | A `0` that should have been an error yields a game that is subtly wrong, which is far harder to find than one that is obviously broken |
+| A31 | Core's requirements are declared as `core_requirement`, not implemented in silence (§7.2.5) | A rule enforced by code nobody can read is the ADRIFT/Inform wart wearing a different hat. A declared requirement fails by name |
+| A35 | The requirement form is core-only and stays so (§7.2.5.1) | A library's dependencies are checked by being used; core's live in C++, which the schema layer cannot see. A library appearing to need this would be evidence it had C++ in it, which §2.2 forbids |
+| A32 | No declaration may be duplicated; `@replaces(lib)` is the deliberate form (§7.6) | Naming the source turns a typo or an upstream rename into a build failure, rather than a new declaration that silently never takes effect |
+| A33 | `@replaces` rather than reusing `@override` (§7.6) | `@override` combines a value within a key; this supersedes a whole declaration. One word for two operations would hide the difference |
+| A34 | `schema_extension` mirrors `class_extension`; `provides_schema` demoted to a checked manifest (§7.5, §13.3) | The spec previously pointed at a manifest field as though it were a mechanism, which it never was |
 | A29 | `includes` overloaded on `value` / `key` rather than a separate `has_key` (§6.5.1) | One question over two domains, with the argument name saying which. Acceptable because `exclusive_group` was already required by `rule`, `list_remove` and `present_in` — this makes an unmet need visible rather than inventing one |
 | A30 | `exclusive_group` added to the schema layer (§7.2.1) | Three forms already documented mutually exclusive arguments in prose with no way to enforce them |
 | A27 | Map keys are path segments — `location.exits.north` (§6.6.1) | Reads far better than the reader form for the overwhelmingly common literal-key case, and the compiler distinguishes key from property by the preceding segment's declared type. `map_get` remains for computed and non-identifier keys |
@@ -1919,6 +2023,8 @@ Forms supplied by `stdlib/core` unless noted. Libraries add more by declaring sc
 | `project` | Project manifest; exactly one per project | §13.1 |
 | `library` | Library metadata, dependencies, editor features | §13.3 |
 | `schema` | Declares a form or nested block shape | §7.2 |
+| `schema_extension` | Adds keys to an existing form, including a sealed one | §7.5 |
+| `core_requirement` | Asserts something `starcore` depends on | §7.2.5 |
 | `enum` | Declares an enumerated value set | §6.2 |
 | `style` | Declares a semantic text style | §9.3 |
 | `global` | A mutable, saved, typed variable not owned by any object | §6.4 |

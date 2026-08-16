@@ -403,6 +403,17 @@ Where core needs to know *which* property means something, the library declares 
 - [ ] Using a relation keyword together with `holder` or `relation` in one block is an error.
 - [ ] Round-trip (E5) preserves whichever spelling the author used — the sugar is expanded in the semantic view, never in the CST.
 
+### F2d · `schema_extension`, replacement, and the no-duplicates rule
+**Size:** M · **Depends on:** F2a
+
+Three gaps the implementation surfaced. Spec §7.5 and §7.6.
+
+- [ ] `schema_extension` adds keys to an existing form, **including a sealed one** — sealing prevents redefinition, not extension. Redeclaring a key identically warns; any difference errors.
+- [ ] No declaration may be duplicated, for any form with a `unique_in` key. Error cites both spans.
+- [ ] `@replaces(lib)` supersedes a declaration from a named library. Total replacement, no merge. Naming a source that declared no such thing is an error — that check is the point of naming it.
+- [ ] `@replaces` on a sealed declaration is an error.
+- [ ] `provides_schema` demoted to a checked manifest (§13.3); a mismatch warns. It was never a mechanism, and §7.2.2 previously said it was.
+
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2
 
@@ -600,10 +611,10 @@ B1 → B3 → C1 → C2 → C3 → C4      │
 | C · Diagnostics | 7 |
 | D · Lexer | 8 |
 | E · CST | 14 |
-| F · Schema | 20 |
+| F · Schema | 23 |
 | G · VFS | 7 |
 | H · Corpus and exit | 7 |
-| **Total** | **≈ 72 days ≈ 14–15 weeks** |
+| **Total** | **≈ 75 days ≈ 15 weeks** |
 
 The proposal estimated 6–8 weeks. **That was optimistic** — the CST and the schema layer are each about a fortnight on their own, and the estimate did not account for diagnostics being real infrastructure rather than a printf.
 

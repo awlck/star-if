@@ -26,10 +26,20 @@ using diag::Diagnostic;
     return contents.str();
 }
 
-// A path as the SourceManager should record it: forward-slashed, so that a
-// diagnostic reads the same on every platform.
-[[nodiscard]] std::filesystem::path source_name(const std::filesystem::path& path) {
-    return std::filesystem::path(path.generic_string());
+// A path as the SourceManager should record it: relative to the caller's
+// base when it is under one, and forward-slashed either way, so that a
+// diagnostic reads the same on every platform and in every checkout.
+[[nodiscard]] std::filesystem::path source_name(const std::filesystem::path& path,
+                                                const std::filesystem::path& base) {
+    if (base.empty()) {
+        return std::filesystem::path(path.generic_string());
+    }
+    std::error_code ec;
+    const std::filesystem::path relative = std::filesystem::relative(path, base, ec);
+    if (ec || relative.empty() || *relative.begin() == "..") {
+        return std::filesystem::path(path.generic_string());
+    }
+    return std::filesystem::path(relative.generic_string());
 }
 
 // The forms this loader understands structurally, as opposed to the forms it
@@ -643,7 +653,7 @@ void load_files(const std::vector<std::filesystem::path>& files, const LoadOptio
     loaded.reserve(files.size());
     for (const std::filesystem::path& path : files) {
         LoadedFile file;
-        file.id = sources.add_file(source_name(path), read_bytes(path));
+        file.id = sources.add_file(source_name(path, options.name_relative_to), read_bytes(path));
         file.green = cst::parse(sources, file.id, cache, sink);
         loaded.push_back(std::move(file));
     }

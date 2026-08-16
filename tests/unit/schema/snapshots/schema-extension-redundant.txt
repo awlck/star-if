@@ -7,7 +7,7 @@ warning: W-PROPDEF-REDUNDANT: 'always_resident' is already declared on 'sector',
 8 |     key = { name = always_resident  type = bool }
   |             ^^^^
 note: declared here, by starcore
-  --> /home/user/star-if/libs/starcore/builtin/schema.star:201:13
+  --> libs/starcore/builtin/schema.star:201:13
     |
 201 |     key = { name = always_resident  type = bool
     |             ^^^^

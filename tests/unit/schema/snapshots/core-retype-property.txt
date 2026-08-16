@@ -7,7 +7,7 @@ error: E-PROPDEF-TYPE-MISMATCH: 'holder' is already a ref<starcore.object> on st
 8 |         holder = int
   |         ^^^^^^
 note: declared here, by starcore
-  --> /home/user/star-if/libs/starcore/builtin/object.star:31:9
+  --> libs/starcore/builtin/object.star:31:9
    |
 31 |         holder      = ref<starcore.object>
    |         ^^^^^^

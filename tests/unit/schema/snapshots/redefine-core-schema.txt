@@ -7,7 +7,7 @@ error: E-SCHEMA-SEALED: 'class' already has a perfectly good definition, and it 
 7 |     id        = class
   |     ^^
 note: a sealed declaration describes data starcore reads and writes itself, so redefining it would leave the two disagreeing about the same bytes (spec §7.2.2)
-  --> /home/user/star-if/libs/starcore/builtin/schema.star:31:5
+  --> libs/starcore/builtin/schema.star:31:5
    |
 31 |     id        = class
    |     ^^

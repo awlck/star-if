@@ -156,6 +156,17 @@ struct LoadOptions {
     // rather than deciding, because `libs/stardata` does not know that a
     // thing called `starcore` exists and should not learn.
     bool is_core = false;
+
+    // Record source paths relative to this directory, when they are under
+    // it. A diagnostic naming `libs/starcore/builtin/schema.star` is one an
+    // author can act on; the same diagnostic naming
+    // `/home/somebody/checkout/libs/...` is a path that means nothing to
+    // anyone but the machine that produced it, and bakes that machine into
+    // any golden that captures it.
+    //
+    // Empty means "record what you were given", which is the right default
+    // for a caller loading one absolute path it chose itself.
+    std::filesystem::path name_relative_to;
 };
 
 // Parses every `*.star` directly inside `directory`, in sorted order, and

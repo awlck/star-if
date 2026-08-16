@@ -53,6 +53,7 @@ target_compile_definitions(stardata_unit_tests PRIVATE
     STARIF_UNIT_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     STARIF_BUILTIN_DIR="${CMAKE_SOURCE_DIR}/libs/starcore/builtin"
     STARIF_STDLIB_DIR="${CMAKE_SOURCE_DIR}/stdlib"
+    STARIF_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 starif_set_warnings(stardata_unit_tests)

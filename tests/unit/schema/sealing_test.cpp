@@ -194,7 +194,7 @@ TEST_CASE("an absent core requirement is reported by name", "[schema][sealing]")
     // The `core_requirement` form is not declared here, so the top-level
     // check will complain about that too -- which is correct, and not what
     // this test is about.
-    schema::load_source(id, schema::LoadOptions{"starcore", /*is_core=*/true}, loaded.sources,
+    schema::load_source(id, schema::LoadOptions{"starcore", /*is_core=*/true, {}}, loaded.sources,
                         loaded.cache, loaded.set, loaded.sink);
 
     diag::DiagnosticSink requirements;

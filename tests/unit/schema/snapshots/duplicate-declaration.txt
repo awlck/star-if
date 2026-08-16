@@ -7,7 +7,7 @@ error: E-SCHEMA-DUPLICATE: 'take' is declared twice
 6 | action = { id = take  match = { "take [something]" } }
   |            ^^
 note: first declared here, by stdlib
-  --> /home/user/star-if/stdlib/stdlib/actions.star:16:5
+  --> stdlib/stdlib/actions.star:16:5
    |
 16 |     id    = take
    |     ^^
@@ -19,7 +19,7 @@ error: E-SCHEMA-DUPLICATE: 'take' is declared twice
 7 | action = { id = take  match = { "grab [something]" } }
   |            ^^
 note: first declared here, by stdlib
-  --> /home/user/star-if/stdlib/stdlib/actions.star:16:5
+  --> stdlib/stdlib/actions.star:16:5
    |
 16 |     id    = take
    |     ^^

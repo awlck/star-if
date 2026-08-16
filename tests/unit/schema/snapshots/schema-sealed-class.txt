@@ -7,7 +7,7 @@ error: E-SCHEMA-SEALED: 'starcore.object' already has a perfectly good definitio
 6 |     id = starcore.object
   |     ^^
 note: a sealed declaration describes data starcore reads and writes itself, so redefining it would leave the two disagreeing about the same bytes (spec §7.2.2)
-  --> /home/user/star-if/libs/starcore/builtin/object.star:24:5
+  --> libs/starcore/builtin/object.star:24:5
    |
 24 |     id     = starcore.object
    |     ^^

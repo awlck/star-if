@@ -7,7 +7,7 @@ error: E-PROPDEF-TYPE-MISMATCH: 'id' is already a identifier on 'action', and th
 7 |     key = { name = id  type = int }
   |             ^^^^
 note: declared here, by starcore
-  --> /home/user/star-if/libs/starcore/builtin/schema.star:143:13
+  --> libs/starcore/builtin/schema.star:143:13
     |
 143 |     key = { name = id            type = identifier          required = yes  unique_in = action }
     |             ^^^^

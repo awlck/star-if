@@ -7,7 +7,7 @@ error: E-SCHEMA-INVALID: 'take' doesn't come from no_such_library
 7 | action = @replaces(no_such_library) {
   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: it was declared by stdlib, so that is the name `@replaces` wants (spec §7.6)
-  --> /home/user/star-if/stdlib/stdlib/actions.star:16:5
+  --> stdlib/stdlib/actions.star:16:5
    |
 16 |     id    = take
    |     ^^

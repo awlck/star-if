@@ -112,7 +112,7 @@ private:
 
 // --- §6.2's table ------------------------------------------------------
 
-TEST_CASE("the scalar types accept what §6.2 says they accept", "[schema][types]") {
+TEST_CASE("the scalar types accept what spec 6.2 says they accept", "[schema][types]") {
     CHECK(accepts("bool", "yes"));
     CHECK(accepts("bool", "no"));
     CHECK(accepts("int", "42"));

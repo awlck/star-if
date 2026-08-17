@@ -67,7 +67,11 @@ const std::vector<KindCase>& kind_cases() {
         {"§3.6", ">=", {TokenKind::Operator}},
         {"§3.6", "+=", {TokenKind::Operator}},
         {"§3.6", "-=", {TokenKind::Operator}},
-        {"§3.6", "?=", {TokenKind::Operator}},
+
+        // §6.3.1: `?=` was removed, and is still lexed as one Operator token
+        // so the diagnostic can name the removal (§15). Diagnosed, unlike
+        // every other operator above.
+        {"§6.3.1", "?=", {TokenKind::Operator}, true},
 
         // §3.7 punctuation, and §4.2's ambiguous angle
         {"§3.7", "{}", {TokenKind::Punctuation, TokenKind::Punctuation}},
@@ -176,8 +180,8 @@ TEST_CASE("spec 3.1: newlines have no syntactic significance", "[lex]") {
 
 TEST_CASE("spec 3.6: multi-character operators win over single-character ones", "[lex]") {
     // The rule that makes `>=` one token rather than an angle and an equals.
-    Lexed lexed{">= <= == != += -= ?="};
-    for (std::size_t index = 0; index < 7; ++index) {
+    Lexed lexed{">= <= == != += -="};
+    for (std::size_t index = 0; index < 6; ++index) {
         INFO("operator index " << index);
         CHECK(lexed.stream()[index].kind == TokenKind::Operator);
         CHECK(lexed.stream()[index].span.length == 2);

@@ -24,7 +24,7 @@ enum class TokenKind : std::uint8_t {
     String,      // §3.5  a single quoted literal, quotes included in the span
     LocKey,      // §3.5  '$' Identifier
     Annotation,  // §3.8  '@' Identifier -- see the note on arguments below
-    Operator,    // §3.6  '=' '==' '!=' '<=' '>=' '+=' '-=' '?='
+    Operator,    // §3.6  '=' '==' '!=' '<=' '>=' '+=' '-=' (and the removed '?=', §6.3.1)
     Punctuation, // §3.7  '{' '}' '(' ')' ','
     Angle,       // §3.7  a bare '<' or '>' -- see the note on ambiguity below
     Error,       // a run of bytes that begins no token; retained, see below

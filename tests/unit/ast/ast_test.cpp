@@ -47,18 +47,16 @@ TEST_CASE("a file's statements carry key, operator and value", "[ast]") {
 }
 
 TEST_CASE("the modifier operators are not binding occurrences", "[ast]") {
-    // Spec 5.3: "arity counts binding occurrences only -- those using '=' or
-    // '?='". '+=' and '-=' transform whatever value is in effect rather than
+    // Spec 5.3: "arity counts binding occurrences only -- those using '='".
+    // '+=' and '-=' transform whatever value is in effect rather than
     // establishing one, which is what stops them colliding under
     // 'arity = one'.
     //
-    // '?=' is on the binding side of that line even though it reads like a
-    // modifier: a block whose only mention of a key is 'x ?= 1' has given x a
-    // value, and one whose only mention is 'x += { a }' has not.
-    test::Parsed parsed =
-        parse("traits = { a }\ntraits += { b }\ntraits -= { c }\nnames ?= { d }\n");
+    // '?=' used to be the awkward third case, and spec 6.3.1 removed the
+    // operator. Its removal is tested where it now lives, in the lexer.
+    test::Parsed parsed = parse("traits = { a }\ntraits += { b }\ntraits -= { c }\n");
     const std::vector<ast::Statement> statements = parsed.ast().statements();
-    REQUIRE(statements.size() == 4);
+    REQUIRE(statements.size() == 3);
 
     CHECK(statements[0].is_binding());
     CHECK(statements[0].op_text() == "=");
@@ -66,8 +64,6 @@ TEST_CASE("the modifier operators are not binding occurrences", "[ast]") {
     CHECK(statements[1].op_text() == "+=");
     CHECK_FALSE(statements[2].is_binding());
     CHECK(statements[2].op_text() == "-=");
-    CHECK(statements[3].is_binding());
-    CHECK(statements[3].op_text() == "?=");
 }
 
 TEST_CASE("a scalar reports what was written and nothing else", "[ast]") {

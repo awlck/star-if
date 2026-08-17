@@ -167,6 +167,31 @@ TEST_CASE("spec 3.7: brackets inside a string literal are ordinary characters", 
     CHECK(lexed.stream()[2].kind == TokenKind::String);
 }
 
+TEST_CASE("spec 6.3.1: the removed '?=' operator says so, and suggests '='", "[lex][diag]") {
+    // §15 reserves `?=` rather than letting it lapse into an unknown
+    // character, and the reason is entirely about the author: the operator
+    // was in published drafts, so a file written against one is owed "this
+    // was removed" instead of "'?' begins no token".
+    Lexed lexed{"notes ?= \"a default\"\n"};
+
+    CHECK(lexed.codes() == std::vector<std::string>{"E-OP-REMOVED"});
+    const auto* diagnostic = lexed.find(Code::OpRemoved);
+    REQUIRE(diagnostic != nullptr);
+    CHECK(lexed.sources().text(diagnostic->primary_span()) == "?=");
+
+    // The suggestion §14.3 asks for: `=`, which is what the operator's own
+    // motivation turned out to reduce to (§6.3.1).
+    REQUIRE(diagnostic->fix_its().size() == 1);
+    CHECK(diagnostic->fix_its()[0].replacement == "=");
+
+    // One token, and an Operator one, so the statement still parses as
+    // `Key Op Value` and this is the only complaint the author gets.
+    CHECK(lexed.kinds() ==
+          std::vector{TokenKind::Identifier, TokenKind::Operator, TokenKind::String});
+    CHECK(lexed.stream()[1].span.length == 2);
+    CHECK(lexed.stream().covers_source(lexed.sources()));
+}
+
 TEST_CASE("spec 3.9: 'true' and 'false' are rejected with a pointer at yes / no", "[lex][diag]") {
     Lexed lexed{"open = true\nshut = false\n"};
 

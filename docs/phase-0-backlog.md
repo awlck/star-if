@@ -543,9 +543,24 @@ committed to explicit, named and loud. That it produced a spec/implementation
 disagreement on first contact — the bullet above — is evidence, not
 coincidence.
 
-- [ ] Remove `?=` from the C++ lexer's operator set, keeping it matched as **one token** so the diagnostic can name the removal and suggest `=` (spec §15). A file written against an older draft should be told what happened, not that `?` is an unknown character.
-- [ ] Revert `ast::Statement::is_binding` to `=` alone, and drop the `?=` case from its test.
-- [ ] `E-OP-REMOVED` is already in `check_stardata.py` and `corpus/invalid/removed-operator.star`; the C++ side needs the matching code and snapshot.
+- [x] Remove `?=` from the C++ lexer's operator set, keeping it matched as **one token** so the diagnostic can name the removal and suggest `=` (spec §15). A file written against an older draft should be told what happened, not that `?` is an unknown character.
+- [x] Revert `ast::Statement::is_binding` to `=` alone, and drop the `?=` case from its test.
+- [x] `E-OP-REMOVED` is already in `check_stardata.py` and `corpus/invalid/removed-operator.star`; the C++ side needs the matching code and snapshot.
+
+The removed operator still produces an **Operator token**, not an error token,
+which is the part worth stating. The statement around it then parses as
+`Key Op Value` and the author gets the one diagnostic that explains the
+removal — rather than that plus a cascade of structural complaints about a
+statement with no operator in it. Same reasoning as `true` / `false` (§3.9),
+which are likewise diagnosed and still tokenised.
+
+The diagnostic carries both halves of §6.3.1's argument, since an author
+meeting it has just lost something they thought they had: what the operator
+meant and why it could not be read locally, and that load order already gives
+them the behaviour they wanted. The fix-it is `=`.
+
+`?=` sat in the lexer's kind table with every other operator; it is now the
+one row there marked `diagnosed`, beside `true` and `false`.
 
 The **registry** is a hash index kept beside the declaration-order vector
 rather than instead of it: order is load order (§13.2), which is what a reader

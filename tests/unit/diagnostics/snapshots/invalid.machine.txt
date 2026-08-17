@@ -26,6 +26,7 @@ tests/corpus/invalid/multiline-string.star:7:70: error: E-STR-MULTILINE: this st
 tests/corpus/invalid/multiline-string.star:7:47: error: E-STRAY-TOKEN: I don't know what ',' is doing here
 tests/corpus/invalid/multiline-string.star:5:5: error: E-BLOCK-MIXED: this block holds bare values, and 'id' is a statement among them
 tests/corpus/invalid/presence-portable.star:9:20: error: E-BLOCK-MIXED: this block holds statements, and 'antecourt' is a bare value among them
+tests/corpus/invalid/removed-operator.star:8:13: error: E-OP-REMOVED: '?=' was removed from the format
 tests/corpus/invalid/reserved-words.star:6:12: error: E-RESERVED-WORD: 'true' is a word I know, but not a value I take
 tests/corpus/invalid/side-state-leak.star:9:59: error: E-BLOCK-MIXED: this block holds statements, and 'locked' is a bare value among them
 tests/corpus/invalid/string-bad-escape.star:7:54: error: E-STR-ESCAPE: I don't recognise the escape '\U'

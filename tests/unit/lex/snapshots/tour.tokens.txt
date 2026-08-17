@@ -5461,439 +5461,439 @@
 61379+1 punctuation }
 61394+13 comment # `-=` reduce
 61412+5 identifier notes
-61422+2 operator ?=
-61425+18 string "unset by default"
-61448+25 comment # `?=` bind only if unset
-61474+1 punctuation }
-61477+57 comment # Comparison operators appear only in condition ...
-61535+4 identifier rule
-61540+1 operator =
-61542+1 punctuation {
-61548+9 identifier of_action
-61558+1 operator =
-61560+4 identifier take
-61569+4 identifier when
-61579+1 operator =
-61581+1 punctuation {
-61583+4 identifier noun
-61588+1 operator =
-61590+1 punctuation {
-61592+6 identifier weight
-61599+1 angle >
-61601+5 decimal 0.000
-61607+1 punctuation }
-61609+1 punctuation }
-61615+10 identifier conditions
-61626+1 operator =
-61628+1 punctuation {
-61638+5 identifier actor
-61644+1 operator =
-61646+1 punctuation {
-61660+8 identifier strength
-61669+2 operator >=
-61672+2 integer 10
-61687+8 identifier strength
-61696+2 operator <=
-61699+2 integer 30
-61714+8 identifier presence
-61723+2 operator !=
-61726+1 integer 0
-61736+1 punctuation }
-61746+4 identifier noun
-61751+1 operator =
-61753+1 punctuation {
-61755+6 identifier weight
-61762+1 angle <
-61764+6 decimal 50.000
-61771+1 punctuation }
-61781+6 identifier second
-61788+1 operator =
-61790+1 punctuation {
-61792+4 identifier open
-61797+2 operator ==
-61800+3 identifier yes
-61804+1 punctuation }
-61810+1 punctuation }
-61816+12 identifier restrictions
-61829+1 operator =
-61831+1 punctuation {
-61833+1 punctuation }
-61852+32 comment # empty block: explicit override
-61885+1 punctuation }
-61888+78 comment # --- 18.2 Every scalar kind -------------------...
-61968+15 identifier class_extension
-61984+1 operator =
-61986+1 punctuation {
-61992+8 identifier of_class
-62001+1 operator =
-62003+5 identifier thing
-62013+8 identifier prop_def
-62022+1 operator =
-62024+1 punctuation {
-62034+13 identifier an_identifier
-62048+1 operator =
-62050+10 identifier identifier
-62069+10 identifier an_integer
-62083+1 operator =
-62085+3 identifier int
-62097+9 identifier a_decimal
-62111+1 operator =
-62113+7 identifier decimal
-62129+7 identifier a_float
-62143+1 operator =
-62145+5 identifier float
-62159+8 identifier a_string
-62173+1 operator =
-62175+6 identifier string
-62190+6 identifier a_text
-62204+1 operator =
-62206+4 identifier text
-62219+6 identifier a_bool
-62233+1 operator =
-62235+4 identifier bool
-62248+5 identifier a_ref
-62262+1 operator =
-62264+3 identifier ref
-62267+1 angle <
-62268+5 identifier thing
-62273+1 angle >
-62283+7 identifier an_enum
-62297+1 operator =
-62299+4 identifier enum
-62303+1 angle <
-62304+14 identifier condition_enum
-62318+1 angle >
-62328+10 identifier a_resource
-62342+1 operator =
-62344+8 identifier resource
-62361+12 identifier a_clock_time
-62375+1 operator =
-62377+10 identifier clock_time
-62396+10 identifier a_duration
-62410+1 operator =
-62412+8 identifier duration
-62429+6 identifier a_dice
-62443+1 operator =
-62445+4 identifier dice
-62458+8 identifier a_script
-62472+1 operator =
-62474+6 identifier script
-62489+10 identifier a_flag_set
-62503+1 operator =
-62505+5 identifier flags
-62510+1 angle <
-62511+16 identifier damage_type_enum
-62527+1 angle >
-62537+6 identifier a_list
-62551+1 operator =
-62553+4 identifier list
-62557+1 angle <
-62558+3 identifier int
-62561+1 angle >
-62571+5 identifier a_set
-62585+1 operator =
-62587+3 identifier set
-62590+1 angle <
-62591+10 identifier identifier
-62601+1 angle >
-62611+5 identifier a_map
-62625+1 operator =
-62627+3 identifier map
-62630+1 angle <
-62631+10 identifier identifier
-62641+1 punctuation ,
-62643+3 identifier int
-62646+1 angle >
-62652+1 punctuation }
-62659+13 identifier an_identifier
-62673+1 operator =
-62675+11 identifier some_symbol
-62691+10 identifier an_integer
-62705+1 operator =
-62707+3 integer -42
-62715+9 identifier a_decimal
-62729+1 operator =
-62731+6 decimal -3.750
-62742+7 identifier a_float
-62756+1 operator =
-62758+5 decimal 0.333
-62768+8 identifier a_string
-62782+1 operator =
-62784+38 string "raw, never localised or interpolated"
-62827+6 identifier a_text
-62841+1 operator =
-62843+17 lockey $flavour_text_key
-62865+6 identifier a_bool
-62879+1 operator =
-62881+3 identifier yes
-62889+5 identifier a_ref
-62903+1 operator =
-62905+4 identifier none
-62925+27 comment # `none` clears a reference
-62957+7 identifier an_enum
-62971+1 operator =
-62973+6 identifier vacuum
-62984+10 identifier a_resource
-62998+1 operator =
-63000+19 string "res/audio/hum.ogg"
-63024+12 identifier a_clock_time
-63038+1 operator =
-63040+10 string "18:45:30"
-63055+10 identifier a_duration
-63069+1 operator =
-63071+2 integer 90
-63078+6 identifier a_dice
-63092+1 operator =
-63094+8 string "1d20+4"
-63107+8 identifier a_script
-63121+1 operator =
-63123+18 identifier some_function_name
-63146+10 identifier a_flag_set
-63160+1 operator =
-63162+1 punctuation {
-63164+7 identifier kinetic
-63172+9 identifier corrosive
-63182+1 punctuation }
-63188+6 identifier a_list
-63202+1 operator =
-63204+1 punctuation {
-63206+1 integer 1
-63208+1 integer 2
-63210+1 integer 3
-63212+1 integer 3
-63214+1 punctuation }
-63224+32 comment # duplicates permitted in a list
-63261+5 identifier a_set
-63275+1 operator =
-63277+1 punctuation {
-63279+5 identifier alpha
-63285+4 identifier beta
-63290+5 identifier gamma
-63296+1 punctuation }
-63302+5 identifier a_map
-63316+1 operator =
-63318+1 punctuation {
-63320+5 identifier alpha
-63326+1 operator =
-63328+1 integer 1
-63331+4 identifier beta
-63336+1 operator =
-63338+1 integer 2
-63340+1 punctuation }
-63342+1 punctuation }
-63345+78 comment # --- 18.3 Adjacent-literal concatenation, and e...
-63425+3 identifier loc
-63429+1 operator =
-63431+1 punctuation {
-63437+4 identifier lang
-63442+1 operator =
-63444+2 identifier en
-63452+16 identifier flavour_text_key
-63469+1 operator =
-63471+29 string "Concatenated across lines, "
-63524+47 string "with no separator inserted between the parts."
-63577+12 identifier escapes_demo
-63590+1 operator =
-63592+49 string "A quote: \\" · a backslash: \\\\ · a newline: \\n...
-63661+64 string "a tab: \\t · a bracket: \\[ and \\] · a dollar: ...
-63745+26 string " · a unicode escape: é"
-63777+62 comment # `#` inside a string is an ordinary character, ...
-63844+9 identifier hash_demo
-63854+1 operator =
-63856+34 string "Cell block #4 — not a comment."
-63896+64 comment # A template with a conditional fragment, an els...
-63965+53 comment # explicit tooltip span over text that is not a ...
-64023+16 identifier conditional_demo
-64040+1 operator =
-64042+33 string "[if is_dark]You can't see much."
-64099+28 string "[else]The bay is lit by a "
-64151+48 string "[tip(plasma_cutter)]guttering blue glare[end]."
-64223+7 string "[end]"
-64231+1 punctuation }
-64234+77 comment # --- 18.4 A key written as a string -----------...
-64312+75 comment # Permitted where the schema allows it, for keys...
-64388+21 comment # the identifier set.
-64411+3 identifier loc
-64415+1 operator =
-64417+1 punctuation {
-64423+4 identifier lang
-64428+1 operator =
-64430+2 identifier en
-64437+29 string "key.with.unusual-characters"
-64467+1 operator =
-64469+26 string "Legal, if rarely wanted."
-64496+1 punctuation }
-64499+77 comment # --- 18.5 `inherit`, and combination annotation...
-64578+4 identifier rule
-64583+1 operator =
-64585+1 punctuation {
-64591+9 identifier of_action
-64604+1 operator =
-64606+7 identifier examine
-64618+4 identifier when
-64631+1 operator =
-64633+1 punctuation {
-64635+4 identifier noun
-64640+1 operator =
-64642+1 punctuation {
-64644+8 identifier of_class
-64653+1 operator =
-64655+6 identifier weapon
-64662+1 punctuation }
-64664+1 punctuation }
-64670+10 identifier conditions
-64683+1 operator =
-64685+7 identifier inherit
-64706+37 comment # identical to omitting the statement
-64748+12 identifier restrictions
-64761+1 operator =
-64763+7 identifier inherit
-64775+7 identifier effects
-64788+1 operator =
-64790+7 identifier inherit
-64802+10 identifier successMsg
-64815+1 operator =
-64817+6 annotation @after
-64824+30 string "It is heavier than it looks."
-64855+1 punctuation }
-64858+4 identifier rule
-64863+1 operator =
-64865+1 punctuation {
-64871+9 identifier of_action
-64882+1 operator =
-64884+7 identifier examine
-64896+4 identifier when
-64907+1 operator =
-64909+1 punctuation {
-64911+4 identifier noun
-64916+1 operator =
-64918+1 punctuation {
-64920+8 identifier of_class
-64929+1 operator =
-64931+5 identifier armor
-64937+1 punctuation }
-64939+1 punctuation }
-64945+10 identifier successMsg
-64956+1 operator =
-64958+7 annotation @before
-64966+33 string "You turn it over in your hands."
-65000+1 punctuation }
-65003+15 identifier class_extension
-65019+1 operator =
-65021+1 punctuation {
-65027+8 identifier of_class
-65036+1 operator =
-65038+6 identifier weapon
-65049+8 identifier prop_def
-65058+1 operator =
-65060+6 annotation @merge
-65067+1 punctuation {
-65069+13 identifier serial_number
-65083+1 operator =
-65085+6 identifier string
-65092+1 punctuation }
-65094+1 punctuation }
-65097+15 identifier class_extension
-65113+1 operator =
-65115+1 punctuation {
-65121+8 identifier of_class
-65130+1 operator =
-65132+5 identifier thing
-65142+8 identifier synonyms
-65151+1 operator =
-65153+7 annotation @remove
-65161+1 punctuation {
-65163+5 identifier thing
-65169+1 punctuation }
-65171+1 punctuation }
-65174+78 comment # --- 18.6 Library metadata --------------------...
-65253+76 comment # Normally in the library's own tree; included h...
-65331+7 identifier library
-65339+1 operator =
-65341+1 punctuation {
-65347+2 identifier id
-65360+1 operator =
-65362+9 identifier starscape
-65376+7 identifier version
-65389+1 operator =
-65391+7 string "1.0.0"
-65403+12 identifier display_name
-65416+1 operator =
-65418+19 lockey $lib_starscape_name
-65442+8 identifier requires
-65455+1 operator =
-65457+1 punctuation {
-65459+6 identifier stdlib
-65466+2 operator >=
-65469+7 string "1.0.0"
-65477+1 punctuation }
-65483+19 identifier uses_editor_feature
-65503+1 operator =
-65505+1 punctuation {
-65507+3 identifier rpg
-65511+6 identifier quests
-65518+8 identifier dialogue
-65527+1 punctuation }
-65533+15 identifier provides_schema
-65553+1 operator =
-65555+1 punctuation {
-65557+10 identifier stat_block
-65568+12 identifier combat_style
-65581+10 identifier loot_table
-65592+1 punctuation }
-65594+1 punctuation }
-65597+77 comment # --- 18.7 An empty file is legal; so is an empt...
-65676+6 identifier action
-65683+1 operator =
-65685+1 punctuation {
-65691+2 identifier id
-65700+1 operator =
-65702+4 identifier wait
-65711+5 identifier match
-65720+1 operator =
-65722+1 punctuation {
-65724+8 string "z/wait"
-65733+1 punctuation }
-65739+7 identifier effects
-65748+1 operator =
-65750+1 punctuation {
-65752+1 punctuation }
-65758+10 identifier successMsg
-65769+1 operator =
-65771+14 string "Time passes."
-65786+1 punctuation }
-65789+78 comment # --- 18.8 Superseding a declaration -----------...
-65868+75 comment # No declaration may be duplicated. `@replaces` ...
-65944+75 comment # naming the SOURCE is what makes it useful: if ...
-66020+76 comment # a `wait` action, or renamed it, this becomes a...
-66097+54 comment # second declaration that silently never takes e...
-66152+1 comment #
-66154+79 comment # Replacement is total — nothing is merged fro...
-66234+47 comment # class_extension and schema_extension are for.
-66282+6 identifier action
-66289+1 operator =
-66291+9 annotation @replaces
-66300+1 punctuation (
-66301+6 identifier stdlib
-66307+1 punctuation )
-66309+1 punctuation {
-66315+2 identifier id
-66326+1 operator =
-66328+4 identifier wait
-66337+5 identifier match
-66348+1 operator =
-66350+1 punctuation {
-66352+23 string "wait for/until [text]"
-66376+1 punctuation }
-66382+7 identifier effects
-66393+1 operator =
-66395+1 punctuation {
-66397+1 punctuation }
-66403+10 identifier successMsg
-66414+1 operator =
-66416+11 string "You wait."
-66428+1 punctuation }
-66431+79 comment # ==============================================...
-66511+19 comment #  End of tour.star
-66531+79 comment # ==============================================...
-66611+0 eof 
+61423+1 operator =
+61425+15 string "plainly bound"
+61448+36 comment # `?=` was removed; see spec §6.3.1
+61485+1 punctuation }
+61488+57 comment # Comparison operators appear only in condition ...
+61546+4 identifier rule
+61551+1 operator =
+61553+1 punctuation {
+61559+9 identifier of_action
+61569+1 operator =
+61571+4 identifier take
+61580+4 identifier when
+61590+1 operator =
+61592+1 punctuation {
+61594+4 identifier noun
+61599+1 operator =
+61601+1 punctuation {
+61603+6 identifier weight
+61610+1 angle >
+61612+5 decimal 0.000
+61618+1 punctuation }
+61620+1 punctuation }
+61626+10 identifier conditions
+61637+1 operator =
+61639+1 punctuation {
+61649+5 identifier actor
+61655+1 operator =
+61657+1 punctuation {
+61671+8 identifier strength
+61680+2 operator >=
+61683+2 integer 10
+61698+8 identifier strength
+61707+2 operator <=
+61710+2 integer 30
+61725+8 identifier presence
+61734+2 operator !=
+61737+1 integer 0
+61747+1 punctuation }
+61757+4 identifier noun
+61762+1 operator =
+61764+1 punctuation {
+61766+6 identifier weight
+61773+1 angle <
+61775+6 decimal 50.000
+61782+1 punctuation }
+61792+6 identifier second
+61799+1 operator =
+61801+1 punctuation {
+61803+4 identifier open
+61808+2 operator ==
+61811+3 identifier yes
+61815+1 punctuation }
+61821+1 punctuation }
+61827+12 identifier restrictions
+61840+1 operator =
+61842+1 punctuation {
+61844+1 punctuation }
+61863+32 comment # empty block: explicit override
+61896+1 punctuation }
+61899+78 comment # --- 18.2 Every scalar kind -------------------...
+61979+15 identifier class_extension
+61995+1 operator =
+61997+1 punctuation {
+62003+8 identifier of_class
+62012+1 operator =
+62014+5 identifier thing
+62024+8 identifier prop_def
+62033+1 operator =
+62035+1 punctuation {
+62045+13 identifier an_identifier
+62059+1 operator =
+62061+10 identifier identifier
+62080+10 identifier an_integer
+62094+1 operator =
+62096+3 identifier int
+62108+9 identifier a_decimal
+62122+1 operator =
+62124+7 identifier decimal
+62140+7 identifier a_float
+62154+1 operator =
+62156+5 identifier float
+62170+8 identifier a_string
+62184+1 operator =
+62186+6 identifier string
+62201+6 identifier a_text
+62215+1 operator =
+62217+4 identifier text
+62230+6 identifier a_bool
+62244+1 operator =
+62246+4 identifier bool
+62259+5 identifier a_ref
+62273+1 operator =
+62275+3 identifier ref
+62278+1 angle <
+62279+5 identifier thing
+62284+1 angle >
+62294+7 identifier an_enum
+62308+1 operator =
+62310+4 identifier enum
+62314+1 angle <
+62315+14 identifier condition_enum
+62329+1 angle >
+62339+10 identifier a_resource
+62353+1 operator =
+62355+8 identifier resource
+62372+12 identifier a_clock_time
+62386+1 operator =
+62388+10 identifier clock_time
+62407+10 identifier a_duration
+62421+1 operator =
+62423+8 identifier duration
+62440+6 identifier a_dice
+62454+1 operator =
+62456+4 identifier dice
+62469+8 identifier a_script
+62483+1 operator =
+62485+6 identifier script
+62500+10 identifier a_flag_set
+62514+1 operator =
+62516+5 identifier flags
+62521+1 angle <
+62522+16 identifier damage_type_enum
+62538+1 angle >
+62548+6 identifier a_list
+62562+1 operator =
+62564+4 identifier list
+62568+1 angle <
+62569+3 identifier int
+62572+1 angle >
+62582+5 identifier a_set
+62596+1 operator =
+62598+3 identifier set
+62601+1 angle <
+62602+10 identifier identifier
+62612+1 angle >
+62622+5 identifier a_map
+62636+1 operator =
+62638+3 identifier map
+62641+1 angle <
+62642+10 identifier identifier
+62652+1 punctuation ,
+62654+3 identifier int
+62657+1 angle >
+62663+1 punctuation }
+62670+13 identifier an_identifier
+62684+1 operator =
+62686+11 identifier some_symbol
+62702+10 identifier an_integer
+62716+1 operator =
+62718+3 integer -42
+62726+9 identifier a_decimal
+62740+1 operator =
+62742+6 decimal -3.750
+62753+7 identifier a_float
+62767+1 operator =
+62769+5 decimal 0.333
+62779+8 identifier a_string
+62793+1 operator =
+62795+38 string "raw, never localised or interpolated"
+62838+6 identifier a_text
+62852+1 operator =
+62854+17 lockey $flavour_text_key
+62876+6 identifier a_bool
+62890+1 operator =
+62892+3 identifier yes
+62900+5 identifier a_ref
+62914+1 operator =
+62916+4 identifier none
+62936+27 comment # `none` clears a reference
+62968+7 identifier an_enum
+62982+1 operator =
+62984+6 identifier vacuum
+62995+10 identifier a_resource
+63009+1 operator =
+63011+19 string "res/audio/hum.ogg"
+63035+12 identifier a_clock_time
+63049+1 operator =
+63051+10 string "18:45:30"
+63066+10 identifier a_duration
+63080+1 operator =
+63082+2 integer 90
+63089+6 identifier a_dice
+63103+1 operator =
+63105+8 string "1d20+4"
+63118+8 identifier a_script
+63132+1 operator =
+63134+18 identifier some_function_name
+63157+10 identifier a_flag_set
+63171+1 operator =
+63173+1 punctuation {
+63175+7 identifier kinetic
+63183+9 identifier corrosive
+63193+1 punctuation }
+63199+6 identifier a_list
+63213+1 operator =
+63215+1 punctuation {
+63217+1 integer 1
+63219+1 integer 2
+63221+1 integer 3
+63223+1 integer 3
+63225+1 punctuation }
+63235+32 comment # duplicates permitted in a list
+63272+5 identifier a_set
+63286+1 operator =
+63288+1 punctuation {
+63290+5 identifier alpha
+63296+4 identifier beta
+63301+5 identifier gamma
+63307+1 punctuation }
+63313+5 identifier a_map
+63327+1 operator =
+63329+1 punctuation {
+63331+5 identifier alpha
+63337+1 operator =
+63339+1 integer 1
+63342+4 identifier beta
+63347+1 operator =
+63349+1 integer 2
+63351+1 punctuation }
+63353+1 punctuation }
+63356+78 comment # --- 18.3 Adjacent-literal concatenation, and e...
+63436+3 identifier loc
+63440+1 operator =
+63442+1 punctuation {
+63448+4 identifier lang
+63453+1 operator =
+63455+2 identifier en
+63463+16 identifier flavour_text_key
+63480+1 operator =
+63482+29 string "Concatenated across lines, "
+63535+47 string "with no separator inserted between the parts."
+63588+12 identifier escapes_demo
+63601+1 operator =
+63603+49 string "A quote: \\" · a backslash: \\\\ · a newline: \\n...
+63672+64 string "a tab: \\t · a bracket: \\[ and \\] · a dollar: ...
+63756+26 string " · a unicode escape: é"
+63788+62 comment # `#` inside a string is an ordinary character, ...
+63855+9 identifier hash_demo
+63865+1 operator =
+63867+34 string "Cell block #4 — not a comment."
+63907+64 comment # A template with a conditional fragment, an els...
+63976+53 comment # explicit tooltip span over text that is not a ...
+64034+16 identifier conditional_demo
+64051+1 operator =
+64053+33 string "[if is_dark]You can't see much."
+64110+28 string "[else]The bay is lit by a "
+64162+48 string "[tip(plasma_cutter)]guttering blue glare[end]."
+64234+7 string "[end]"
+64242+1 punctuation }
+64245+77 comment # --- 18.4 A key written as a string -----------...
+64323+75 comment # Permitted where the schema allows it, for keys...
+64399+21 comment # the identifier set.
+64422+3 identifier loc
+64426+1 operator =
+64428+1 punctuation {
+64434+4 identifier lang
+64439+1 operator =
+64441+2 identifier en
+64448+29 string "key.with.unusual-characters"
+64478+1 operator =
+64480+26 string "Legal, if rarely wanted."
+64507+1 punctuation }
+64510+77 comment # --- 18.5 `inherit`, and combination annotation...
+64589+4 identifier rule
+64594+1 operator =
+64596+1 punctuation {
+64602+9 identifier of_action
+64615+1 operator =
+64617+7 identifier examine
+64629+4 identifier when
+64642+1 operator =
+64644+1 punctuation {
+64646+4 identifier noun
+64651+1 operator =
+64653+1 punctuation {
+64655+8 identifier of_class
+64664+1 operator =
+64666+6 identifier weapon
+64673+1 punctuation }
+64675+1 punctuation }
+64681+10 identifier conditions
+64694+1 operator =
+64696+7 identifier inherit
+64717+37 comment # identical to omitting the statement
+64759+12 identifier restrictions
+64772+1 operator =
+64774+7 identifier inherit
+64786+7 identifier effects
+64799+1 operator =
+64801+7 identifier inherit
+64813+10 identifier successMsg
+64826+1 operator =
+64828+6 annotation @after
+64835+30 string "It is heavier than it looks."
+64866+1 punctuation }
+64869+4 identifier rule
+64874+1 operator =
+64876+1 punctuation {
+64882+9 identifier of_action
+64893+1 operator =
+64895+7 identifier examine
+64907+4 identifier when
+64918+1 operator =
+64920+1 punctuation {
+64922+4 identifier noun
+64927+1 operator =
+64929+1 punctuation {
+64931+8 identifier of_class
+64940+1 operator =
+64942+5 identifier armor
+64948+1 punctuation }
+64950+1 punctuation }
+64956+10 identifier successMsg
+64967+1 operator =
+64969+7 annotation @before
+64977+33 string "You turn it over in your hands."
+65011+1 punctuation }
+65014+15 identifier class_extension
+65030+1 operator =
+65032+1 punctuation {
+65038+8 identifier of_class
+65047+1 operator =
+65049+6 identifier weapon
+65060+8 identifier prop_def
+65069+1 operator =
+65071+6 annotation @merge
+65078+1 punctuation {
+65080+13 identifier serial_number
+65094+1 operator =
+65096+6 identifier string
+65103+1 punctuation }
+65105+1 punctuation }
+65108+15 identifier class_extension
+65124+1 operator =
+65126+1 punctuation {
+65132+8 identifier of_class
+65141+1 operator =
+65143+5 identifier thing
+65153+8 identifier synonyms
+65162+1 operator =
+65164+7 annotation @remove
+65172+1 punctuation {
+65174+5 identifier thing
+65180+1 punctuation }
+65182+1 punctuation }
+65185+78 comment # --- 18.6 Library metadata --------------------...
+65264+76 comment # Normally in the library's own tree; included h...
+65342+7 identifier library
+65350+1 operator =
+65352+1 punctuation {
+65358+2 identifier id
+65371+1 operator =
+65373+9 identifier starscape
+65387+7 identifier version
+65400+1 operator =
+65402+7 string "1.0.0"
+65414+12 identifier display_name
+65427+1 operator =
+65429+19 lockey $lib_starscape_name
+65453+8 identifier requires
+65466+1 operator =
+65468+1 punctuation {
+65470+6 identifier stdlib
+65477+2 operator >=
+65480+7 string "1.0.0"
+65488+1 punctuation }
+65494+19 identifier uses_editor_feature
+65514+1 operator =
+65516+1 punctuation {
+65518+3 identifier rpg
+65522+6 identifier quests
+65529+8 identifier dialogue
+65538+1 punctuation }
+65544+15 identifier provides_schema
+65564+1 operator =
+65566+1 punctuation {
+65568+10 identifier stat_block
+65579+12 identifier combat_style
+65592+10 identifier loot_table
+65603+1 punctuation }
+65605+1 punctuation }
+65608+77 comment # --- 18.7 An empty file is legal; so is an empt...
+65687+6 identifier action
+65694+1 operator =
+65696+1 punctuation {
+65702+2 identifier id
+65711+1 operator =
+65713+4 identifier wait
+65722+5 identifier match
+65731+1 operator =
+65733+1 punctuation {
+65735+8 string "z/wait"
+65744+1 punctuation }
+65750+7 identifier effects
+65759+1 operator =
+65761+1 punctuation {
+65763+1 punctuation }
+65769+10 identifier successMsg
+65780+1 operator =
+65782+14 string "Time passes."
+65797+1 punctuation }
+65800+78 comment # --- 18.8 Superseding a declaration -----------...
+65879+75 comment # No declaration may be duplicated. `@replaces` ...
+65955+75 comment # naming the SOURCE is what makes it useful: if ...
+66031+76 comment # a `wait` action, or renamed it, this becomes a...
+66108+54 comment # second declaration that silently never takes e...
+66163+1 comment #
+66165+79 comment # Replacement is total — nothing is merged fro...
+66245+47 comment # class_extension and schema_extension are for.
+66293+6 identifier action
+66300+1 operator =
+66302+9 annotation @replaces
+66311+1 punctuation (
+66312+6 identifier stdlib
+66318+1 punctuation )
+66320+1 punctuation {
+66326+2 identifier id
+66337+1 operator =
+66339+4 identifier wait
+66348+5 identifier match
+66359+1 operator =
+66361+1 punctuation {
+66363+23 string "wait for/until [text]"
+66387+1 punctuation }
+66393+7 identifier effects
+66404+1 operator =
+66406+1 punctuation {
+66408+1 punctuation }
+66414+10 identifier successMsg
+66425+1 operator =
+66427+11 string "You wait."
+66439+1 punctuation }
+66442+79 comment # ==============================================...
+66522+19 comment #  End of tour.star
+66542+79 comment # ==============================================...
+66622+0 eof 

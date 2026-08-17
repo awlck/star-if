@@ -106,18 +106,6 @@ TEST_CASE("the modifier operators never collide with a binding", "[schema][arity
     CHECK(all_of(loaded, diag::Code::DuplicateKey).empty());
 }
 
-TEST_CASE("'?=' binds, and collides with a binding", "[schema][arity]") {
-    // §5.3: "arity counts binding occurrences only -- those using `=` or
-    // `?=`". `?=` reads like a modifier and is not one: it establishes a
-    // value where `+=` transforms one, which is why a block mentioning a key
-    // only through `?=` has still set it.
-    test::LoadedSet loaded;
-    loaded.load_builtin();
-    loaded.load_text(an_action("    successMsg = \"One.\"\n    successMsg ?= \"Two.\"\n"));
-
-    CHECK(all_of(loaded, diag::Code::DuplicateKey).size() == 1);
-}
-
 TEST_CASE("an arity-many key repeats freely, in source order", "[schema][arity]") {
     test::LoadedSet loaded;
     loaded.load_builtin();

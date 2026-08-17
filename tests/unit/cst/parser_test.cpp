@@ -64,7 +64,7 @@ TEST_CASE("a key may be a string", "[cst][parser]") {
 }
 
 TEST_CASE("every operator of spec 3.6 is accepted in operator position", "[cst][parser]") {
-    for (std::string_view op : {"=", "==", "!=", "<=", ">=", "+=", "-=", "?=", "<", ">"}) {
+    for (std::string_view op : {"=", "==", "!=", "<=", ">=", "+=", "-=", "<", ">"}) {
         INFO("operator: " << op);
         Parsed parsed{"strength " + std::string(op) + " 14\n"};
         CHECK(shape_of(only_statement(parsed)) ==

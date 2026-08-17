@@ -42,6 +42,7 @@ enum class Code : std::uint8_t {
     UnicodeWhitespace,      // E-UNICODE-WS            §3.1    non-ASCII whitespace
     BadChar,                // E-BAD-CHAR              §3      character that begins no token
     Utf8Invalid,            // E-UTF8-INVALID          §2      file is not well-formed UTF-8
+    OpRemoved,              // E-OP-REMOVED            §6.3.1  '?=', which earlier drafts specified
 
     // Syntactic (spec §4, §5.2). E-BRACE-UNBALANCED and E-STRAY-TOKEN reuse
     // the names tests/check_stardata.py already reports, so the two

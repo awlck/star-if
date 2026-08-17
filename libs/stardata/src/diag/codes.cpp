@@ -43,6 +43,8 @@ std::string_view code_string(Code code) noexcept {
         return "E-BAD-CHAR";
     case Code::Utf8Invalid:
         return "E-UTF8-INVALID";
+    case Code::OpRemoved:
+        return "E-OP-REMOVED";
     case Code::BraceUnbalanced:
         return "E-BRACE-UNBALANCED";
     case Code::StrayToken:

@@ -652,9 +652,33 @@ private:
     // §3.6, longest match first: `>=` is one operator, never `>` then `=`.
     // A bare `<` or `>` is not handled here -- it is an Angle (§4.2).
     bool lex_operator() {
-        static constexpr std::array<std::string_view, 7> kTwoCharOperators{
-            "==", "!=", "<=", ">=", "+=", "-=", "?="};
+        static constexpr std::array<std::string_view, 6> kTwoCharOperators{
+            "==", "!=", "<=", ">=", "+=", "-="};
         const std::string_view pair = slice(pos_, 2);
+
+        // `?=` is still matched here, as one token, although §3.6 no longer
+        // lists it. That is §15's requirement rather than an oversight: the
+        // operator appeared in published drafts, so a file written against
+        // one is owed "this was removed, write `=`" instead of "`?` begins no
+        // token", which is what falling through to lex_bad_char would give.
+        //
+        // An Operator token is pushed despite the error, so the statement
+        // still parses as `Key Op Value` and the author gets this one
+        // diagnostic rather than it plus a cascade of structural ones.
+        if (pair == "?=") {
+            report(Code::OpRemoved, span(pos_, 2), "'?=' was removed from the format")
+                .with_note("it meant \"bind only if this key is unset\", which could not be read "
+                           "locally: whether it bound depended on every other declaration of the "
+                           "key, at any inheritance level, in any file (spec §6.3.1)")
+                .with_note("the case it existed for is already covered -- a project loads after "
+                           "every library, so a library's plain `=` is always pre-emptable "
+                           "(spec §13.2)")
+                .with_fix_it(span(pos_, 2), "=", "bind it plainly with '='");
+            push_token(TokenKind::Operator, pos_, 2);
+            pos_ += 2;
+            return true;
+        }
+
         for (std::string_view op : kTwoCharOperators) {
             if (pair == op) {
                 push_token(TokenKind::Operator, pos_, 2);

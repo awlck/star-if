@@ -1,0 +1,17 @@
+# tests/corpus/invalid/sub-grammar-malformed.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-TYPE-MISMATCH: "3d" is not a dice expression
+  --> tests/corpus/invalid/sub-grammar-malformed.star:21:16
+   |
+21 |     damage   = "3d"
+   |                ^^^^
+note: a dice expression is a count, a 'd', a number of faces and an optional modifier: "3d6", "d20", "3d6+2" (spec §6.2)
+
+error: E-TYPE-MISMATCH: "25:9" is not a time of day
+  --> tests/corpus/invalid/sub-grammar-malformed.star:22:16
+   |
+22 |     goes_off = "25:9"
+   |                ^^^^^^
+note: a clock_time is written "HH:MM" or "HH:MM:SS", two digits per field (spec §6.2)
+note: what those numbers count is the sector's calendar's to say, so the hour is not range-checked here (spec §11.6)

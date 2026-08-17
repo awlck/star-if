@@ -1,0 +1,15 @@
+# tests/corpus/invalid/duplicate-key-arity-one.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-DUP-KEY: 'successMsg' is set twice in this 'action'
+  --> tests/corpus/invalid/duplicate-key-arity-one.star:14:5
+   |
+14 |     successMsg = "The bell is already gleaming."
+   |     ^^^^^^^^^^
+note: first set here
+  --> tests/corpus/invalid/duplicate-key-arity-one.star:13:5
+   |
+13 |     successMsg = "You buff the bell until it gleams."
+   |     ^^^^^^^^^^
+note: 'successMsg' holds one value, so the second line would silently win over the first. A key that may repeat says `arity = many` in its schema (spec §5.3, §7.2)
+note: `+=` and `-=` are not bindings and never collide: write `successMsg += ...` to add to what is already there

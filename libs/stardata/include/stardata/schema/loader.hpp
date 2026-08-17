@@ -2,9 +2,14 @@
 // SPDX-FileCopyrightText: 2026 Adrian Welcker
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
+#include <map>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "stardata/cst/green.hpp"
@@ -14,12 +19,19 @@
 
 namespace stardata::schema {
 
-// Everything a load has declared so far (backlog F2).
+// Everything a load has declared so far (backlog F2, F3).
 //
-// Deliberately a flat vector with a linear lookup. Phase 0 loads dozens of
-// declarations, not thousands, and backlog F3 replaces this with the real
-// registry -- keyed by form id, contributed to by libraries. Making it fast
-// before it is right would be the wrong order.
+// THE REGISTRY (backlog F3, spec §13.3). Every declaration is keyed by its
+// id, and any library may contribute one: the built-in set arrives first
+// because it loads first, not because it is stored anywhere special. A
+// library's `stat_block` and core's `action` sit in the same table, are found
+// the same way, and are validated against by the same code -- which is what
+// §7.1's claim about one source of truth amounts to in practice.
+//
+// Storage stays a vector in declaration order, with a hash index beside it
+// rather than instead of it. The order is load order (§13.2), which is what
+// a reader and a diagnostic both expect, and no hash map's iteration order is
+// anybody's. The index makes a lookup a hash instead of a scan.
 //
 // SEALING (backlog F2a, spec §7.2.2) lives here rather than in the loader,
 // because it is a property of the *set*: whether a declaration is legal
@@ -92,21 +104,23 @@ public:
     void add_library(LibraryManifest manifest);
     void add_requirement(CoreRequirement requirement);
 
-    // Which enum's values are the placement keywords of §8.5.
-    //
-    // Named by whoever owns the object model -- `starcore` in Phase 1, the
-    // test harness today -- and not known here. `libs/stardata` has no
-    // business knowing that placement exists, let alone that its vocabulary
-    // is called `relation_enum`, so the one place that name could leak in is
-    // a setter the owner calls.
-    void set_relation_enum(std::string id) { relation_enum_ = std::move(id); }
-    [[nodiscard]] const std::vector<std::string>& relation_values() const noexcept;
-
     [[nodiscard]] const Schema* find(std::string_view id) const noexcept;
-    [[nodiscard]] const ClassDecl* find_class(std::string_view id) const noexcept;
     [[nodiscard]] const EnumDecl* find_enum(std::string_view id) const noexcept;
     [[nodiscard]] const Declaration* find_declaration(std::string_view space,
                                                       std::string_view id) const noexcept;
+
+    // Classes and traits are separate namespaces (§7.2.4 gives each its own
+    // `unique_in`), so `class thing` and `trait thing` may both exist and a
+    // lookup has to say which it wants. Only the first is instantiable:
+    // §7.4's rule is that a top-level statement whose key names a *class*
+    // creates one, and a trait is mixed in rather than created.
+    [[nodiscard]] const ClassDecl* find_class(std::string_view id) const noexcept;
+    [[nodiscard]] const ClassDecl* find_trait(std::string_view id) const noexcept;
+
+    // Either, class first. For the callers that genuinely do not care --
+    // `class_extension` names a declaration to add properties to, and §8.2
+    // draws no distinction there.
+    [[nodiscard]] const ClassDecl* find_class_or_trait(std::string_view id) const noexcept;
 
     [[nodiscard]] const std::vector<Schema>& schemas() const noexcept { return schemas_; }
     [[nodiscard]] const std::vector<ClassDecl>& classes() const noexcept { return classes_; }
@@ -122,22 +136,49 @@ public:
     }
 
 private:
+    // Index into one of the vectors below, or nothing. Returned rather than a
+    // pointer wherever the caller goes on to mutate the vector, since a
+    // pointer into it is one `push_back` away from dangling.
+    [[nodiscard]] std::optional<std::size_t> schema_index(std::string_view id) const noexcept;
+    [[nodiscard]] std::optional<std::size_t> class_index(std::string_view id,
+                                                         bool is_trait) const noexcept;
+    [[nodiscard]] std::optional<std::size_t> declaration_index(std::string_view space,
+                                                               std::string_view id) const noexcept;
+
     std::vector<Schema> schemas_;
     std::vector<ClassDecl> classes_;
     std::vector<EnumDecl> enums_;
-    std::string relation_enum_;
     std::vector<Declaration> declarations_;
     std::vector<CoreRequirement> requirements_;
     std::vector<LibraryManifest> libraries_;
+
+    // id -> position in the vector beside it. Classes and traits share one
+    // vector and get one map each, because they are two namespaces (§7.2.4)
+    // stored together for the reason `ClassDecl` is one structure: every
+    // assertion §7.2.2 makes about a core class it makes about a core trait.
+    std::unordered_map<std::string, std::size_t> schema_index_;
+    std::unordered_map<std::string, std::size_t> class_index_;
+    std::unordered_map<std::string, std::size_t> trait_index_;
+    std::unordered_map<std::string, std::size_t> enum_index_;
+
+    // Keyed by namespace and id both, since §7.6's uniqueness rule is stated
+    // per `unique_in` namespace: `const` and `global` share one, `class` and
+    // `trait` do not.
+    std::map<std::pair<std::string, std::string>, std::size_t> declaration_index_;
 };
 
-// Validates one record block against a schema.
+// Validates one record block against a schema: unknown keys (§7.3), required
+// keys (§7.2), arity (§5.3), exclusive groups (§7.2.1) and the declared type
+// of every value (§6.2).
 //
-// F2's share of key validation, and no more: an unknown key in a closed
-// schema, and a required key that is absent. Arity and duplicate keys are
-// F3, types are F4, combination modes are F5, exclusive groups are F3 --
-// each is read into the KeyDecl already, and none is acted on here.
-void validate_block(const ast::Block& block, const Schema& schema, diag::DiagnosticSink& sink);
+// `set` is the registry the type checker resolves `enum<E>`, `ref<C>` and
+// `block<S>` against, and may be null -- which is what the bootstrap needs,
+// since the first schema block is validated before anything is registered.
+// A null set checks everything except types.
+//
+// Combination modes are F5's, and are read into the KeyDecl already.
+void validate_block(const ast::Block& block, const Schema& schema, const SchemaSet* set,
+                    diag::DiagnosticSink& sink);
 
 // Who a set of files is loaded on behalf of. The owner is assigned here and
 // never read from the file, so that a library cannot claim to be `starcore`

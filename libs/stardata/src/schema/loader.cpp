@@ -8,6 +8,7 @@
 
 #include "stardata/cst/parser.hpp"
 #include "stardata/diag/diagnostic.hpp"
+#include "stardata/schema/types.hpp"
 
 namespace stardata::schema {
 
@@ -54,40 +55,58 @@ using diag::Diagnostic;
 
 // --- SchemaSet ---------------------------------------------------------
 
+// The registry proper (backlog F3). Every `find` below is a hash lookup into
+// an index kept beside the declaration-order vector, rather than the scan
+// that stood in for it while F2 was being written.
+//
+// The maps are keyed by `std::string` and probed with a `std::string_view`,
+// which C++20 heterogeneous lookup does not give unordered containers without
+// a transparent hash, so each probe below constructs one string. That is a
+// deliberate trade for now: the alternative is a custom hash and equality
+// pair on every map, and the cost is a small allocation on a path that used
+// to walk the whole vector.
+std::optional<std::size_t> SchemaSet::schema_index(std::string_view id) const noexcept {
+    const auto it = schema_index_.find(std::string(id));
+    return it == schema_index_.end() ? std::nullopt : std::optional<std::size_t>(it->second);
+}
+
+std::optional<std::size_t> SchemaSet::class_index(std::string_view id,
+                                                  bool is_trait) const noexcept {
+    const std::unordered_map<std::string, std::size_t>& index =
+        is_trait ? trait_index_ : class_index_;
+    const auto it = index.find(std::string(id));
+    return it == index.end() ? std::nullopt : std::optional<std::size_t>(it->second);
+}
+
+std::optional<std::size_t> SchemaSet::declaration_index(std::string_view space,
+                                                        std::string_view id) const noexcept {
+    const auto it = declaration_index_.find(std::pair(std::string(space), std::string(id)));
+    return it == declaration_index_.end() ? std::nullopt : std::optional<std::size_t>(it->second);
+}
+
 const Schema* SchemaSet::find(std::string_view id) const noexcept {
-    for (const Schema& schema : schemas_) {
-        if (schema.id == id) {
-            return &schema;
-        }
-    }
-    return nullptr;
+    const std::optional<std::size_t> index = schema_index(id);
+    return index ? &schemas_[*index] : nullptr;
 }
 
 const EnumDecl* SchemaSet::find_enum(std::string_view id) const noexcept {
-    for (const EnumDecl& decl : enums_) {
-        if (decl.id == id) {
-            return &decl;
-        }
-    }
-    return nullptr;
-}
-
-const std::vector<std::string>& SchemaSet::relation_values() const noexcept {
-    static const std::vector<std::string> none;
-    if (relation_enum_.empty()) {
-        return none;
-    }
-    const EnumDecl* declared = find_enum(relation_enum_);
-    return declared != nullptr ? declared->values : none;
+    const auto it = enum_index_.find(std::string(id));
+    return it == enum_index_.end() ? nullptr : &enums_[it->second];
 }
 
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
-    for (const ClassDecl& decl : classes_) {
-        if (decl.id == id) {
-            return &decl;
-        }
-    }
-    return nullptr;
+    const std::optional<std::size_t> index = class_index(id, /*is_trait=*/false);
+    return index ? &classes_[*index] : nullptr;
+}
+
+const ClassDecl* SchemaSet::find_trait(std::string_view id) const noexcept {
+    const std::optional<std::size_t> index = class_index(id, /*is_trait=*/true);
+    return index ? &classes_[*index] : nullptr;
+}
+
+const ClassDecl* SchemaSet::find_class_or_trait(std::string_view id) const noexcept {
+    const ClassDecl* decl = find_class(id);
+    return decl != nullptr ? decl : find_trait(id);
 }
 
 void SchemaSet::add_requirement(CoreRequirement requirement) {
@@ -100,12 +119,8 @@ void SchemaSet::add_library(LibraryManifest manifest) {
 
 const SchemaSet::Declaration* SchemaSet::find_declaration(std::string_view space,
                                                           std::string_view id) const noexcept {
-    for (const Declaration& declaration : declarations_) {
-        if (declaration.space == space && declaration.id == id) {
-            return &declaration;
-        }
-    }
-    return nullptr;
+    const std::optional<std::size_t> index = declaration_index(space, id);
+    return index ? &declarations_[*index] : nullptr;
 }
 
 // The §7.6 gate. Everything a file declares at the top level comes through
@@ -115,7 +130,8 @@ const SchemaSet::Declaration* SchemaSet::find_declaration(std::string_view space
 SchemaSet::Outcome SchemaSet::offer(Declaration declaration,
                                     const std::optional<Replaces>& replaces,
                                     diag::DiagnosticSink& sink) {
-    const Declaration* existing = find_declaration(declaration.space, declaration.id);
+    const std::optional<std::size_t> at = declaration_index(declaration.space, declaration.id);
+    const Declaration* existing = at ? &declarations_[*at] : nullptr;
 
     if (replaces) {
         // §7.6: naming the source is the point. A typo, an upstream rename,
@@ -156,8 +172,7 @@ SchemaSet::Outcome SchemaSet::offer(Declaration declaration,
             return Outcome::Rejected;
         }
 
-        const std::size_t index = static_cast<std::size_t>(existing - declarations_.data());
-        declarations_[index] = std::move(declaration);
+        declarations_[*at] = std::move(declaration);
         return Outcome::Replaced;
     }
 
@@ -191,6 +206,7 @@ SchemaSet::Outcome SchemaSet::offer(Declaration declaration,
         return Outcome::Rejected;
     }
 
+    declaration_index_.emplace(std::pair(declaration.space, declaration.id), declarations_.size());
     declarations_.push_back(std::move(declaration));
     return Outcome::Fresh;
 }
@@ -202,12 +218,11 @@ bool SchemaSet::declare(Schema schema, const std::optional<Replaces>& replaces,
     if (outcome == Outcome::Rejected) {
         return false;
     }
-    for (Schema& existing : schemas_) {
-        if (existing.id == schema.id) {
-            existing = std::move(schema); // §7.6: replacement is total
-            return true;
-        }
+    if (const std::optional<std::size_t> at = schema_index(schema.id)) {
+        schemas_[*at] = std::move(schema); // §7.6: replacement is total
+        return true;
     }
+    schema_index_.emplace(schema.id, schemas_.size());
     schemas_.push_back(std::move(schema));
     return true;
 }
@@ -220,12 +235,11 @@ bool SchemaSet::declare_class(ClassDecl decl, const std::optional<Replaces>& rep
     if (outcome == Outcome::Rejected) {
         return false;
     }
-    for (ClassDecl& existing : classes_) {
-        if (existing.id == decl.id && existing.is_trait == decl.is_trait) {
-            existing = std::move(decl);
-            return true;
-        }
+    if (const std::optional<std::size_t> at = class_index(decl.id, decl.is_trait)) {
+        classes_[*at] = std::move(decl);
+        return true;
     }
+    (decl.is_trait ? trait_index_ : class_index_).emplace(decl.id, classes_.size());
     classes_.push_back(std::move(decl));
     return true;
 }
@@ -237,20 +251,19 @@ bool SchemaSet::declare_enum(EnumDecl decl, const std::optional<Replaces>& repla
     if (outcome == Outcome::Rejected) {
         return false;
     }
-    for (EnumDecl& existing : enums_) {
-        if (existing.id == decl.id) {
-            existing = std::move(decl);
-            return true;
-        }
+    if (const auto it = enum_index_.find(decl.id); it != enum_index_.end()) {
+        enums_[it->second] = std::move(decl);
+        return true;
     }
+    enum_index_.emplace(decl.id, enums_.size());
     enums_.push_back(std::move(decl));
     return true;
 }
 
 bool SchemaSet::apply_schema_extension(const SchemaExtensionDecl& extension,
                                        diag::DiagnosticSink& sink) {
-    const Schema* existing = find(extension.of_schema);
-    if (existing == nullptr) {
+    const std::optional<std::size_t> at = schema_index(extension.of_schema);
+    if (!at) {
         Diagnostic diagnostic(Code::SchemaInvalid, extension.of_schema_span,
                               "I can't extend '" + extension.of_schema +
                                   "', because nothing declares it");
@@ -260,7 +273,7 @@ bool SchemaSet::apply_schema_extension(const SchemaExtensionDecl& extension,
         return false;
     }
 
-    const std::size_t index = static_cast<std::size_t>(existing - schemas_.data());
+    const std::size_t index = *at;
     bool accepted = true;
     for (const KeyDecl& key : extension.keys) {
         const KeyDecl* declared = schemas_[index].find_key(key.name);
@@ -297,7 +310,9 @@ bool SchemaSet::apply_schema_extension(const SchemaExtensionDecl& extension,
 }
 
 bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::DiagnosticSink& sink) {
-    const ClassDecl* existing = find_class(extension.of_class);
+    // Either namespace: §8.2 draws no distinction, and a trait's property set
+    // is extended the same way a class's is.
+    const ClassDecl* existing = find_class_or_trait(extension.of_class);
     if (existing == nullptr) {
         Diagnostic diagnostic(Code::SchemaInvalid, extension.of_class_span,
                               "I can't extend '" + extension.of_class +
@@ -356,8 +371,138 @@ bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::Diagnostic
 
 // --- block validation --------------------------------------------------
 
-void validate_block(const ast::Block& block, const Schema& schema, diag::DiagnosticSink& sink) {
-    for (const ast::Statement& statement : block.statements()) {
+namespace {
+
+// "'a', 'b' or 'c'" -- for a diagnostic that §14.3 requires to name a
+// group's members. Written out rather than a bare comma list because the
+// sentence it lands in reads as a sentence.
+[[nodiscard]] std::string list_of(const std::vector<std::string>& names) {
+    std::string text;
+    for (std::size_t i = 0; i < names.size(); ++i) {
+        if (i > 0) {
+            text += i + 1 == names.size() ? " or " : ", ";
+        }
+        text += "'" + names[i] + "'";
+    }
+    return text;
+}
+
+// §5.3: a second **binding** occurrence of an `arity = one` key is an error,
+// citing both spans.
+//
+// Only keys the schema declares are checked. §5.3 states arity as something
+// "declared by the schema", so an undeclared key in an `open = yes` form has
+// none to violate -- and the forms that are open are open precisely because
+// their key set is a question for a later pass (`class` keys are property
+// defaults, F11's) rather than one this function can answer.
+void check_arity(const std::vector<ast::Statement>& statements, const Schema& schema,
+                 diag::DiagnosticSink& sink) {
+    std::vector<std::pair<std::string, const ast::Statement*>> bound;
+
+    for (const ast::Statement& statement : statements) {
+        if (!statement.is_binding()) {
+            continue; // `+=` and `-=` transform a value, they do not bind one
+        }
+        const std::optional<std::string> name = statement.key_name();
+        if (!name || name->empty()) {
+            continue;
+        }
+        const KeyDecl* declared = schema.find_key(*name);
+        if (declared == nullptr || declared->arity != Arity::One) {
+            continue; // `arity = many` collects them, in source order
+        }
+
+        const ast::Statement* first = nullptr;
+        for (const auto& [seen, at] : bound) {
+            if (seen == *name) {
+                first = at;
+                break;
+            }
+        }
+        if (first == nullptr) {
+            bound.emplace_back(*name, &statement);
+            continue;
+        }
+
+        Diagnostic diagnostic(Code::DuplicateKey, statement.report_span(),
+                              "'" + *name + "' is set twice in this '" + schema.id + "'");
+        diagnostic.with_note("first set here", first->report_span());
+        diagnostic.with_note("'" + *name +
+                             "' holds one value, so the second line would silently win over "
+                             "the first. A key that may repeat says `arity = many` in its "
+                             "schema (spec §5.3, §7.2)");
+        diagnostic.with_note("`+=` and `-=` are not bindings and never collide: write `" + *name +
+                             " += ...` to add to what is already there");
+        sink.report(std::move(diagnostic));
+    }
+}
+
+// §7.2.1: within a block, exactly one key of a given `exclusive_group` may
+// appear. Two or more is always an error; zero is an error if any member is
+// required.
+//
+// Presence, not binding: `of_action = take` alongside `of_event += ...` is
+// still a block that says both, and the point of a group is that the two
+// alternatives are answers to one question.
+void check_exclusive_groups(const ast::Block& block, const Schema& schema,
+                            diag::DiagnosticSink& sink) {
+    // Groups in the order the schema declares them, so two blocks with the
+    // same mistake report it the same way.
+    std::vector<std::string> groups;
+    for (const KeyDecl& key : schema.keys) {
+        if (key.exclusive_group.empty()) {
+            continue;
+        }
+        if (std::find(groups.begin(), groups.end(), key.exclusive_group) == groups.end()) {
+            groups.push_back(key.exclusive_group);
+        }
+    }
+
+    for (const std::string& group : groups) {
+        std::vector<std::string> members;
+        bool any_required = false;
+        std::vector<ast::Statement> present;
+        for (const KeyDecl& key : schema.keys) {
+            if (key.exclusive_group != group) {
+                continue;
+            }
+            members.push_back(key.name);
+            any_required = any_required || key.required;
+            if (const std::optional<ast::Statement> written = block.find(key.name)) {
+                present.push_back(*written);
+            }
+        }
+
+        if (present.size() > 1) {
+            Diagnostic diagnostic(Code::ExclusiveGroup, present[1].report_span(),
+                                  "this '" + schema.id + "' sets both '" + *present[0].key_name() +
+                                      "' and '" + *present[1].key_name() + "'");
+            diagnostic.with_note("'" + *present[0].key_name() + "' is set here",
+                                 present[0].report_span());
+            diagnostic.with_note("a '" + schema.id + "' takes " + list_of(members) +
+                                 " -- they are alternative answers to one question, so having "
+                                 "both leaves nothing to decide between them (spec §7.2.1)");
+            sink.report(std::move(diagnostic));
+            continue;
+        }
+
+        if (present.empty() && any_required) {
+            Diagnostic diagnostic(Code::ExclusiveMissing, block.span(),
+                                  "this '" + schema.id + "' sets none of " + list_of(members));
+            diagnostic.with_note("exactly one of them belongs in every '" + schema.id +
+                                 "' (spec §7.2.1)");
+            sink.report(std::move(diagnostic));
+        }
+    }
+}
+
+} // namespace
+
+void validate_block(const ast::Block& block, const Schema& schema, const SchemaSet* set,
+                    diag::DiagnosticSink& sink) {
+    const std::vector<ast::Statement> statements = block.statements();
+
+    for (const ast::Statement& statement : statements) {
         const std::optional<std::string> name = statement.key_name();
         if (!name || name->empty()) {
             continue;
@@ -379,8 +524,35 @@ void validate_block(const ast::Block& block, const Schema& schema, diag::Diagnos
         sink.report(std::move(diagnostic));
     }
 
+    check_arity(statements, schema, sink);
+
+    // §6.2, backlog F4. Every value whose key the schema declares is checked
+    // against the declared type -- for every operator, because §6.3 gives
+    // `+=` and `-=` the same collection shape the binding has.
+    if (set != nullptr) {
+        for (const ast::Statement& statement : statements) {
+            const std::optional<std::string> name = statement.key_name();
+            if (!name || name->empty()) {
+                continue;
+            }
+            const KeyDecl* declared = schema.find_key(*name);
+            const std::optional<ast::Value> value = statement.value();
+            if (declared == nullptr || !value) {
+                continue;
+            }
+            check_value("'" + *name + "'", *value, declared->type, *set, sink);
+        }
+    }
+
     for (const KeyDecl& key : schema.keys) {
         if (!key.required || block.find(key.name)) {
+            continue;
+        }
+        // A required key in an exclusive group is required *of the group*
+        // (§7.2.1: "zero is an error if any member is required"), not of the
+        // block. Reporting it here as well would tell an author who correctly
+        // wrote `of_action` that they had also forgotten `of_event`.
+        if (!key.exclusive_group.empty()) {
             continue;
         }
         Diagnostic diagnostic(Code::KeyMissing, block.span(),
@@ -392,6 +564,8 @@ void validate_block(const ast::Block& block, const Schema& schema, diag::Diagnos
                              "' (spec §7.2)");
         sink.report(std::move(diagnostic));
     }
+
+    check_exclusive_groups(block, schema, sink);
 }
 
 // --- loading -----------------------------------------------------------
@@ -512,14 +686,20 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
     const Schema* schema = set.find(key);
     if (schema == nullptr) {
         if (set.find_class(key) != nullptr) {
-            // §7.4: a statement whose key names a class instantiates one.
-            // Checking the keys inside against the class's property set is
-            // backlog F3 and F11, once property resolution exists -- but the
-            // placement is checkable now, and is written on nearly every
-            // object in a game (§8.5, backlog F2c).
+            // §7.4: a statement whose key names a *class* instantiates one.
+            // A trait is mixed in through `traits = { ... }` and never
+            // created, so a top-level statement naming one is not an
+            // instantiation and falls through to the unknown-key report.
+            //
+            // Type-checking the values against the class's declared property
+            // types is mechanism and belongs here. What the properties *mean*
+            // does not: §8.5's placement sugar used to be expanded on this
+            // line and now lives in `libs/starcore`, which runs its own pass
+            // over the same trees (proposal §2.1.1). Which keys are permitted
+            // at all is backlog F11's.
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-                (void)read_placement(*block, set.relation_values(), sink);
+                check_instantiation(*block, *set.find_class(key), set, sink);
             }
             return;
         }
@@ -545,7 +725,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
 
     const std::optional<ast::Value> value = statement.value();
     if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-        validate_block(*block, *schema, sink);
+        validate_block(*block, *schema, &set, sink);
     }
 }
 
@@ -602,12 +782,12 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
         for (const ast::Statement& statement : view.find_all("schema")) {
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-                validate_block(*block, schema_of_schemas(), sink);
+                validate_block(*block, schema_of_schemas(), &set, sink);
                 for (const ast::Statement& key : block->find_all("key")) {
                     const std::optional<ast::Value> key_value = key.value();
                     if (const std::optional<ast::Block> key_block =
                             key_value ? key_value->as_block() : std::nullopt) {
-                        validate_block(*key_block, key_schema(), sink);
+                        validate_block(*key_block, key_schema(), &set, sink);
                     }
                 }
             }
@@ -770,13 +950,19 @@ void check_requirements(const SchemaSet& set, diag::DiagnosticSink& sink) {
 
         if (requirement.kind == "class" || requirement.kind == "trait") {
             const bool want_trait = requirement.kind == "trait";
-            const ClassDecl* decl = set.find_class(requirement.subject);
-            if (decl == nullptr) {
+            // The two are separate namespaces, so ask for the one core wants
+            // and only then look in the other -- which is what turns "nothing
+            // declares one" into the more useful "it is a class".
+            const ClassDecl* decl = want_trait ? set.find_trait(requirement.subject)
+                                               : set.find_class(requirement.subject);
+            const ClassDecl* other = want_trait ? set.find_class(requirement.subject)
+                                                : set.find_trait(requirement.subject);
+            if (decl == nullptr && other != nullptr) {
+                fail("core needs '" + requirement.subject + "' to be a " + requirement.kind +
+                     ", and it is a " + (other->is_trait ? "trait" : "class"));
+            } else if (decl == nullptr) {
                 fail("core needs a " + requirement.kind + " called '" + requirement.subject +
                      "', and nothing declares one");
-            } else if (decl->is_trait != want_trait) {
-                fail("core needs '" + requirement.subject + "' to be a " + requirement.kind +
-                     ", and it is a " + (decl->is_trait ? "trait" : "class"));
             } else if (!decl->sealed) {
                 fail("the " + requirement.kind + " '" + requirement.subject +
                      "' has to be sealed, and it is not");
@@ -785,7 +971,10 @@ void check_requirements(const SchemaSet& set, diag::DiagnosticSink& sink) {
         }
 
         if (requirement.kind == "property") {
-            const ClassDecl* decl = set.find_class(requirement.subject);
+            // Either namespace: `starcore.actor` is a trait, and `busy_until`
+            // is a property core reads off it exactly as it reads `holder`
+            // off the object class.
+            const ClassDecl* decl = set.find_class_or_trait(requirement.subject);
             if (decl == nullptr) {
                 fail("core needs '" + requirement.subject + "' to declare '" + requirement.member +
                      "', and nothing declares '" + requirement.subject + "' at all");
@@ -806,7 +995,7 @@ void check_requirements(const SchemaSet& set, diag::DiagnosticSink& sink) {
         }
 
         if (requirement.kind == "parent") {
-            const ClassDecl* decl = set.find_class(requirement.subject);
+            const ClassDecl* decl = set.find_class_or_trait(requirement.subject);
             if (decl == nullptr) {
                 fail("core needs a class called '" + requirement.subject +
                      "', and nothing declares one");

@@ -20,7 +20,11 @@ Sizes are **S** (≤ 1 day), **M** (2–4 days), **L** (1–2 weeks), at full-ti
 - CI is green on all three desktop platforms.
 - No new compiler warnings (warnings are errors — see B4).
 - Anything that changes the format is reflected in `docs/stardata-spec.md`, `tests/corpus/tour.star`, and a fixture in `tests/corpus/invalid/`.
-- No identifier from `libs/starcore/builtin/` appears as a string literal in `libs/stardata/` — the grep test of proposal §2.1.1, asserted in CI.
+- No **vocabulary** identifier from `libs/starcore/builtin/` appears as a string literal in `libs/stardata/` — proposal §2.1.1's grep test, asserted in CI by `scripts/check_layering.py`.
+
+  Vocabulary means class ids, trait ids, property names, enum ids and enum values: `starcore.object`, `holder`, `relation`, `present_in`, `relation_enum`, `carried`. The **schema language** is exempt — the id of a core-owned form and the name of any key it declares, plus the fields of the two bootstrap forms — because `schema`, `key`, `class`, `of_class` and `sealed` are what `libs/stardata` exists to implement, and spec §1.2.1 puts §2–§7 in its column. A name in both sets counts as schema language: `name` is a property of `starcore.object` and also a field of a `key` declaration, and no arrangement of the code would let the schema layer stop saying it.
+
+  Both sets are derived from the files rather than listed in the script, so a property added to a core class is guarded the next time CI runs.
 
 ---
 
@@ -439,14 +443,47 @@ the same conflict wearing one spelling, and are reported too. On a conflict
 **neither** spelling wins: §8.5 says the precedence is not resolvable, and
 guessing would put the object somewhere the author did not ask for.
 
-The keywords are **the values of the enum `starcore.object.relation` is typed
-by**, read from the data rather than listed in the code — so `libs/stardata`
-holds no piece of the object model. Which enum that is, is named by whoever
-owns the object model (`starcore` in Phase 1, the test harness today) through
-`SchemaSet::set_relation_enum`. **[OPEN]** Whether the desugaring belongs in
-`stardata` at all, or moves up into `starcore` in Phase 1, is worth deciding
-before F3 — and whether a library may amend the relation set needs a spec
-mechanism, since there is no `enum_extension`.
+**Moved to `libs/starcore`**, which the `[OPEN]` here used to ask about and
+proposal §2.1.1 has now answered. `libs/starcore` exists as a C++ target from
+this commit, holding `placement.{hpp,cpp}` and nothing else; the tests moved
+with it to `tests/unit/starcore/`, in their own binary, so a pass drifting
+back across the line would have nowhere to be tested from.
+
+The interesting part of the move is what it *removed*. `read_placement` used
+to take the relation keywords as a `vector<string>`, and `SchemaSet` carried a
+`set_relation_enum` hook so that the format library could run the pass without
+naming the vocabulary. That made it look generic and it never was — a
+mechanism with exactly one possible user is a semantic pass wearing a
+parameter. The parameter and the hook are both gone; `starcore` names
+`relation_enum` outright, because there it is the right thing to do. The
+diagnostic it produces is byte-identical to the one the loader used to
+produce, which is the check that the move changed placement and nothing else.
+
+The keywords are still **the values of the enum `starcore.object.relation` is
+typed by**, read from the data rather than listed in the code — owning a
+vocabulary is not the same as hard-coding one. A ruleset that supersedes
+`relation_enum` with `@replaces(starcore)` (§7.6) gets its own keywords working
+as sugar with no code change, which the test at the bottom of
+`placement_test.cpp` asserts. That is also half an answer to the second
+`[OPEN]` above: a library may **replace** the relation set through the
+mechanism §7.6 already provides. **[OPEN]** Adding to one still has no
+spelling, since there is no `enum_extension`.
+
+**The grep test of proposal §2.1.1 is now a CI gate**, `scripts/check_layering.py`,
+and the Definition of Done above states the rule it actually enforces.
+
+The scoping is worth recording, because the first draft of that rule failed on
+22 names that were not leaks. `libs/starcore/builtin/` declares the core-owned
+*forms* of §7.2.4 as well as the object model, so "no identifier from
+`builtin/`" forbids `libs/stardata` from naming `schema`, `key`, `class` or
+`of_class` — the schema language it exists to implement, and which spec §1.2.1
+puts in Stardata's own column. Guarding the vocabulary alone leaves 20
+identifiers, and `holder` and `relation` were the only two the placement pass
+had actually leaked.
+
+A check with false positives nobody can clear is a check that gets disabled,
+which is why the exemption is drawn from the files rather than from a list of
+apologies in the script.
 
 ### F2d · `schema_extension`, replacement, and the no-duplicates rule
 **Size:** M · **Depends on:** F2a
@@ -481,17 +518,102 @@ when core writes it and an overstep when anything else does.
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2
 
-- [ ] Registry keyed by form id; libraries may contribute (spec §13.3).
-- [ ] Unknown key in a closed schema → error; `open = yes` permits and retains.
-- [ ] Arity: duplicate under `arity = one` cites both spans; `arity = many` preserves order.
-- [ ] `+=` / `-=` / `?=` do not count as binding occurrences (spec §5.3).
+- [x] Registry keyed by form id; libraries may contribute (spec §13.3).
+- [x] Unknown key in a closed schema → error; `open = yes` permits and retains.
+- [x] Arity: duplicate under `arity = one` cites both spans; `arity = many` preserves order.
+- [x] `+=` / `-=` do not count as binding occurrences (spec §5.3). **`?=` does** — see below.
+- [x] Exclusive groups (§7.2.1): two or more members in a block is an error naming the group's members; zero is an error when a member is `required`.
+
+**`?=` binds, and this bullet used to say otherwise.** Spec §5.3 has read
+"arity counts binding occurrences only — those using `=` or `?=`" since the
+first commit; F1 implemented `is_binding()` as `=` alone, and this line said
+the same. The spec is right and both were wrong: a block whose only mention of
+a key is `x ?= 1` has given `x` a value, and one whose only mention is
+`x += { a }` has not. Counting `?=` as a non-binding makes those two
+indistinguishable. Corrected in `ast::Statement::is_binding` and its test.
+
+**[OPEN] `?=` may not be worth keeping.** Whether it binds is genuinely hard
+to answer, because whether it *does* anything depends on what else is
+declared, at any inheritance level and in any file — so the static question
+("is this a binding occurrence?") and the dynamic one ("did this bind?") have
+different answers and both are reasonable readings of the operator. It is a
+plausible candidate for removal in favour of `@replaces` (§7.6), which says
+the same thing with an owner named and a load-order-independent meaning.
+Recorded now because everything downstream of §5.3 — arity, combination modes
+(F5), and the save-state layout — inherits the ambiguity.
+
+The **registry** is a hash index kept beside the declaration-order vector
+rather than instead of it: order is load order (§13.2), which is what a reader
+and a diagnostic both expect, and no hash map's iteration order is anybody's.
+Building it surfaced two lookup bugs a linear scan had been hiding — `class`
+and `trait` are separate `unique_in` namespaces (§7.2.4) and a single scan
+returned whichever was declared first, and §7.4's instantiation rule names a
+*class*, so a top-level statement naming a trait was being accepted as an
+object of a kind that cannot exist. Hence `find_class`, `find_trait` and
+`find_class_or_trait` rather than one function guessing.
+
+`arity` is checked only for keys the schema declares. §5.3 states arity as
+something "declared by the schema", and the open forms are open precisely
+because their other keys are property defaults — whose shape is F11's
+question, not this pass's.
+
+Still parsed into `KeyDecl` and still acted on by nobody: `default` (F5's),
+`editor` (the inspector's), and **`deprecated`**, which §7.2 says "produces a
+warning carrying this message" and §14.3's table has no row for. That last one
+is a five-line check and a new code, and is left out only because it is not on
+this task's list — say the word and it goes in with a §14.3 row.
+
+**[OPEN]** §7.2.1 allows a group to declare a `fix_hint` "so the error can
+point at the right construct rather than merely refusing", and nothing says
+where a group declares anything: a group is not a declaration, only a name
+repeated across the keys that belong to it. Left unimplemented pending a
+spelling.
 
 ### F4 · Type checking
 **Size:** M · **Depends on:** F3
 
-- [ ] Every type of spec §6.2, including `TypeExpr` parsing and the bare-enum shorthand (§4.2).
-- [ ] Coercion from lexical kind to declared type, with a precise error when it fails.
-- [ ] `dice`, `clock_time`, `resource`, `duration` sub-grammars validated at compile time.
+- [x] Every type of spec §6.2, including `TypeExpr` parsing and the bare-enum shorthand (§4.2).
+- [x] Coercion from lexical kind to declared type, with a precise error when it fails.
+- [x] `dice`, `clock_time`, `duration` sub-grammars validated at compile time. `resource` is checked as a string; **its existence is workstream G's**, since there is no VFS to ask yet.
+
+Three parts, and only the first is §6.2's table read back.
+
+**The declared-type check paid for itself immediately.** Asking whether a type
+*expression* means anything — as opposed to whether a value fits it — found
+five keys whose declared type nothing declared: `advances_turn_enum` on
+`action`, `block<project_defaults>` and `block<project_simulation>` on
+`project`, `block<version_constraints>` on `library`, and `block<exits>` on
+stdlib's `room`. Every one of them looked checked and was not. All five are
+now declared, taking their content from where the documents already give it:
+§13.1's project manifest, §13.3's library manifest, proposal §7.2 for
+`advances_turn_enum`, and §6.6.1 for `exits`, which the spec writes as
+`map<direction, ref<room>>` and which needed a `direction` enum in stdlib to
+be that. It is reported at the key, once, rather than at every value written
+against it.
+
+Two things it turned up that are the spec's to settle rather than the code's:
+
+- **`ref<C>` names a form as often as a class.** §6.2 defines it as "a
+  reference to an object of class `C`", and the built-in set writes
+  `ref<action>` and `ref<sector>`, which are references to declared *forms*.
+  Both resolve here. §6.2 should probably say so.
+- **`offstage_default` cannot be an enum**, because one of its four values
+  (proposal §5.3) is `none`, which §3.9 reserves. It is typed `identifier`
+  with the four listed in its `doc`, which is the wrong shape for a closed
+  set and the only one available.
+
+**`clock_time` is checked for shape and not for range.** §6.2 resolves it
+"against the sector's calendar" and §11.6 lets a sector declare a
+`local_clock`, so whether hour 30 exists is not this pass's question —
+rejecting it would leave an author with a thirty-hour day no way to say so.
+
+**Instantiations (§7.4) are type-checked against the class's property set**,
+walking `of_class` for inherited properties, which is what makes §14.3's
+`exits.nrth` case actually fire. A key naming no property is left alone:
+which keys are *permitted* inside an instantiation needs the object-local
+`prop_def` of F11. **Traits are not in that walk**, because `read_class` does
+not read the `traits` key into `ClassDecl` at all — a property arriving only
+through a trait is not yet type-checked on an instantiation.
 
 ### F5 · Combination modes
 **Size:** M · **Depends on:** F3

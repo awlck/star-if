@@ -1,0 +1,9 @@
+# tests/corpus/invalid/schema-type-unknown.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-INVALID: 'mood' on 'journal_entry' is declared enum<mood_enum>, and nothing declares the enum 'mood_enum'
+  --> tests/corpus/invalid/schema-type-unknown.star:13:13
+   |
+13 |     key = { name = mood  type = enum<mood_enum> }
+   |             ^^^^
+note: the whole point of naming it is that this is checked: a rename upstream becomes a build failure rather than a type that silently stops meaning anything (spec §6.2, §13.2)

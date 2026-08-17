@@ -235,43 +235,6 @@ read_schema_extension(const ast::Statement& statement, diag::DiagnosticSink& sin
 [[nodiscard]] std::optional<EnumDecl> read_enum(const ast::Statement& statement,
                                                 std::string_view owner, diag::DiagnosticSink& sink);
 
-// Where an object starts out (§8.5, backlog F2c).
-//
-// Every object has at most one parent, and the parent link carries a
-// relation. `in = ornate_box` is sugar for `holder = ornate_box  relation =
-// in`, and both spellings produce identical data -- the sugar exists because
-// placement is written for nearly every object in a game, the long form
-// because it is what the two slots actually are and because a computed
-// placement has no keyword to use.
-//
-// THE SUGAR IS EXPANDED HERE AND NEVER IN THE TREE. §14.2 requires that a
-// round-trip reproduce what the author wrote, so `in = box` has to still say
-// `in = box` after a parse and a write. This is the semantic view; the CST
-// keeps the spelling.
-struct Placement {
-    std::string holder;   // the id of the containing object
-    std::string relation; // one of the values of the relation enum
-    bool from_sugar = false;
-    diag::Span span; // the key that established it
-};
-
-// The placement an object instantiation block declares, if any.
-//
-// `relations` is the set of legal relation names -- the values of the enum
-// that `starcore.object`'s `relation` property is typed by. It is passed in
-// rather than known here for the same reason the markers are: `libs/stardata`
-// does not know that placement is a thing interactive fiction has, and a list
-// of seven words in this file would be a piece of the object model hiding in
-// the format library. An empty set means no keyword is sugar, which is what
-// a caller with no object model wants.
-//
-// Reports when a block writes both spellings: they are the same two slots,
-// and §8.5 says the conflict is not resolvable by precedence -- so neither
-// wins, and nothing is returned.
-[[nodiscard]] std::optional<Placement> read_placement(const ast::Block& block,
-                                                      const std::vector<std::string>& relations,
-                                                      diag::DiagnosticSink& sink);
-
 // --- the bootstrap -----------------------------------------------------
 
 // The schema for `schema` itself: the one rule in the system not written in

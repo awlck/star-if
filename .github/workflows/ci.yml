@@ -33,6 +33,18 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_no_qt_in_libs.py
 
+  # proposal §2.1.1's grep test: libs/stardata implements the format and the
+  # schema mechanism, libs/starcore the vocabulary expressed in it. §2.1.1
+  # asks for this as a CI check for the same reason spec §7.2.2 insists core
+  # assert rather than hope -- a boundary nobody verifies is one that erodes,
+  # and this one had already eroded once.
+  layering:
+    name: stardata names no core vocabulary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_layering.py
+
   # Section numbers cited from the code are positional, so a specification
   # edit can renumber them out from under a comment or a diagnostic without
   # anything failing to compile.

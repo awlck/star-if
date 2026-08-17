@@ -44,20 +44,32 @@ namespace stardata::test {
     return "tests/corpus/" + relative.generic_string();
 }
 
-// The diagnostic codes the schema layer owns.
+// Which pass owns which diagnostic code.
 //
-// Shared, because two tests need the same answer for opposite reasons: the
-// schema-layer corpus test asserts these fire, and the front end's snapshot
-// says so in its header when a fixture declares one the front end does not
-// produce. Without that, a snapshot reading "(none)" cannot be told apart
-// from one nothing checks at all -- which is exactly the question a reader
-// asks of it first.
+// Shared, because two tests need the same answer for opposite reasons: each
+// owning pass's corpus test asserts its codes fire, and the front end's
+// snapshot says which pass owns a code it does not itself produce. Without
+// that, a snapshot reading "(none)" cannot be told apart from one nothing
+// checks at all -- which is exactly the question a reader asks of it first.
+//
+// There are two sets rather than one because there are two libraries. The
+// mechanism/vocabulary line of proposal §2.1.1 runs through the diagnostics
+// as much as through the code: E-UNKNOWN-KEY is a fact about a schema, and
+// E-PLACEMENT-CONFLICT is a fact about containment.
+
+// `libs/starcore`'s: the vocabulary of spec §8-§12.
+[[nodiscard]] inline const std::set<std::string>& starcore_codes() {
+    static const std::set<std::string> codes = {"E-PLACEMENT-CONFLICT"};
+    return codes;
+}
+
+// `libs/stardata`'s schema layer: the mechanism of spec §5-§7.
 [[nodiscard]] inline const std::set<std::string>& schema_layer_codes() {
     static const std::set<std::string> codes = {
-        "E-SCHEMA-INVALID",        "E-SCHEMA-DUPLICATE",   "E-SCHEMA-SEALED",
-        "E-KEY-MISSING",           "E-CORE-REPARENT",      "E-CORE-REQUIREMENT",
-        "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",        "W-PROVIDES-MISMATCH",
-        "E-CORE-RESERVED",         "E-PLACEMENT-CONFLICT", "W-PROPDEF-REDUNDANT"};
+        "E-SCHEMA-INVALID",    "E-SCHEMA-DUPLICATE",  "E-SCHEMA-SEALED",         "E-KEY-MISSING",
+        "E-CORE-REPARENT",     "E-CORE-REQUIREMENT",  "E-PROPDEF-TYPE-MISMATCH", "E-UNKNOWN-KEY",
+        "W-PROVIDES-MISMATCH", "E-CORE-RESERVED",     "W-PROPDEF-REDUNDANT",     "E-DUP-KEY",
+        "E-EXCLUSIVE-GROUP",   "E-EXCLUSIVE-MISSING", "E-TYPE-MISMATCH"};
     return codes;
 }
 

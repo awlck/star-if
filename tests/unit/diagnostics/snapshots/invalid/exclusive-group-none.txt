@@ -1,0 +1,6 @@
+# tests/corpus/invalid/exclusive-group-none.star
+# declared E-EXCLUSIVE-MISSING
+# lexer and parser report (none)
+# E-EXCLUSIVE-MISSING is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

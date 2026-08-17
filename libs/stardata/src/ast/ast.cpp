@@ -585,7 +585,8 @@ std::optional<Value> Statement::value() const {
 }
 
 bool Statement::is_binding() const {
-    return op_text() == "=";
+    const std::string_view op = op_text();
+    return op == "=" || op == "?=";
 }
 
 diag::Span Statement::report_span() const {

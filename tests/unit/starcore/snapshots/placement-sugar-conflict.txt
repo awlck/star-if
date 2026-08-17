@@ -1,5 +1,5 @@
 # tests/corpus/invalid/placement-sugar-conflict.star
-# loaded as a library, on top of the core-owned set and stdlib
+# starcore's placement pass, over the core-owned set and stdlib
 
 error: E-PLACEMENT-CONFLICT: this object is placed twice, once with 'in' and once with 'holder'
   --> tests/corpus/invalid/placement-sugar-conflict.star:8:5

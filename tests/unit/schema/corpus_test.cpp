@@ -19,6 +19,7 @@
 #include "stardata/diag/codes.hpp"
 #include "stardata/diag/render.hpp"
 #include "stardata/schema/loader.hpp"
+#include "stardata/schema/types.hpp"
 
 #include "support/corpus.hpp"
 #include "support/fixture.hpp"
@@ -58,6 +59,7 @@ std::set<std::string> codes_for(const std::filesystem::path& path) {
                      as_core);
     schema::check_requirements(loaded.set, loaded.sink);
     schema::check_library_manifests(loaded.set, loaded.sink);
+    schema::check_declared_types(loaded.set, loaded.sink);
 
     std::set<std::string> reported;
     for (const diag::Diagnostic& diagnostic : loaded.sink.diagnostics()) {
@@ -123,6 +125,7 @@ TEST_CASE("each fixture's schema-layer diagnostics match its checked-in snapshot
                          as_core);
         schema::check_requirements(loaded.set, loaded.sink);
         schema::check_library_manifests(loaded.set, loaded.sink);
+        schema::check_declared_types(loaded.set, loaded.sink);
 
         std::ostringstream out;
         out << "# " << test::corpus_name(path) << '\n'

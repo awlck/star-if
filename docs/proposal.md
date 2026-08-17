@@ -130,7 +130,71 @@ star-if-system/
     corpus/              # sample games, including the perf stress game
 ```
 
-**Rationale for the split:** `stardata` knows nothing about IF; `starcore` knows nothing about Qt; `starforge` depends on both but on no UI. That means the compiler and the CLI runtime build and test without Qt at all, which keeps CI fast and makes the WASM build tractable.
+**Rationale for the split:** `starcore` knows nothing about Qt; `starforge` depends on both but on no UI. That means the compiler and the CLI runtime build and test without Qt at all, which keeps CI fast and makes the WASM build tractable. The `stardata`/`starcore` boundary is subtler and gets its own section.
+
+### 2.1.1 The `stardata` / `starcore` line
+
+An earlier draft said "`stardata` knows nothing about IF" and left it there. That was an assertion without a test, and it did not survive the first attempt to implement the schema layer: desugaring `in = ornate_box`, checking that a `restrictions` block carries a message, and narrowing a slot's type across an action's stages are all IF semantics, and all three were sitting in `stardata`.
+
+**The line is mechanism versus vocabulary.**
+
+> **`stardata` implements the format and the schema *mechanism*. `starcore` implements the *vocabulary* expressed in it.**
+>
+> `stardata` knows that forms have keys, that keys have types and arities, that schemas can be sealed and extended and replaced, that values must typecheck and references must resolve. It does not know what any particular form *means*.
+>
+> `starcore` knows what `class`, `action` and `rule` mean; what `holder` and `relation` are; that a `restrictions` block owes the player a message; and in what order an action's stages run.
+
+This is the same relationship as JSON to a JSON-Schema-for-your-app, except that Stardata's mechanism is richer — sealing, extension, exclusive groups, markers — precisely so that more of the vocabulary can be *declared* rather than compiled in.
+
+#### Two tests
+
+**1. The deletion test.** Remove every `.star` file and every schema from the project. Does `libs/stardata` still compile, and is it still useful — can it parse, round-trip, edit, and validate against schemas supplied by someone else? If yes, the line holds.
+
+**2. The grep test, which is mechanical and therefore worth asserting.** Does the code reference an identifier that appears in `libs/starcore/builtin/`? `holder`, `relation`, `restrictions`, `failureMsg`, `when`, `effects`, `starcore.object` — if any of those is a string literal in `libs/stardata/`, the layering has leaked.
+
+The second test should be a CI check, for the same reason §7.2.2 of the spec insists core assert rather than hope: a boundary nobody verifies is a boundary that erodes. `git grep` over the core identifiers, failing the build on a hit, costs nothing and makes the rule real.
+
+#### Where the current Phase 0 tasks land
+
+| Task | Owner | Note |
+|---|---|---|
+| F1 typed AST view | `stardata` | the shape of a tree, not what it means |
+| F2 registry, sealing mechanism | `stardata` | |
+| F2 the core-owned *content* — `starcore.object`, the forms | `starcore` | it **is** the vocabulary |
+| F2a `core_requirement` | `starcore` | asserts starcore's needs; the registry queries it uses are stardata's |
+| F2b marker mechanism / marker names | `stardata` / `starcore` | `prop_def` may carry markers; `affects_scope` is a scope concept |
+| **F2c placement sugar** | **`starcore`** | `in`/`on`/`carried` are containment, and containment is IF |
+| F2d `schema_extension`, `@replaces`, no-duplicates | `stardata` | pure registry rules |
+| F3 key validation · F4 types · F5 combination · F6 suggestions | `stardata` | |
+| F7 template *grammar* / template *builtins* | `stardata` / `starlang` | `[the noun]`'s syntax is generic; what `the` does is not |
+| **F8 `failureMsg` placement** | **`starcore`** | entirely about the condition vocabulary |
+| F9 reference resolution | `stardata` | "this id resolves" is generic |
+| F10 globals mechanism / `flag_set` sugar | `stardata` / `starcore` | |
+| F11 object-local `prop_def` | `stardata` | |
+| **F12 property access and narrowing** | **split — see below** | |
+
+#### F12, which is the interesting one
+
+You are right that narrowing blows past any line drawn naively, because it needs to know that `when` precedes `conditions` precedes `restrictions` precedes `effects`. That ordering is the action pipeline (§7.1), which is unambiguously `starcore`.
+
+But the *dataflow* is not IF-specific at all: "a predicate appearing earlier in a conjunction refines what later siblings may assume, and refinement flows forward through an ordered sequence of stages" is a generic analysis. It only looks IF-specific because the stage names are hard-coded.
+
+So parameterise it. The schema declares its own stage order:
+
+```stardata
+schema = {
+    id = action
+    stage_order = { when conditions restrictions effects report }
+}
+```
+
+`stardata` implements narrowing over *whatever* sequence a schema declares, and knows none of those five words. `starcore` supplies the sequence. This is exactly the markers-not-magic-names move of spec §7.2.3, applied one level up, and it turns the task that most threatened the boundary into the one that best demonstrates it.
+
+The same trick does *not* rescue F2c or F8, and it should not be forced to. Placement sugar and `failureMsg` are vocabulary through and through; they belong in `starcore` and generalising them would produce a mechanism with exactly one user.
+
+#### The practical consequence for Phase 0
+
+**Create `libs/starcore` now**, even though it will be nearly empty until Phase 1, and put the vocabulary-aware passes there from the first commit. A target and a directory cost nothing; a semantic pass that lives in `stardata` "for now" is how the line stops being real. This also narrows Phase 0's exit criterion to `stardata`'s half of the work, which is welcome given the phase is already over its original estimate.
 
 ### 2.2 What is *not* in C++
 

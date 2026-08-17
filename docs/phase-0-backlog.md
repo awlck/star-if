@@ -12,12 +12,15 @@ Tasks are grouped into workstreams. Within a workstream they are roughly sequent
 
 Sizes are **S** (≤ 1 day), **M** (2–4 days), **L** (1–2 weeks), at full-time pace. Multiply for evenings-and-weekends.
 
+**Where each task lives.** `libs/stardata` implements the format and the schema *mechanism*; `libs/starcore` implements the *vocabulary* — see proposal §2.1.1 for the line and the two tests that decide it. Tasks below carry an **owner** where it is not obvious. `libs/starcore` should exist from the first commit that needs it, even while nearly empty: a semantic pass living in `stardata` "for now" is how the boundary stops being real.
+
 **Definition of done, applying to every task:**
 
 - Tests exist and pass under `ctest`.
 - CI is green on all three desktop platforms.
 - No new compiler warnings (warnings are errors — see B4).
 - Anything that changes the format is reflected in `docs/stardata-spec.md`, `tests/corpus/tour.star`, and a fixture in `tests/corpus/invalid/`.
+- No identifier from `libs/starcore/builtin/` appears as a string literal in `libs/stardata/` — the grep test of proposal §2.1.1, asserted in CI.
 
 ---
 
@@ -405,7 +408,7 @@ groups, `+=`/`-=`/`?=` and the registry proper remain F3's; `arity` and
 `combine` are already parsed into the key declaration and simply not acted
 on yet.
 
-### F2b · Markers
+### F2b · Markers — **owner: split**
 **Size:** S · **Depends on:** F2
 
 Where core needs to know *which* property means something, the library declares it (spec §7.2.3) rather than core hard-coding a name.
@@ -423,7 +426,7 @@ declares as a `bool`. Adding a marker is an edit to the schema and a line in
 `a marker added to the schema is read with no code change` asserts by
 extending `prop_marker` with a marker the repository has never heard of.
 
-### F2c · Placement sugar
+### F2c · Placement sugar — **owner: `starcore`**
 **Size:** S · **Depends on:** F2
 
 - [x] `in` / `on` / `under` / `behind` / `carried` / `worn` / `part_of` desugar to `holder` + `relation` (spec §8.5).
@@ -513,7 +516,7 @@ Templates are parsed here; the text VM that *evaluates* them is Phase 1.
 - [ ] `E-TEMPLATE-BRACKETS`, `E-STYLE-UNDECLARED`.
 - [ ] Localisation keys: `E-LOC-UNDEFINED`, `E-LOC-DUPLICATE`, `W-LOC-UNUSED`.
 
-### F8 · `failureMsg` placement
+### F8 · `failureMsg` placement — **owner: `starcore`**
 **Size:** S · **Depends on:** F3
 
 Spec §10.5.1 — the rule is subtle and entirely mechanical, so it is cheap to enforce and expensive to leave out.
@@ -535,7 +538,7 @@ Spec §10.5.1 — the rule is subtle and entirely mechanical, so it is cheap to 
 - [ ] Resolution order puts object-local declarations first (§8.4).
 - [ ] Redeclaring an inherited name: error on type mismatch, warning on redundancy.
 
-### F12 · Property access and narrowing
+### F12 · Property access and narrowing — **owner: split**
 **Size:** M · **Depends on:** F11, F9
 
 The one genuinely novel piece of static analysis in Phase 0. Spec §8.8.
@@ -544,6 +547,7 @@ The one genuinely novel piece of static analysis in Phase 0. Spec §8.8.
 - [ ] Three-way classification: definitely present / definitely absent / possibly present.
 - [ ] Narrowing through `of_class`, `has_trait`, `is` in a conjunction.
 - [ ] Narrowing flows forward through pipeline stages: `when` → `conditions` → `restrictions` → `effects` and messages. The last hop is what lets a broad grammar token keep its static knowledge (spec §8.8.1).
+- [ ] **The stage sequence is read from the schema's `stage_order`, not hard-coded.** `stardata` implements the dataflow over whatever sequence it finds and knows none of the stage names; `starcore` declares the order. This is the task that most threatened the layering, and parameterising it is what saves it (proposal §2.1.1).
 - [ ] Narrowing does not escape `OR` or `NOT`.
 - [ ] `has_prop` and `prop_or` as the explicit escapes.
 - [ ] Error carries the slot's static type, the property, and the classes that do declare it.

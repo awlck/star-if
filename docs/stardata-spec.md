@@ -33,6 +33,23 @@ A **conforming file** is one that a Level 2 implementation accepts without error
 
 `tests/check_stardata.py` implements Level 1 plus the subset of Level 3 that does not require schemas, and runs both corpora in CI — together with every fenced example in this document, since spec examples are read far more often than the corpus and are where drift hides. It is a stand-in until `libs/stardata` exists and should be deleted then, not maintained beside it.
 
+### 1.2.1 What this document specifies, and what merely uses it
+
+This document describes two things, and a reader should know which they are looking at. The conformance levels above almost draw the line already:
+
+| | **Stardata, the format** | **The STAR core vocabulary** |
+|---|---|---|
+| Sections | §2–§7, §13, §14 | §8–§12 |
+| Levels | 1 and 2 | 3 |
+| Implemented by | `libs/stardata` | `libs/starcore` |
+| Content | lexical structure, grammar, block semantics, types, the schema *mechanism*, load order, round-trip | the object model, containment, templates, and the condition and effect vocabularies |
+
+The distinction is **mechanism versus vocabulary** (proposal §2.1.1). Everything in the left column would be equally true of a format used for a spreadsheet or a spacecraft telemetry log; everything in the right column exists because this is an interactive fiction system.
+
+A Level 2 implementation can validate any Stardata file against any schema, and knows nothing about rooms. A Level 3 implementation knows what `holder` means, that a `restrictions` block owes the player a message, and in what order an action's stages run.
+
+The two halves live in one document because splitting a specification whose cross-references are this dense costs more than it currently returns. They will separate when `docs/runtime-spec.md` is written, since that document needs the right-hand column anyway.
+
 ### 1.3 Relationship to the Clausewitz format
 
 Stardata is derived from the Paradox/Clausewitz data format and is deliberately *not* compatible with it. The differences are all restrictions or additions made to remove ambiguity:
@@ -684,6 +701,7 @@ Fields of a `key` declaration:
 | `editor` | identifier | a hint for the inspector widget (`text_area`, `object_picker`, `slider`, …) |
 | `deprecated` | text | if present, using this key produces a warning carrying this message |
 | `exclusive_group` | identifier | this key belongs to a mutually exclusive group; see §7.2.1 |
+| `stage_order` | list of identifiers | *on the schema, not a key.* The ordered stages of this form, through which type narrowing flows (§8.8.3). Declaring it keeps the narrowing analysis free of any knowledge of what the stages are |
 
 #### 7.2.1 Exclusive groups
 
@@ -1167,7 +1185,7 @@ A "possibly present" read MUST be justified by one of:
 
 **1. A narrowing condition earlier in the same conjunction.** Because the condition language is ordered and short-circuiting (§10.1), `of_class`, `has_trait` and `is` narrow the slot's static type for everything after them.
 
-Narrowing also flows **forward through the pipeline stages**, because each stage gates the next:
+Narrowing also flows **forward through the pipeline stages**, because each stage gates the next. The sequence is not built into the analysis: a schema declares its own `stage_order` (§7.2), and the dataflow runs over whatever it finds — so the implementation of narrowing knows none of the stage names below (proposal §2.1.1).
 
 | A narrowing in… | …narrows |
 |---|---|

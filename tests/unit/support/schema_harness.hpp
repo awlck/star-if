@@ -40,14 +40,13 @@ public:
     LoadedSet& operator=(const LoadedSet&) = delete;
 
     // libs/starcore/builtin/, as `starcore` owns it.
-    void load_builtin() {
-        load_from(builtin_dir(), "starcore", /*is_core=*/true);
-        // Standing in for what `starcore` does in Phase 1: naming the enum
-        // whose values are §8.5's placement keywords. `libs/stardata` does
-        // not know that placement exists, so somebody who owns the object
-        // model has to say.
-        set.set_relation_enum("relation_enum");
-    }
+    //
+    // No longer tells the set anything about placement. It used to name the
+    // relation enum here, standing in for what `starcore` would do in Phase 1;
+    // `libs/starcore` now names it itself, which is the whole of proposal
+    // §2.1.1's point -- the stand-in existed only because the pass was on the
+    // wrong side of the line.
+    void load_builtin() { load_from(builtin_dir(), "starcore", /*is_core=*/true); }
 
     // stdlib/stdlib/, which is ordinary Stardata with no privileged status.
     // Owned by `stdlib`, its own `library` id: an owner is the name

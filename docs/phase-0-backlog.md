@@ -439,14 +439,44 @@ the same conflict wearing one spelling, and are reported too. On a conflict
 **neither** spelling wins: §8.5 says the precedence is not resolvable, and
 guessing would put the object somewhere the author did not ask for.
 
-The keywords are **the values of the enum `starcore.object.relation` is typed
-by**, read from the data rather than listed in the code — so `libs/stardata`
-holds no piece of the object model. Which enum that is, is named by whoever
-owns the object model (`starcore` in Phase 1, the test harness today) through
-`SchemaSet::set_relation_enum`. **[OPEN]** Whether the desugaring belongs in
-`stardata` at all, or moves up into `starcore` in Phase 1, is worth deciding
-before F3 — and whether a library may amend the relation set needs a spec
-mechanism, since there is no `enum_extension`.
+**Moved to `libs/starcore`**, which the `[OPEN]` here used to ask about and
+proposal §2.1.1 has now answered. `libs/starcore` exists as a C++ target from
+this commit, holding `placement.{hpp,cpp}` and nothing else; the tests moved
+with it to `tests/unit/starcore/`, in their own binary, so a pass drifting
+back across the line would have nowhere to be tested from.
+
+The interesting part of the move is what it *removed*. `read_placement` used
+to take the relation keywords as a `vector<string>`, and `SchemaSet` carried a
+`set_relation_enum` hook so that the format library could run the pass without
+naming the vocabulary. That made it look generic and it never was — a
+mechanism with exactly one possible user is a semantic pass wearing a
+parameter. The parameter and the hook are both gone; `starcore` names
+`relation_enum` outright, because there it is the right thing to do. The
+diagnostic it produces is byte-identical to the one the loader used to
+produce, which is the check that the move changed placement and nothing else.
+
+The keywords are still **the values of the enum `starcore.object.relation` is
+typed by**, read from the data rather than listed in the code — owning a
+vocabulary is not the same as hard-coding one. A ruleset that supersedes
+`relation_enum` with `@replaces(starcore)` (§7.6) gets its own keywords working
+as sugar with no code change, which the test at the bottom of
+`placement_test.cpp` asserts. That is also half an answer to the second
+`[OPEN]` above: a library may **replace** the relation set through the
+mechanism §7.6 already provides. **[OPEN]** Adding to one still has no
+spelling, since there is no `enum_extension`.
+
+**The grep test of proposal §2.1.1 is now a CI gate**, `scripts/check_layering.py`.
+It is narrower than the sentence in the Definition of Done, deliberately:
+`libs/starcore/builtin/` declares the core-owned *forms* of §7.2.4 as well as
+the object model, so a literal reading forbids `libs/stardata` from naming
+`schema`, `key`, `class` or `of_class` — the schema language it exists to
+implement, and which spec §1.2.1 puts in Stardata's own column. The script
+therefore guards class ids, trait ids, property names, enum ids and enum
+values, and exempts anything also declared as a form id or a key name
+(including the two bootstrap forms, read out of `schema.cpp`). Both sets are
+derived from the files, never listed in the script: 20 identifiers are
+guarded today, and a property added to `starcore.object` is covered the next
+time it runs.
 
 ### F2d · `schema_extension`, replacement, and the no-duplicates rule
 **Size:** M · **Depends on:** F2a

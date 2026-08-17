@@ -50,6 +50,7 @@ import sys
 from pathlib import Path
 
 SPEC = Path("docs/stardata-spec.md")
+PROPOSAL = Path("docs/proposal.md")
 
 # Where citations are looked for. Documentation cites the spec constantly and
 # in prose forms this script has no business parsing; code is the place where
@@ -57,7 +58,15 @@ SPEC = Path("docs/stardata-spec.md")
 SEARCHED = ["libs", "apps"]
 SEARCHED_SUFFIXES = {".cpp", ".cc", ".cxx", ".h", ".hpp", ".hh"}
 
-CITATION = re.compile(r"§(\d+(?:\.\d+)*)")
+# A citation, with the document it names. "proposal §2.1.1" resolves against
+# docs/proposal.md; a bare "§6.2" or "spec §6.2" against the specification.
+#
+# Without the distinction a proposal citation is checked against the wrong
+# document and passes or fails by coincidence -- "proposal §5.4" resolved
+# today only because the spec happens to have a §5.4 of its own, about
+# something else entirely. Proposal §2.1.1, which now justifies the
+# stardata/starcore split from inside the code, has no such twin and failed.
+CITATION = re.compile(r"(proposal\s+)?§(\d+(?:\.\d+)*)", re.IGNORECASE)
 HEADING = re.compile(r"^#{2,4}\s+(\d+(?:\.\d+)*)\.?\s+\S", re.MULTILINE)
 CLAUSE = re.compile(r"^(\d+)\.\s+\S", re.MULTILINE)
 
@@ -96,11 +105,13 @@ def main() -> int:
         ).stdout.strip()
     )
 
-    spec_path = repo_root / SPEC
-    if not spec_path.is_file():
-        print(f"{SPEC} not found", file=sys.stderr)
-        return 2
-    sections = spec_sections(spec_path.read_text(encoding="utf-8"))
+    documents = {}
+    for label, relative in (("spec", SPEC), ("proposal", PROPOSAL)):
+        path = repo_root / relative
+        if not path.is_file():
+            print(f"{relative} not found", file=sys.stderr)
+            return 2
+        documents[label] = (relative, spec_sections(path.read_text(encoding="utf-8")))
 
     dangling = []
     citations = 0
@@ -110,11 +121,12 @@ def main() -> int:
         except UnicodeDecodeError:
             continue
         for lineno, line in enumerate(text.splitlines(), start=1):
-            for number in CITATION.findall(line):
+            for qualifier, number in CITATION.findall(line):
                 citations += 1
+                document, sections = documents["proposal" if qualifier else "spec"]
                 if number not in sections:
                     rel = path.relative_to(repo_root).as_posix()
-                    dangling.append(f"{rel}:{lineno}: §{number} is not a section of {SPEC}")
+                    dangling.append(f"{rel}:{lineno}: §{number} is not a section of {document}")
 
     if dangling:
         print("dangling specification references:", file=sys.stderr)
@@ -128,7 +140,7 @@ def main() -> int:
         )
         return 1
 
-    print(f"ok: all {citations} specification reference(s) resolve against {SPEC}")
+    print(f"ok: all {citations} reference(s) resolve against {SPEC} and {PROPOSAL}")
     return 0
 
 

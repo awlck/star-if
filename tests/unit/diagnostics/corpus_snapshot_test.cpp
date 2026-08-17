@@ -91,6 +91,22 @@ std::string join(const std::set<std::string>& codes) {
     return joined;
 }
 
+// Where a code the front end does not produce is asserted instead.
+//
+// Two libraries own diagnostics now, so this names the one that does rather
+// than assuming there is only one somewhere else. A code belonging to neither
+// is a workstream that has not landed, and saying so is the whole reason the
+// header exists.
+[[nodiscard]] std::string owning_pass(const std::string& code) {
+    if (test::schema_layer_codes().contains(code)) {
+        return " is the schema layer's -- asserted in unit/schema/corpus_test.cpp";
+    }
+    if (test::starcore_codes().contains(code)) {
+        return " is starcore's -- asserted in unit/starcore/placement_test.cpp";
+    }
+    return " is not implemented yet";
+}
+
 // The snapshot: a three-line header naming the fixture and the gap between
 // what it declares and what the front end currently reports, then the human
 // rendering of each diagnostic in report order.
@@ -115,11 +131,7 @@ std::string report(const ParsedFixture& fixture, const std::filesystem::path& pa
         if (reported.contains(code)) {
             continue;
         }
-        out << "# " << code
-            << (test::schema_layer_codes().contains(code)
-                    ? " is the schema layer's -- asserted in unit/schema/corpus_test.cpp"
-                    : " is not implemented yet")
-            << '\n';
+        out << "# " << code << owning_pass(code) << '\n';
     }
     out << '\n';
 

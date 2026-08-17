@@ -36,13 +36,14 @@ option(STARIF_ENABLE_TESTS "Build the test suite" ON)
 # each, no CMakeLists.txt) until their backlog workstream lands -- see
 # docs/phase-0-backlog.md and each directory's own README.md for when.
 #
-# libs/starcore is a half-exception: its C++ is Phase 1, but backlog F2 puts
-# the core-owned schema set in libs/starcore/builtin/ now, as Stardata. That
-# is data, so it needs no target -- the tests point at it through
-# STARIF_BUILTIN_DIR, and Phase 1 embeds it via a generated string literal.
+# libs/starcore is mostly Phase 1 and exists now regardless, because proposal
+# §2.1.1 draws the mechanism/vocabulary line between it and libs/stardata and
+# makes a point of not deferring the directory: "a semantic pass that lives in
+# `stardata` 'for now' is how the line stops being real." Its builtin/ holds
+# the core-owned schema set as Stardata, which needs no target.
 #
-#   libs/starcore    Phase 1        libs/stardebug   later (author's kit)
-#   libs/stardata    Phase 0 (D-F)  libs/starforge   Phase 4
+#   libs/stardata    Phase 0 (D-F)  libs/stardebug   later (author's kit)
+#   libs/starcore    Phase 0-1      libs/starforge   Phase 4
 #   libs/starvfs     Phase 0 (G)    libs/startext    Phase 1
 #                                    libs/starlang    Phase 1
 #
@@ -50,6 +51,7 @@ option(STARIF_ENABLE_TESTS "Build the test suite" ON)
 #   apps/starhelm-glk   later       apps/starhelm-qt   Phase 3 (Qt)
 #   apps/starhelm-web   later       apps/starforge-cli Phase 4
 add_subdirectory(libs/stardata)
+add_subdirectory(libs/starcore)
 
 if (STARIF_ENABLE_TESTS)
     enable_testing()

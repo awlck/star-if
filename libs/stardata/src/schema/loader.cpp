@@ -94,15 +94,6 @@ const EnumDecl* SchemaSet::find_enum(std::string_view id) const noexcept {
     return it == enum_index_.end() ? nullptr : &enums_[it->second];
 }
 
-const std::vector<std::string>& SchemaSet::relation_values() const noexcept {
-    static const std::vector<std::string> none;
-    if (relation_enum_.empty()) {
-        return none;
-    }
-    const EnumDecl* declared = find_enum(relation_enum_);
-    return declared != nullptr ? declared->values : none;
-}
-
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
     const std::optional<std::size_t> index = class_index(id, /*is_trait=*/false);
     return index ? &classes_[*index] : nullptr;
@@ -700,13 +691,14 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
             // created, so a top-level statement naming one is not an
             // instantiation and falls through to the unknown-key report.
             //
-            // Checking the keys inside against the class's property set is
-            // backlog F3 and F11, once property resolution exists -- but the
-            // placement is checkable now, and is written on nearly every
-            // object in a game (§8.5, backlog F2c).
+            // Type-checking the values against the class's declared property
+            // types is mechanism and belongs here. What the properties *mean*
+            // does not: §8.5's placement sugar used to be expanded on this
+            // line and now lives in `libs/starcore`, which runs its own pass
+            // over the same trees (proposal §2.1.1). Which keys are permitted
+            // at all is backlog F11's.
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-                (void)read_placement(*block, set.relation_values(), sink);
                 check_instantiation(*block, *set.find_class(key), set, sink);
             }
             return;

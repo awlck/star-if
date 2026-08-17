@@ -64,7 +64,11 @@ enum class Code : std::uint8_t {
     CoreRequirement,        // E-CORE-REQUIREMENT      §7.2.5  something core requires is absent or wrong
     CoreReserved,           // E-CORE-RESERVED         §7.2.5.1 a reserved internal form declared by something other than starcore
     ProvidesMismatch,       // W-PROVIDES-MISMATCH     §13.3   provides_schema disagrees with what the library declares
-    PlacementConflict,      // E-PLACEMENT-CONFLICT    §8.5    a relation keyword and holder/relation in one block
+    // §14.3's table is a table of the *whole* document's diagnostics, and §14
+    // is Stardata's half of it (§1.2.1) -- so the enum lives here even for the
+    // conditions §8-§12 describe, and `libs/starcore` reports through it.
+    // E-PLACEMENT-CONFLICT is raised in libs/starcore/src/placement.cpp.
+    PlacementConflict,      // E-PLACEMENT-CONFLICT    §8.5    two spellings of one object's placement
     ExclusiveGroup,         // E-EXCLUSIVE-GROUP       §7.2.1  two or more keys of one exclusive_group in a block
     ExclusiveMissing,       // E-EXCLUSIVE-MISSING     §7.2.1  no key of a required exclusive_group
 

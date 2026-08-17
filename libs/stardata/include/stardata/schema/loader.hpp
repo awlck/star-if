@@ -104,16 +104,6 @@ public:
     void add_library(LibraryManifest manifest);
     void add_requirement(CoreRequirement requirement);
 
-    // Which enum's values are the placement keywords of §8.5.
-    //
-    // Named by whoever owns the object model -- `starcore` in Phase 1, the
-    // test harness today -- and not known here. `libs/stardata` has no
-    // business knowing that placement exists, let alone that its vocabulary
-    // is called `relation_enum`, so the one place that name could leak in is
-    // a setter the owner calls.
-    void set_relation_enum(std::string id) { relation_enum_ = std::move(id); }
-    [[nodiscard]] const std::vector<std::string>& relation_values() const noexcept;
-
     [[nodiscard]] const Schema* find(std::string_view id) const noexcept;
     [[nodiscard]] const EnumDecl* find_enum(std::string_view id) const noexcept;
     [[nodiscard]] const Declaration* find_declaration(std::string_view space,
@@ -175,8 +165,6 @@ private:
     // per `unique_in` namespace: `const` and `global` share one, `class` and
     // `trait` do not.
     std::map<std::pair<std::string, std::string>, std::size_t> declaration_index_;
-
-    std::string relation_enum_;
 };
 
 // Validates one record block against a schema: unknown keys (§7.3), required

@@ -1,8 +1,10 @@
 # STAR IF System — Implementation Proposal
 
-**Status:** Draft v0.5 · **Date:** 2026-08-11 · **Author:** drafted from `main-design-notes.md`
+**Status:** Draft v0.6 · **Date:** 2026-08-17 · **Author:** drafted from `main-design-notes.md`
 
 > **v0.2 changes:** ordered/unordered block distinction dropped (§4.2); pinned sectors (§5.3); a time and calendar model (§5.6); the turn sequence rebuilt around an initiative-ordered actor loop with explicit ruleset hook points (§7.1); action redirection and dialogue entry as effects (§7.2); script-only rules and a corrected statement of the data/script relationship (§8.4); combat pacing resolved (§9.3); party members (§9.5); full offstage simulation as an option (§10.1); multi-party dialogue and its presentation (§11); debugger as an author's-kit plugin (§13.3); a distro-style trust model (§14.4); licensing (§14.5).
+>
+> **v0.6 changes:** removal of `?=`; specifying the boundary between `stardata` and `starcore`.
 >
 > **v0.5 changes:** globals, constants and collection state (spec §6.4–§6.5); flags reduced to declared boolean globals; properties declarable on a single object (spec §8.7); property access rules with static narrowing and an explicit runtime escape (spec §8.8); disambiguation's unselectable-object problem, detected at compile time (§6.4.1); dynamic object creation and general tables recorded as deliberate omissions (spec §1.4).
 >
@@ -299,7 +301,7 @@ Decimal      ::= '-'? [0-9]+ '.' [0-9]+
 String       ::= '"' ( <char except " and \> | '\' <escape> )* '"'
 LocKey       ::= '$' Identifier            # localisation key reference
 Annotation   ::= '@' Identifier
-Operator     ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-=' | '?='
+Operator     ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-='
 Punctuation  ::= '{' | '}' | '[' | ']'
 ```
 
@@ -309,7 +311,7 @@ Additions to your example's syntax, each justified:
 
 - **`==` and comparison operators.** Your `restrictions` blocks need to express `strength > 12`. Using bare `=` for both assignment and comparison is Clausewitz's original sin and produces genuinely confusing scripts. Stardata uses `=` for assignment/binding only, and `== != < > <= >=` in condition contexts. In a condition context, a bare `=` is a *warning* that suggests `==`, not an error, so the format stays forgiving for beginners. **[DECISION]**
 - **`+=` / `-=`.** For extending inherited list-valued properties without restating them, e.g. `synonyms += { lantern lamp }`.
-- **`?=`** — "set only if not already set". Useful in library files that want to provide a default the game can pre-empt regardless of load order.
+- ~~**`?=`** — "set only if not already set".~~ **Removed**; see spec §6.3.1. Whether it bound could not be determined locally, and load order already gave a library's default the pre-emptability it was meant to provide.
 - **`$key`** for localisation references (§4.8).
 
 **Everything is ordered.** v0.1 proposed a `{ }` (unordered) versus `[ ]` (ordered) distinction. Dropped, on your objection, which I think is correct on all three counts:
@@ -328,7 +330,7 @@ The one thing given up is the editor's licence to silently re-sort a block. That
 File        ::= Statement*
 Statement   ::= Key Op Value
 Key         ::= Identifier | String
-Op          ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-=' | '?='
+Op          ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-='
 Value       ::= Annotation* ( Scalar | Block )
 Scalar      ::= Identifier | Integer | Decimal | String | LocKey | 'yes' | 'no' | 'inherit'
 Block       ::= '{' ( Statement | Scalar )* '}'

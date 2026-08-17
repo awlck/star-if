@@ -1,6 +1,6 @@
 # Stardata Format Specification
 
-**Version:** 0.1 (draft) · **Date:** 2026-08-11 · **Status:** Normative
+**Version:** 0.2 (draft) · **Date:** 2026-08-17 · **Status:** Normative
 **Companion documents:** `docs/proposal.md` (rationale), `tests/corpus/tour.star` (conformance corpus)
 
 ---
@@ -176,7 +176,7 @@ This is the sanctioned way to write text longer than a line. An implementation M
 ### 3.6 Operators
 
 ```
-Op ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-=' | '?='
+Op ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-='
 ```
 
 | Operator | Name | Valid in |
@@ -187,7 +187,6 @@ Op ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-=' | '?='
 | `<` `>` `<=` `>=` | comparison | condition context only |
 | `+=` | extend | binding context, collection-typed keys only |
 | `-=` | reduce | binding context, collection-typed keys only |
-| `?=` | bind-if-unset | binding context only |
 
 **Context** is determined by the schema (§7): a key whose declared type is `condition_block` establishes a condition context for its contents, recursively, until a key of some other type is reached.
 
@@ -240,7 +239,7 @@ Statement ::= Key Op Value
 
 Key       ::= Identifier | String
 
-Op        ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-=' | '?='
+Op        ::= '=' | '==' | '!=' | '<' | '>' | '<=' | '>=' | '+=' | '-='
 
 Value     ::= Annotation* ( Block | TypeExpr | Call | Scalar )
 
@@ -325,7 +324,7 @@ Whether a key may appear more than once in a block is declared by the schema (§
 - `arity = one` (the default): a second **binding** occurrence MUST be an error, and the diagnostic MUST cite both spans.
 - `arity = many`: repeated occurrences are collected, **in source order**, into a sequence.
 
-Arity counts **binding** occurrences only — those using `=` or `?=`. The modifier operators `+=` and `-=` do not bind; they transform whatever value is in effect, and any number of them may follow a binding, or stand alone and transform an inherited value. They apply in source order:
+Arity counts **binding** occurrences only — those using `=`. The modifier operators `+=` and `-=` do not bind; they transform whatever value is in effect, and any number of them may follow a binding, or stand alone and transform an inherited value. They apply in source order:
 
 ```stardata
 synonyms  = { thing object }      # binds
@@ -450,7 +449,19 @@ synonyms -= { lamp }              # removes the named entries
 
 `+=` appends to the end. `-=` removes by value; removing a value that is not present MUST produce a warning, not an error, because a library update that already removed it should not break a game.
 
-`?=` binds only if the key is currently unset, at any inheritance level. It is intended for library files that want to offer a default that a game may pre-empt regardless of load order.
+#### 6.3.1 On the removal of `?=`
+
+Earlier drafts specified a `?=` operator — "bind only if this key is currently unset, at any inheritance level" — intended to let a library offer a default a game could pre-empt regardless of load order. **It is removed.** The reasoning is recorded here because the operator appeared in published drafts and someone will ask.
+
+**It could not be reasoned about locally.** Whether `x ?= 1` binds depends on every other declaration of `x`, at any inheritance level, in any file. Worse, the static question "is this a binding occurrence?" and the dynamic one "did this bind?" have different answers, and both are reasonable readings — which is not a hypothetical complaint: the first implementation and the specification disagreed about arity counting on the operator's very first contact with code.
+
+**Its stated motivation was already satisfied.** Load order (§13.2) is stdlib, then libraries, then the project. A library's plain `=` is *always* pre-emptable by the project, because the project loads later. The case the operator existed for did not need it.
+
+**Compilation collapses it anyway.** Starforge bakes resolved defaults into the object table (proposal §14.2), so `?=` carries no information past the compile boundary. A patch or mod layered above a `.spak` (proposal §14.1) sees an already-bound value, making `?=` in a patch close to inert — a half-guarantee that would mislead rather than help.
+
+**And it ran against the grain of everything else.** Declared flags, `@replaces` naming its source and failing when that source declared nothing, `core_requirement`, sealing — every recent decision has moved toward explicit, named and loud. `?=` was a silent conditional whose effect you could not see at the site that wrote it.
+
+The residual case — two *libraries* disagreeing, wanting an order-independent outcome — is real but rare, and the project already controls library order through `uses`. If it ever becomes pressing, the answer should be an explicit priority, in the manner of `@priority(n)` (§5.4.1), rather than a conditional binding.
 
 ### 6.4 Globals and constants
 
@@ -1934,6 +1945,7 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | Unknown key in a closed schema (§7.3), with suggestion | error |
 | Unknown annotation (§3.7) | error |
 | `==` in a binding context (§3.6) | error |
+| The removed `?=` operator (§6.3.1, §15) | error, naming the removal and suggesting `=` |
 | Bare `=` in a condition context (§3.6) | warning |
 | `true` / `false` used as a value (§3.8) | error |
 | Type mismatch against the declared type (§6.2) | error |
@@ -1986,6 +1998,7 @@ The following are reserved and MUST currently be rejected, so that adding them l
 
 - The characters `[` and `]` outside string literals. They are reserved exclusively for the template language and parser grammar tokens, and MUST NOT acquire a block meaning.
 - The operators `*=`, `/=`, `=>`, `->`, `::`.
+- The operator `?=`, which earlier drafts specified and §6.3.1 removed. It MUST be rejected with a diagnostic naming the removal and suggesting `=`, rather than as an unknown character — a file written against an old draft deserves to be told what happened.
 - The keys `import`, `include`, `macro`, `template` at top level.
 - Annotations `@deprecated`, `@since`, `@experimental`.
 - The `voice` key on dialogue nodes (§11.3 of the proposal): reserved as `resource`-typed so that voice acting can be added without a data-model change.

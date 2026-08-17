@@ -521,7 +521,7 @@ when core writes it and an overstep when anything else does.
 - [x] Registry keyed by form id; libraries may contribute (spec §13.3).
 - [x] Unknown key in a closed schema → error; `open = yes` permits and retains.
 - [x] Arity: duplicate under `arity = one` cites both spans; `arity = many` preserves order.
-- [x] `+=` / `-=` do not count as binding occurrences (spec §5.3). **`?=` does** — see below.
+- [x] `+=` / `-=` do not count as binding occurrences (spec §5.3). `?=` is removed entirely — see below.
 - [x] Exclusive groups (§7.2.1): two or more members in a block is an error naming the group's members; zero is an error when a member is `required`.
 
 **`?=` binds, and this bullet used to say otherwise.** Spec §5.3 has read
@@ -532,15 +532,20 @@ a key is `x ?= 1` has given `x` a value, and one whose only mention is
 `x += { a }` has not. Counting `?=` as a non-binding makes those two
 indistinguishable. Corrected in `ast::Statement::is_binding` and its test.
 
-**[OPEN] `?=` may not be worth keeping.** Whether it binds is genuinely hard
-to answer, because whether it *does* anything depends on what else is
-declared, at any inheritance level and in any file — so the static question
-("is this a binding occurrence?") and the dynamic one ("did this bind?") have
-different answers and both are reasonable readings of the operator. It is a
-plausible candidate for removal in favour of `@replaces` (§7.6), which says
-the same thing with an owner named and a load-order-independent meaning.
-Recorded now because everything downstream of §5.3 — arity, combination modes
-(F5), and the save-state layout — inherits the ambiguity.
+**`?=` is removed — [OPEN] closed.** Spec §6.3.1 records the reasoning; the
+short version is that the ambiguity noted above was the least of it. Its
+stated motivation was already satisfied by load order (§13.2 puts the project
+after every library, so a library's plain `=` is always pre-emptable);
+compilation collapses it, since Starforge bakes resolved defaults into the
+object table and a patch layered above a `.spak` sees an already-bound value;
+and it was the one silent conditional in a format that had otherwise
+committed to explicit, named and loud. That it produced a spec/implementation
+disagreement on first contact — the bullet above — is evidence, not
+coincidence.
+
+- [ ] Remove `?=` from the C++ lexer's operator set, keeping it matched as **one token** so the diagnostic can name the removal and suggest `=` (spec §15). A file written against an older draft should be told what happened, not that `?` is an unknown character.
+- [ ] Revert `ast::Statement::is_binding` to `=` alone, and drop the `?=` case from its test.
+- [ ] `E-OP-REMOVED` is already in `check_stardata.py` and `corpus/invalid/removed-operator.star`; the C++ side needs the matching code and snapshot.
 
 The **registry** is a hash index kept beside the declaration-order vector
 rather than instead of it: order is load order (§13.2), which is what a reader

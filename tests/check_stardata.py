@@ -65,6 +65,7 @@ CODES = {
     "E-INT-RANGE":          "§3.4 integer literal outside signed 64-bit range",
     "E-BRACKET-OUTSIDE":    "§3.7 '[' or ']' outside a string literal",
     "E-RESERVED-WORD":      "§3.9 reserved word used as a value",
+    "E-OP-REMOVED":         "§6.3.1 the '?=' operator was removed; use '='",
     "E-BAD-CHAR":           "§3 unexpected character",
     # Structural (spec §4, §5)
     "E-BRACE-UNBALANCED":   "§4 unbalanced braces",
@@ -259,8 +260,14 @@ def tokenize(src, path, diags):
 
         # Multi-character operators MUST be matched before single-character
         # punctuation, or '>=' lexes as '>' followed by '='.
+        # `?=` is still matched as one token, deliberately: a file written
+        # against an older draft should be told the operator was removed
+        # (spec §6.3.1), not that `?` is an unknown character.
         m = re.match(r"(==|!=|<=|>=|\+=|-=|\?=|=)", src[i:])
         if m:
+            if m.group(0) == "?=":
+                diags.append(Diag("E-OP-REMOVED", path,
+                                  src.count("\n", 0, i) + 1, "use '=' instead"))
             add("op", m.group(0), i)
             i += m.end()
             continue

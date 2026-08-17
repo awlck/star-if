@@ -1759,7 +1759,7 @@ class_extension = {
     synonyms  = { thing object }        # `=`  bind
     synonyms += { item }                # `+=` extend
     synonyms -= { object }              # `-=` reduce
-    notes     ?= "unset by default"     # `?=` bind only if unset
+    notes      = "plainly bound"        # `?=` was removed; see spec §6.3.1
 }
 
 # Comparison operators appear only in condition contexts.

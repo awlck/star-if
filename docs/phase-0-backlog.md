@@ -20,7 +20,11 @@ Sizes are **S** (≤ 1 day), **M** (2–4 days), **L** (1–2 weeks), at full-ti
 - CI is green on all three desktop platforms.
 - No new compiler warnings (warnings are errors — see B4).
 - Anything that changes the format is reflected in `docs/stardata-spec.md`, `tests/corpus/tour.star`, and a fixture in `tests/corpus/invalid/`.
-- No identifier from `libs/starcore/builtin/` appears as a string literal in `libs/stardata/` — the grep test of proposal §2.1.1, asserted in CI.
+- No **vocabulary** identifier from `libs/starcore/builtin/` appears as a string literal in `libs/stardata/` — proposal §2.1.1's grep test, asserted in CI by `scripts/check_layering.py`.
+
+  Vocabulary means class ids, trait ids, property names, enum ids and enum values: `starcore.object`, `holder`, `relation`, `present_in`, `relation_enum`, `carried`. The **schema language** is exempt — the id of a core-owned form and the name of any key it declares, plus the fields of the two bootstrap forms — because `schema`, `key`, `class`, `of_class` and `sealed` are what `libs/stardata` exists to implement, and spec §1.2.1 puts §2–§7 in its column. A name in both sets counts as schema language: `name` is a property of `starcore.object` and also a field of a `key` declaration, and no arrangement of the code would let the schema layer stop saying it.
+
+  Both sets are derived from the files rather than listed in the script, so a property added to a core class is guarded the next time CI runs.
 
 ---
 
@@ -465,18 +469,21 @@ as sugar with no code change, which the test at the bottom of
 mechanism §7.6 already provides. **[OPEN]** Adding to one still has no
 spelling, since there is no `enum_extension`.
 
-**The grep test of proposal §2.1.1 is now a CI gate**, `scripts/check_layering.py`.
-It is narrower than the sentence in the Definition of Done, deliberately:
-`libs/starcore/builtin/` declares the core-owned *forms* of §7.2.4 as well as
-the object model, so a literal reading forbids `libs/stardata` from naming
-`schema`, `key`, `class` or `of_class` — the schema language it exists to
-implement, and which spec §1.2.1 puts in Stardata's own column. The script
-therefore guards class ids, trait ids, property names, enum ids and enum
-values, and exempts anything also declared as a form id or a key name
-(including the two bootstrap forms, read out of `schema.cpp`). Both sets are
-derived from the files, never listed in the script: 20 identifiers are
-guarded today, and a property added to `starcore.object` is covered the next
-time it runs.
+**The grep test of proposal §2.1.1 is now a CI gate**, `scripts/check_layering.py`,
+and the Definition of Done above states the rule it actually enforces.
+
+The scoping is worth recording, because the first draft of that rule failed on
+22 names that were not leaks. `libs/starcore/builtin/` declares the core-owned
+*forms* of §7.2.4 as well as the object model, so "no identifier from
+`builtin/`" forbids `libs/stardata` from naming `schema`, `key`, `class` or
+`of_class` — the schema language it exists to implement, and which spec §1.2.1
+puts in Stardata's own column. Guarding the vocabulary alone leaves 20
+identifiers, and `holder` and `relation` were the only two the placement pass
+had actually leaked.
+
+A check with false positives nobody can clear is a check that gets disabled,
+which is why the exemption is drawn from the files rather than from a list of
+apologies in the script.
 
 ### F2d · `schema_extension`, replacement, and the no-duplicates rule
 **Size:** M · **Depends on:** F2a

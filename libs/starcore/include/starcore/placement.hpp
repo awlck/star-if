@@ -30,8 +30,8 @@ namespace starcore {
 // wearing a parameter. So the parameter is gone: the code below names
 // `relation_enum` outright, because here that is the right thing to do.
 //
-// This is also why the file does not try to generalise. §2.1.1 makes the
-// point directly: parameterising the *stage order* rescues F12's narrowing,
+// This is also why the file does not try to generalise. Proposal §2.1.1 makes
+// the point directly: parameterising the *stage order* rescues F12's narrowing,
 // because the dataflow really is generic; doing the same to placement would
 // produce a mechanism nobody else could use.
 

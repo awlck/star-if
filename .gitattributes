@@ -12,3 +12,6 @@
 # Binary-ish or generated formats: no diff noise, no text conversion.
 *.png binary
 *.spak binary
+
+# Large test snapshots: collapsed in GitHub diffs.
+tests/unit/lex/snapshots/tour.tokens.txt linguist-generated=true

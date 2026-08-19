@@ -21,6 +21,7 @@ add_library(stardata STATIC
     src/schema/schema.cpp
     src/schema/annotation.cpp
     src/schema/suggest.cpp
+    src/schema/property.cpp
     src/schema/loader.cpp
     src/schema/types.cpp
 )

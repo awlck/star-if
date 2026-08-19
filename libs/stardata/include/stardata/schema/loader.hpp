@@ -101,8 +101,22 @@ public:
     bool declare_enum(EnumDecl decl, const std::optional<Replaces>& replaces,
                       diag::DiagnosticSink& sink);
 
+    // A property one object declared for itself (§8.7, backlog F11).
+    //
+    // Tracked because §8.8.2's classification needs it: a slot typed `thing`
+    // reading a property that only `reactor_console` declares is "possibly
+    // present", and a walk over classes alone would call it definitely absent
+    // and reject correct code. The class is recorded so the descendant test
+    // can ask whether such an object could satisfy the slot at all.
+    struct LocalProperty {
+        std::string name;
+        std::string class_id;
+        diag::Span span;
+    };
+
     void add_library(LibraryManifest manifest);
     void add_requirement(CoreRequirement requirement);
+    void add_local_property(LocalProperty property);
 
     [[nodiscard]] const Schema* find(std::string_view id) const noexcept;
     [[nodiscard]] const EnumDecl* find_enum(std::string_view id) const noexcept;
@@ -134,6 +148,9 @@ public:
     [[nodiscard]] const std::vector<LibraryManifest>& libraries() const noexcept {
         return libraries_;
     }
+    [[nodiscard]] const std::vector<LocalProperty>& local_properties() const noexcept {
+        return local_properties_;
+    }
 
 private:
     // Index into one of the vectors below, or nothing. Returned rather than a
@@ -151,6 +168,7 @@ private:
     std::vector<Declaration> declarations_;
     std::vector<CoreRequirement> requirements_;
     std::vector<LibraryManifest> libraries_;
+    std::vector<LocalProperty> local_properties_;
 
     // id -> position in the vector beside it. Classes and traits share one
     // vector and get one map each, because they are two namespaces (§7.2.4)

@@ -1,0 +1,13 @@
+# tests/corpus/invalid/prop-maybe-absent.star
+# starcore's passes -- placement and property reads -- over the
+# core-owned set, stdlib, and the fixture as a library
+
+error: E-PROP-MAYBE-ABSENT: 'noun' is a 'starcore.object' here, and only some of those have 'open'
+  --> tests/corpus/invalid/prop-maybe-absent.star:17:18
+   |
+17 |         noun = { open == yes
+   |                  ^^^^
+note: container, door declare it (spec §8.8.2)
+note: narrow the slot earlier in this conjunction, or in a stage before it -- `of_class`, `has_trait` and `is` all do, and a restriction that narrows also gives the player a real message (spec §8.8.3)
+fix-it: or test it explicitly with `has_prop = open`
+  replace tests/corpus/invalid/prop-maybe-absent.star:17:18 with `has_prop = open`

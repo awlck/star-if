@@ -83,6 +83,7 @@ starif_enable_sanitizers(stardata_unit_tests)
 add_executable(starcore_unit_tests
     main.cpp
     starcore/placement_test.cpp
+    starcore/narrowing_test.cpp
 )
 
 target_link_libraries(starcore_unit_tests PRIVATE starif_test_support starcore::starcore)

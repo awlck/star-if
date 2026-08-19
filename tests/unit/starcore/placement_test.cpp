@@ -28,6 +28,7 @@
 #include "stardata/diag/codes.hpp"
 #include "stardata/diag/render.hpp"
 
+#include "starcore/narrowing.hpp"
 #include "starcore/placement.hpp"
 #include "support/corpus.hpp"
 #include "support/cst_harness.hpp"
@@ -303,9 +304,15 @@ TEST_CASE("each invalid fixture reports the starcore codes it declares", "[starc
         test::LoadedSet loaded;
         loaded.load_builtin();
         loaded.load_stdlib();
+        // Loaded as well as parsed: §8.8's analysis asks the registry what
+        // each class declares, so a fixture's own classes and actions have
+        // to be in it. Placement needed only the relation enum and so never
+        // did.
+        loaded.load_text(contents, "a library", test::corpus_name(path));
         test::Parsed parsed(contents, test::corpus_name(path));
         diag::DiagnosticSink sink;
         starcore::check_placements(parsed.ast(), loaded.set, sink);
+        starcore::check_property_reads(parsed.ast(), loaded.set, sink);
 
         std::set<std::string> reported;
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
@@ -338,13 +345,20 @@ TEST_CASE("each fixture's starcore diagnostics match its checked-in snapshot",
         test::LoadedSet loaded;
         loaded.load_builtin();
         loaded.load_stdlib();
+        // Loaded as well as parsed: §8.8's analysis asks the registry what
+        // each class declares, so a fixture's own classes and actions have
+        // to be in it. Placement needed only the relation enum and so never
+        // did.
+        loaded.load_text(contents, "a library", test::corpus_name(path));
         test::Parsed parsed(contents, test::corpus_name(path));
         diag::DiagnosticSink sink;
         starcore::check_placements(parsed.ast(), loaded.set, sink);
+        starcore::check_property_reads(parsed.ast(), loaded.set, sink);
 
         std::ostringstream out;
         out << "# " << test::corpus_name(path) << '\n'
-            << "# starcore's placement pass, over the core-owned set and stdlib\n\n";
+            << "# starcore's passes -- placement and property reads -- over the\n"
+            << "# core-owned set, stdlib, and the fixture as a library\n\n";
         bool first = true;
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
             if (!first) {

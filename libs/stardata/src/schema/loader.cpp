@@ -119,6 +119,10 @@ void SchemaSet::add_library(LibraryManifest manifest) {
     libraries_.push_back(std::move(manifest));
 }
 
+void SchemaSet::add_local_property(LocalProperty property) {
+    local_properties_.push_back(std::move(property));
+}
+
 const SchemaSet::Declaration* SchemaSet::find_declaration(std::string_view space,
                                                           std::string_view id) const noexcept {
     const std::optional<std::size_t> index = declaration_index(space, id);
@@ -746,6 +750,8 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
                 check_instantiation(*block, *set.find_class(key), set, sink);
             }
+            // The object's own `prop_def` names are recorded by `fold_all`,
+            // which has the non-const set.
             return;
         }
         Diagnostic diagnostic(Code::UnknownKey, statement.report_span(),
@@ -788,6 +794,32 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
     const std::optional<ast::Value> value = statement.value();
     if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
         validate_block(*block, *schema, &set, sink);
+    }
+}
+
+// The property names an object declares for itself (§8.7), kept for the
+// §8.8.2 classification that runs once everything has loaded.
+//
+// Read here rather than inside `check_instantiation` because that takes the
+// set by const reference -- it validates, it does not populate. The cost is
+// reading the `prop_def` blocks twice, on the small minority of statements
+// that are instantiations carrying one.
+void note_local_properties(const ast::Statement& statement, const std::string& key,
+                           SchemaSet& set) {
+    if (set.find_class(key) == nullptr) {
+        return; // not an instantiation
+    }
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        return;
+    }
+    // A throwaway sink: whatever these declarations are wrong about,
+    // `check_instantiation` has already said so, and saying it twice would
+    // double every diagnostic in the corpus.
+    diag::DiagnosticSink quiet;
+    for (const PropDecl& property : read_local_prop_defs(*block, set.find("prop_marker"), quiet)) {
+        set.add_local_property(SchemaSet::LocalProperty{property.name, key, property.span});
     }
 }
 
@@ -877,6 +909,7 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
             }
             const std::optional<Replaces> replaces = read_replaces(statement);
             check_top_level(statement, *key, set, sink);
+            note_local_properties(statement, *key, set);
 
             if (is_structural_form(*key)) {
                 fold_declaration(statement, *key, replaces, options, set, sink);

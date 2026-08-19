@@ -68,6 +68,22 @@ struct Schema {
     std::string owner;   // who declared it; assigned by the loader, never by the file
     std::string doc;
     std::vector<KeyDecl> keys;
+
+    // §7.2's last row, which is a field of the *schema* and not of a key:
+    // "the ordered stages of this form, through which type narrowing flows
+    // (§8.8.3). Declaring it keeps the narrowing analysis free of any
+    // knowledge of what the stages are."
+    //
+    // That parenthesis is the whole reason it exists, and it is the one
+    // thing that keeps backlog F12 on the right side of proposal §2.1.1: a
+    // dataflow that ran over a built-in list `when, conditions,
+    // restrictions, effects` would be `libs/stardata` naming four pieces of
+    // interactive-fiction vocabulary. Running over whatever sequence the
+    // schema declares, it names none of them -- and a ruleset that invents a
+    // fifth stage gets narrowing through it for free.
+    std::vector<std::string> stage_order;
+    diag::Span stage_order_span;
+
     diag::Span span;
 
     [[nodiscard]] const KeyDecl* find_key(std::string_view name) const noexcept;
@@ -122,6 +138,17 @@ struct ClassDecl {
     bool sealed = false;
     std::string owner;
     std::vector<PropDecl> properties;
+
+    // §8.3's `traits = { openable lockable }`, in declaration order because
+    // §8.4 resolves them in it.
+    //
+    // Read late, and the gap it closed is worth recording: until backlog F12
+    // this key was parsed by nobody, so a property arriving through a trait
+    // resolved to nothing at all. Everything that walked a class for a
+    // property -- the instantiation type check of F4, the object-local rule
+    // of F11 -- was quietly missing every trait property in the program.
+    std::vector<std::string> traits;
+
     diag::Span span;
     diag::Span of_class_span;
 

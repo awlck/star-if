@@ -58,17 +58,51 @@ class SchemaSet;
 void check_value(std::string_view what, const ast::Value& value, const ast::TypeRef& type,
                  const SchemaSet& set, diag::DiagnosticSink& sink);
 
-// Checks an object instantiation (§7.4) against the property types its class
-// declares, inherited ones included.
+// Checks an object instantiation (§7.4): the object's own `prop_def`
+// declarations against what it inherits (§8.7), and every value against the
+// type of the property it is written for.
 //
 // The keys inside an instantiation are properties rather than schema keys, so
-// they are looked up through the class chain instead of in a `Schema`. A key
-// naming no property is left alone: §7.4 says which keys are permitted inside
-// an instantiation, and enforcing that needs the object-local `prop_def` of
-// backlog F11. Being wrong about a property's *type* is checkable now, and is
-// the case §14.3 names -- `exits.nrth` on a `map<direction, ...>`.
+// they are looked up through §8.4's resolution order instead of in a
+// `Schema`.
+//
+// A KEY NAMING NO PROPERTY IS STILL LEFT ALONE, and F11 does not change that
+// -- it only removes one of the two reasons. §7.4 permits "those of the
+// class's property set, plus the universal keys `id`, `traits`, `in`, `on`,
+// `part_of`, and `sector`", and four of those six universals are core
+// vocabulary: `in`, `on` and `part_of` are values of the relation enum (§8.5)
+// and `sector` is a core-owned form. `libs/stardata` may not name them
+// (proposal §2.1.1), so it cannot tell a universal key from a typo, and
+// guessing would reject `in = ornate_box` on every object in the corpus.
+//
+// So §8.7's typo detection -- "`times_reboofed` is an error rather than a
+// second property" -- wants a pass in `libs/starcore`, beside the placement
+// pass that already reads the same blocks for the same reason. Recorded as an
+// [OPEN] on F11 rather than solved here or solved wrongly.
 void check_instantiation(const ast::Block& block, const ClassDecl& decl, const SchemaSet& set,
                          diag::DiagnosticSink& sink);
+
+// §8.4's property resolution order, as far as Phase 0's model reaches
+// (backlog F11).
+//
+// The order is the specification's, and the first step is the one F11 adds:
+//
+//   1. the object's own `prop_def` declarations (§8.7)
+//   2. traits mixed into the object directly            <-- not yet modelled
+//   3. the class, then its ancestors, each with its traits
+//
+// STEP 2 AND THE TRAIT HALF OF STEP 3 ARE MISSING, and saying so here is
+// better than a caller assuming otherwise: `read_class` does not read the
+// `traits` key into `ClassDecl` at all, so a property arriving through a
+// trait resolves to nothing. That gap is F12's to close, because F12 is the
+// task that cannot work without it -- §8.8.2 classifies a read by whether
+// "`T` or an ancestor **or trait** of `T`" declares the property.
+//
+// `local` is what `read_local_prop_defs` returned for the instantiation, and
+// may be empty; most objects declare no properties of their own.
+[[nodiscard]] const PropDecl* resolve_property(std::string_view name,
+                                               const std::vector<PropDecl>& local,
+                                               const ClassDecl& decl, const SchemaSet& set);
 
 // Checks that every type expression in the set resolves: each name is one of
 // §6.2's, or a declared enum; each takes the right number of arguments; and

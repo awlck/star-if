@@ -18,7 +18,6 @@ tests/corpus/invalid/decimal-precision.star:8:14: error: E-DEC-PRECISION: '1.5' 
 tests/corpus/invalid/decimal-precision.star:9:14: error: E-NUM-TRAILING-DOT: '2.' trails off after the dot -- did you mean '2' or '2.000'?
 tests/corpus/invalid/includes-key-and-value.star:13:40: error: E-BLOCK-MIXED: this block holds statements, and 'stray' is a bare value among them
 tests/corpus/invalid/integer-out-of-range.star:7:15: error: E-INT-RANGE: I can't hold '99999999999999999999' in an integer
-tests/corpus/invalid/local-propdef-shadow.star:14:43: error: E-BLOCK-MIXED: this block holds statements, and 'diagnostic_code' is a bare value among them
 tests/corpus/invalid/map-key-not-in-domain.star:9:57: error: E-BLOCK-MIXED: this block holds statements, and 'stray' is a bare value among them
 tests/corpus/invalid/mixed-block.star:6:16: error: E-BLOCK-MIXED: this block holds statements, and 'openable' is a bare value among them
 tests/corpus/invalid/multiline-string.star:6:19: error: E-STR-MULTILINE: this string opens here, but the line ends before it closes

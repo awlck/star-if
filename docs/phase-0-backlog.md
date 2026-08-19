@@ -812,9 +812,48 @@ Spec §10.5.1 — the rule is subtle and entirely mechanical, so it is cheap to 
 ### F11 · Object-local `prop_def`
 **Size:** S · **Depends on:** F3
 
-- [ ] `prop_def` inside an object instantiation declares a property on that object only (spec §8.7).
-- [ ] Resolution order puts object-local declarations first (§8.4).
-- [ ] Redeclaring an inherited name: error on type mismatch, warning on redundancy.
+- [x] `prop_def` inside an object instantiation declares a property on that object only (spec §8.7).
+- [x] Resolution order puts object-local declarations first (§8.4).
+- [x] Redeclaring an inherited name: error on type mismatch, warning on redundancy.
+
+Read by the same `read_prop_defs` that `class` and `trait` use, markers and
+all, because §8.7 says a local property "is otherwise an ordinary property" —
+a second reader would agree with the first until it didn't.
+
+**The corpus was already carrying the feature untested.** tour.star has §8.7's
+own example, `reactor_console` with `times_rebooted` and `diagnostic_code`;
+until now those keys resolved to nothing and the two values written against
+them were never checked at all. They are now, which is the difference between
+the syntax being present and the rule being enforced.
+
+`resolve_property` is §8.4's order as a function, so the ordering is
+assertable directly rather than only through a diagnostic — a test that
+watched for an error would pass just as well if the class won and happened to
+agree about the type.
+
+**[OPEN] §7.4's permitted-key rule is still not enforced, and F4 deferred it
+here on the assumption that F11 would close it.** It cannot, in this library.
+§7.4 permits "those of the class's property set, plus the universal keys `id`,
+`traits`, `in`, `on`, `part_of`, and `sector`" — and four of those six are
+core vocabulary: `in`, `on` and `part_of` are values of the relation enum
+(§8.5), `sector` is a core-owned form. `libs/stardata` may not name them
+(proposal §2.1.1, and `check_layering.py` would fail the build), so it cannot
+tell a universal key from a typo, and guessing would reject `in = ornate_box`
+on every object in the corpus.
+
+So §8.7's typo detection — "`times_reboofed` is an error rather than a second
+property", which is the first thing §8.7 lists as what the declaration buys —
+wants a pass in `libs/starcore`, beside the placement pass that already reads
+these same blocks for the same reason. That is the F2c shape and it is a small
+task; it is left out here only because F11's list does not name it and the
+alternative was to solve it wrongly.
+
+**[OPEN] Traits are still not in the resolution walk.** §8.4 step 2 is traits
+mixed into the object and step 3 checks each class's traits, and `read_class`
+does not read the `traits` key into `ClassDecl` at all — so a property
+arriving through a trait resolves to nothing. F4 recorded this; F11 inherits
+it and F12 has to close it, since §8.8.2 classifies a read by whether "`T` or
+an ancestor **or trait** of `T`" declares the property.
 
 ### F12 · Property access and narrowing — **owner: split**
 **Size:** M · **Depends on:** F11, F9

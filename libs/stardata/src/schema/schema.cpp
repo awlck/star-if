@@ -558,6 +558,13 @@ std::optional<Replaces> read_replaces(const ast::Statement& statement) {
     return std::nullopt;
 }
 
+std::vector<PropDecl> read_local_prop_defs(const ast::Block& block, const Schema* markers,
+                                           diag::DiagnosticSink& sink) {
+    std::vector<PropDecl> properties;
+    read_prop_defs(block, markers, properties, sink);
+    return properties;
+}
+
 std::optional<EnumDecl> read_enum(const ast::Statement& statement, std::string_view owner,
                                   diag::DiagnosticSink& sink) {
     const std::optional<ast::Value> value = statement.value();

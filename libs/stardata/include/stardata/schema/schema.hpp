@@ -235,6 +235,17 @@ read_schema_extension(const ast::Statement& statement, diag::DiagnosticSink& sin
 [[nodiscard]] std::optional<EnumDecl> read_enum(const ast::Statement& statement,
                                                 std::string_view owner, diag::DiagnosticSink& sink);
 
+// The `prop_def` declarations an object instantiation carries (§8.7, backlog
+// F11): properties belonging to this object and to nothing else.
+//
+// The same reader `class` and `trait` use, because §8.7 is explicit that a
+// local property "is otherwise an ordinary property: typed, saved, readable
+// in conditions, writable in effects" -- so it had better be read by the
+// same code, markers and all, rather than by a second reader that agrees
+// with the first until it doesn't.
+[[nodiscard]] std::vector<PropDecl>
+read_local_prop_defs(const ast::Block& block, const Schema* markers, diag::DiagnosticSink& sink);
+
 // --- the bootstrap -----------------------------------------------------
 
 // The schema for `schema` itself: the one rule in the system not written in

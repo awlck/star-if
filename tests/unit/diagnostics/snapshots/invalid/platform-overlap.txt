@@ -1,0 +1,6 @@
+# tests/corpus/invalid/platform-overlap.star
+# declared E-DUP-KEY
+# lexer and parser report (none)
+# E-DUP-KEY is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

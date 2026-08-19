@@ -1,0 +1,6 @@
+# tests/corpus/invalid/annotation-misapplied.star
+# declared E-ANNOT-MISAPPLIED
+# lexer and parser report (none)
+# E-ANNOT-MISAPPLIED is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

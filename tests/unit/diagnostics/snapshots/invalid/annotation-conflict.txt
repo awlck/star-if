@@ -1,0 +1,6 @@
+# tests/corpus/invalid/annotation-conflict.star
+# declared E-ANNOT-CONFLICT
+# lexer and parser report (none)
+# E-ANNOT-CONFLICT is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

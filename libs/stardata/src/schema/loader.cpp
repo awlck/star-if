@@ -8,6 +8,7 @@
 
 #include "stardata/cst/parser.hpp"
 #include "stardata/diag/diagnostic.hpp"
+#include "stardata/schema/annotation.hpp"
 #include "stardata/schema/types.hpp"
 
 namespace stardata::schema {
@@ -412,12 +413,22 @@ void check_arity(const std::vector<ast::Statement>& statements, const Schema& sc
             continue; // `arity = many` collects them, in source order
         }
 
+        // §5.4.1's conditional presence, made pairwise: two bindings collide
+        // only where both apply. `@platform(glk)` and `@platform(qt)` are one
+        // binding with a run-time selector -- both ship in the one `.spak`
+        // and the engine picks when the frontend declares itself -- so
+        // neither is a duplicate of the other. `@debug` separates nothing,
+        // because a development build holds the annotated statement and the
+        // plain one both.
+        const Presence presence = presence_of(statement);
+
         const ast::Statement* first = nullptr;
         for (const auto& [seen, at] : bound) {
-            if (seen == *name) {
-                first = at;
-                break;
+            if (seen != *name || !presence.can_coexist_with(presence_of(*at))) {
+                continue;
             }
+            first = at;
+            break;
         }
         if (first == nullptr) {
             bound.emplace_back(*name, &statement);
@@ -433,6 +444,13 @@ void check_arity(const std::vector<ast::Statement>& statements, const Schema& sc
                              "schema (spec §5.3, §7.2)");
         diagnostic.with_note("`+=` and `-=` are not bindings and never collide: write `" + *name +
                              " += ...` to add to what is already there");
+        if (!presence.unconditional() || !presence_of(*first).unconditional()) {
+            diagnostic.with_note("these two apply together somewhere. `@platform` tells them "
+                                 "apart only when their frontends do not overlap -- and a "
+                                 "statement without one runs on every frontend, so it overlaps "
+                                 "them all. `@debug` tells nothing apart: a development build has "
+                                 "the annotated statement and the plain one both (spec §5.4.1)");
+        }
         sink.report(std::move(diagnostic));
     }
 }
@@ -471,6 +489,15 @@ void check_exclusive_groups(const ast::Block& block, const Schema& schema,
             if (const std::optional<ast::Statement> written = block.find(key.name)) {
                 present.push_back(*written);
             }
+        }
+
+        // The same reading of §5.4.1 the arity check makes: two members are
+        // both answers to the group's one question only where both apply.
+        // `@platform(glk)` on one and `@platform(qt)` on the other is one
+        // answer per session, which is what the group asks for.
+        if (present.size() > 1 &&
+            !presence_of(present[0]).can_coexist_with(presence_of(present[1]))) {
+            continue;
         }
 
         if (present.size() > 1) {
@@ -775,6 +802,14 @@ void collect_library_manifest(const ast::Statement& statement, const std::string
 // The two passes, over files already parsed.
 void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options, SchemaSet& set,
               diag::DiagnosticSink& sink) {
+    // Pass zero: annotations (§3.8, §5.4.1, backlog F5). Registry-free, and
+    // run first because it is the pass that decides what a value even claims
+    // to do -- an author who wrote `@merge` on a string wants to hear that
+    // before they hear what the schema thinks of the string.
+    for (const LoadedFile& file : loaded) {
+        check_annotations(ast::File::from(cst::SyntaxNode::root(file.green), file.id), sink);
+    }
+
     // Pass one: schemas. A form declared in one file and used in another
     // must work regardless of which sorts first (§13.2).
     for (const LoadedFile& file : loaded) {

@@ -19,6 +19,7 @@ add_library(stardata STATIC
     src/cst/edit.cpp
     src/ast/ast.cpp
     src/schema/schema.cpp
+    src/schema/annotation.cpp
     src/schema/loader.cpp
     src/schema/types.cpp
 )

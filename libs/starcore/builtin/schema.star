@@ -41,7 +41,11 @@ schema = {
             doc  = "The name this class is instantiated by, and referred to by." }
     key = { name = of_class  type = identifier
             doc  = "The parent class. Absent means starcore.object, the root (§8.1.1)." }
-    key = { name = prop_def  type = block<prop_def>  arity = many
+    # §5.4.2's table declares `prop_def` as `combine = merge`: a second
+    # block adds to the inherited property set rather than replacing it,
+    # which is the only reading under which `class_extension` can add a
+    # property to a class somebody else declared.
+    key = { name = prop_def  type = block<prop_def>  arity = many  combine = merge
             doc  = "Properties this class declares, each a type or a block of markers." }
     key = { name = traits    type = list<identifier>
             doc  = "Traits mixed in, inherited by every instance and subclass." }
@@ -61,7 +65,7 @@ schema = {
 
     key = { name = of_class  type = identifier       required = yes
             doc  = "The class being extended. It must already exist." }
-    key = { name = prop_def  type = block<prop_def>  arity = many }
+    key = { name = prop_def  type = block<prop_def>  arity = many  combine = merge }
     key = { name = traits    type = list<identifier> }
     key = { name = doc       type = text }
 }
@@ -87,7 +91,7 @@ schema = {
     doc       = "A named bundle of properties, defaults and rules that cuts across the class tree."
 
     key = { name = id        type = identifier       required = yes  unique_in = trait }
-    key = { name = prop_def  type = block<prop_def>  arity = many }
+    key = { name = prop_def  type = block<prop_def>  arity = many  combine = merge }
     key = { name = rule      type = block<rule>      arity = many }
     key = { name = sealed    type = bool }
     key = { name = doc       type = text }

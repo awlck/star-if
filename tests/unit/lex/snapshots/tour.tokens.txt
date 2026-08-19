@@ -1,4 +1,4 @@
-# tokens: 5514, trivia: 6205 (whitespace elided)
+# tokens: 5547, trivia: 6261 (whitespace elided)
 0+79 comment # ==============================================...
 80+48 comment #  tour.star — the Stardata conformance corpus
 129+79 comment # ==============================================...
@@ -3767,2133 +3767,2182 @@
 41401+1 punctuation }
 41407+1 punctuation }
 41409+1 punctuation }
-41412+59 comment # Development-only: stripped entirely from a rel...
-41472+4 identifier rule
-41477+1 operator =
-41479+6 annotation @debug
-41486+1 punctuation {
-41492+9 identifier of_action
-41502+1 operator =
-41504+7 identifier examine
-41516+4 identifier when
-41526+1 operator =
-41528+1 punctuation {
-41530+1 punctuation }
-41536+63 comment # \\[ and \\] escape the template delimiters (spec...
-41604+10 identifier successMsg
-41615+1 operator =
-41617+6 annotation @after
-41624+28 string "\\[debug: [DebugId(noun)]\\]"
-41653+1 punctuation }
-41656+68 comment # Frontend-specific: a text-only fallback where ...
-41725+4 identifier rule
-41730+1 operator =
-41732+9 annotation @platform
-41741+1 punctuation (
-41742+3 identifier glk
-41745+1 punctuation ,
-41747+3 identifier cli
-41750+1 punctuation )
-41752+1 punctuation {
-41758+9 identifier of_action
-41769+1 operator =
-41771+7 identifier examine
-41783+4 identifier when
-41794+1 operator =
-41796+1 punctuation {
-41798+4 identifier noun
-41803+1 operator =
-41805+1 punctuation {
-41807+8 identifier of_class
-41816+1 operator =
-41818+6 identifier weapon
-41825+1 punctuation }
-41827+1 punctuation }
-41833+10 identifier successMsg
-41844+1 operator =
-41846+6 annotation @after
-41853+44 string "([DamageString(noun)], range [noun.range])"
-41898+1 punctuation }
-41902+79 comment # ==============================================...
-41982+81 comment #  12. TURN HOOKS                               ...
-42064+79 comment # ==============================================...
-42144+76 comment # The turn is an initiative-ordered loop over ac...
-42221+50 comment # named points rather than replacing the sequenc...
-42273+9 identifier turn_hook
-42283+1 operator =
-42285+1 punctuation {
-42287+2 identifier id
-42290+1 operator =
-42292+9 identifier ss_upkeep
-42307+5 identifier phase
-42313+1 operator =
-42315+6 identifier upkeep
-42327+8 identifier priority
-42336+1 operator =
-42338+3 integer 100
-42356+6 identifier script
-42363+1 operator =
-42365+15 identifier ss_tick_effects
-42381+1 punctuation }
-42384+9 identifier turn_hook
-42394+1 operator =
-42396+1 punctuation {
-42398+2 identifier id
-42401+1 operator =
-42403+13 identifier ss_initiative
-42418+5 identifier phase
-42424+1 operator =
-42426+10 identifier initiative
-42438+8 identifier priority
-42447+1 operator =
-42449+3 integer 100
-42467+10 identifier conditions
-42478+1 operator =
-42480+1 punctuation {
-42482+9 identifier any_actor
-42492+1 operator =
-42494+1 punctuation {
-42496+9 identifier in_combat
-42506+2 operator ==
-42509+3 identifier yes
-42513+1 punctuation }
-42515+1 punctuation }
-42531+6 identifier script
-42538+1 operator =
-42540+18 identifier ss_roll_initiative
-42559+1 punctuation }
-42562+9 identifier turn_hook
-42572+1 operator =
-42574+1 punctuation {
-42576+2 identifier id
-42579+1 operator =
-42581+11 identifier ss_reaction
-42596+5 identifier phase
-42602+1 operator =
-42604+8 identifier reaction
-42616+8 identifier priority
-42625+1 operator =
-42627+3 integer 100
-42645+6 identifier script
-42652+1 operator =
-42654+18 identifier ss_offer_reactions
-42673+1 punctuation }
-42676+9 identifier turn_hook
-42686+1 operator =
-42688+1 punctuation {
-42690+2 identifier id
-42693+1 operator =
-42695+12 identifier ss_round_end
-42710+5 identifier phase
-42716+1 operator =
-42718+9 identifier round_end
-42730+8 identifier priority
-42739+1 operator =
-42741+3 integer 100
-42759+6 identifier script
-42766+1 operator =
-42768+15 identifier ss_end_of_round
-42784+1 punctuation }
-42787+77 comment # The default combat response, dispatching on th...
-42865+9 identifier turn_hook
-42875+1 operator =
-42877+1 punctuation {
-42879+2 identifier id
-42882+1 operator =
-42884+18 identifier ss_combat_response
-42904+5 identifier phase
-42910+1 operator =
-42912+11 identifier round_start
-42925+8 identifier priority
-42934+1 operator =
-42936+2 integer 90
-42953+6 identifier script
-42960+1 operator =
-42962+27 identifier ss_dispatch_combat_response
-42990+1 punctuation }
-42994+79 comment # ==============================================...
-43074+77 comment #  13. QUESTS                                   ...
-43152+79 comment # ==============================================...
-43233+5 identifier quest
-43239+1 operator =
-43241+1 punctuation {
-43247+2 identifier id
-43256+1 operator =
-43258+16 identifier find_the_captain
-43279+5 identifier title
-43288+1 operator =
-43290+21 lockey $q_find_captain_title
-43316+7 identifier summary
-43325+1 operator =
-43327+23 lockey $q_find_captain_summary
-43355+8 identifier category
-43364+1 operator =
-43366+4 identifier main
-43393+32 comment # main | side | faction | hidden
-43431+5 identifier stage
-43437+1 operator =
-43439+1 punctuation {
-43449+2 identifier id
-43454+1 operator =
-43456+13 identifier search_bridge
-43478+4 identifier text
-43483+1 operator =
-43485+18 lockey $q_find_captain_s1
-43512+13 identifier complete_when
-43526+1 operator =
-43528+1 punctuation {
-43530+7 identifier visited
-43538+1 operator =
-43540+19 identifier command_bridge_stub
-43560+1 punctuation }
-43566+1 punctuation }
-43572+5 identifier stage
-43578+1 operator =
-43580+1 punctuation {
-43590+2 identifier id
-43595+1 operator =
-43597+18 identifier follow_blood_trail
-43624+4 identifier text
-43629+1 operator =
-43631+18 lockey $q_find_captain_s2
-43658+13 identifier complete_when
-43672+1 operator =
-43674+1 punctuation {
-43688+2 identifier OR
-43691+1 operator =
-43693+1 punctuation {
-43711+8 identifier examined
-43720+1 operator =
-43722+11 identifier blood_trail
-43750+6 identifier script
-43759+1 operator =
-43761+1 punctuation {
-43763+2 identifier fn
-43766+1 operator =
-43768+26 identifier player_asked_about_captain
-43795+1 punctuation }
-43809+1 punctuation }
-43819+1 punctuation }
-43825+1 punctuation }
-43831+5 identifier stage
-43837+1 operator =
-43839+1 punctuation {
-43849+2 identifier id
-43854+1 operator =
-43856+8 identifier confront
-43873+4 identifier text
-43878+1 operator =
-43880+18 lockey $q_find_captain_s3
-43907+13 identifier complete_when
-43921+1 operator =
-43923+1 punctuation {
-43925+10 identifier quest_flag
-43936+1 operator =
-43938+18 identifier captain_confronted
-43957+1 punctuation }
-43963+1 punctuation }
-43970+11 identifier on_complete
-43982+1 operator =
-43984+1 punctuation {
-43994+7 identifier effects
-44002+1 operator =
-44004+1 punctuation {
-44018+3 identifier add
-44027+1 operator =
-44029+1 punctuation {
-44031+6 identifier target
-44038+1 operator =
-44040+6 identifier player
-44048+4 identifier prop
-44053+1 operator =
-44055+2 identifier xp
-44059+6 identifier amount
-44066+1 operator =
-44068+3 integer 250
-44072+1 punctuation }
-44086+8 identifier set_flag
-44095+1 operator =
-44097+13 identifier captain_found
-44119+1 punctuation }
-44125+1 punctuation }
-44131+7 identifier on_fail
-44139+1 operator =
-44141+1 punctuation {
-44151+10 identifier conditions
-44162+1 operator =
-44164+1 punctuation {
-44166+4 identifier dead
-44171+1 operator =
-44173+13 identifier captain_reyes
-44187+1 punctuation }
-44193+1 punctuation }
-44195+1 punctuation }
-44198+70 comment # A hidden quest: tracked, but absent from the j...
-44269+5 identifier quest
-44275+1 operator =
-44277+1 punctuation {
-44283+2 identifier id
-44292+1 operator =
-44294+17 identifier the_real_employer
-44316+5 identifier title
-44325+1 operator =
-44327+17 lockey $q_employer_title
-44349+7 identifier summary
-44358+1 operator =
-44360+19 lockey $q_employer_summary
-44384+8 identifier category
-44393+1 operator =
-44395+6 identifier hidden
-44406+5 identifier stage
-44412+1 operator =
-44414+1 punctuation {
-44416+2 identifier id
-44419+1 operator =
-44421+9 identifier suspicion
-44432+4 identifier text
-44437+1 operator =
-44439+14 lockey $q_employer_s1
-44468+13 identifier complete_when
-44482+1 operator =
-44484+1 punctuation {
-44486+14 identifier COUNT_AT_LEAST
-44501+1 operator =
-44503+1 punctuation {
-44523+1 identifier n
-44525+1 operator =
-44527+1 integer 2
-44547+8 identifier flag_set
-44556+1 operator =
-44558+16 identifier saw_the_manifest
-44593+8 identifier flag_set
-44602+1 operator =
-44604+14 identifier heard_vex_slip
-44637+8 identifier examined
-44646+1 operator =
-44648+12 identifier captains_log
-44661+1 punctuation }
-44663+1 punctuation }
-44665+1 punctuation }
-44667+1 punctuation }
-44671+79 comment # ==============================================...
-44751+79 comment #  14. DIALOGUE                                 ...
-44831+79 comment # ==============================================...
-44912+8 identifier dialogue
-44921+1 operator =
-44923+1 punctuation {
-44929+2 identifier id
-44932+1 operator =
-44934+17 identifier vex_first_meeting
-44957+68 comment # Everyone who can speak or be addressed. Partic...
-45030+65 comment # loaded sector, so a radio conversation uses th...
-45100+11 identifier participant
-45112+1 operator =
-45114+1 punctuation {
-45116+5 identifier actor
-45122+1 operator =
-45124+17 identifier quartermaster_vex
-45143+4 identifier role
-45148+1 operator =
-45150+7 identifier primary
-45158+1 punctuation }
-45164+11 identifier participant
-45176+1 operator =
-45178+1 punctuation {
-45180+5 identifier actor
-45186+1 operator =
-45188+2 identifier pc
-45207+4 identifier role
+41412+74 comment # Development-only. `@debug` resolves at COMPILE...
+41487+63 comment # this from a release build, and what ships neve...
+41551+4 identifier rule
+41556+1 operator =
+41558+6 annotation @debug
+41565+1 punctuation {
+41571+9 identifier of_action
+41581+1 operator =
+41583+7 identifier examine
+41595+4 identifier when
+41605+1 operator =
+41607+1 punctuation {
+41609+1 punctuation }
+41615+63 comment # \\[ and \\] escape the template delimiters (spec...
+41683+10 identifier successMsg
+41694+1 operator =
+41696+6 annotation @after
+41703+28 string "\\[debug: [DebugId(noun)]\\]"
+41732+1 punctuation }
+41735+68 comment # Frontend-specific: a text-only fallback where ...
+41804+1 comment #
+41806+77 comment # `@platform` resolves at RUN time, and the diff...
+41884+77 comment # not cosmetic. One .spak is signed and shipped ...
+41962+75 comment # one is running is not known until it declares ...
+42038+75 comment # start — so the compiler keeps every alternat...
+42114+4 identifier rule
+42119+1 operator =
+42121+9 annotation @platform
+42130+1 punctuation (
+42131+3 identifier glk
+42134+1 punctuation ,
+42136+3 identifier cli
+42139+1 punctuation )
+42141+1 punctuation {
+42147+9 identifier of_action
+42158+1 operator =
+42160+7 identifier examine
+42172+4 identifier when
+42183+1 operator =
+42185+1 punctuation {
+42187+4 identifier noun
+42192+1 operator =
+42194+1 punctuation {
+42196+8 identifier of_class
+42205+1 operator =
+42207+6 identifier weapon
+42214+1 punctuation }
+42216+1 punctuation }
+42222+10 identifier successMsg
+42233+1 operator =
+42235+6 annotation @after
+42242+44 string "([DamageString(noun)], range [noun.range])"
+42287+1 punctuation }
+42290+77 comment # Which is what makes the pair below legal on an...
+42368+74 comment # two bindings of `successMsg` in one block, and...
+42443+78 comment # their frontends are disjoint, so exactly one i...
+42522+65 comment # key is bound once wherever the game runs (spec...
+42588+1 comment #
+42590+76 comment # Overlapping them — or leaving one of them un...
+42667+78 comment # frontend — is E-DUP-KEY, because the engine ...
+42746+69 comment # and no rule to pick between them. There is del...
+42816+78 comment # precedence: the general case is written as its...
+42895+45 comment # where is legible here rather than inferred.
+42941+6 identifier action
+42948+1 operator =
+42950+1 punctuation {
+42956+2 identifier id
+42962+1 operator =
+42964+16 identifier unlock_the_hatch
+42985+5 identifier match
+42991+1 operator =
+42993+1 punctuation {
+42995+14 string "unlock hatch"
+43010+31 string "unlock hatch with [something]"
+43042+1 punctuation }
+43049+10 identifier successMsg
+43060+1 operator =
+43062+9 annotation @platform
+43071+1 punctuation (
+43072+2 identifier qt
+43074+1 punctuation ,
+43076+3 identifier web
+43079+1 punctuation ,
+43081+6 identifier mobile
+43087+1 punctuation )
+43089+36 string "The lock yields with a soft chime."
+43130+10 identifier successMsg
+43141+1 operator =
+43143+9 annotation @platform
+43152+1 punctuation (
+43153+3 identifier glk
+43156+1 punctuation ,
+43158+3 identifier cli
+43161+1 punctuation )
+43170+18 string "The lock yields."
+43189+1 punctuation }
+43193+79 comment # ==============================================...
+43273+81 comment #  12. TURN HOOKS                               ...
+43355+79 comment # ==============================================...
+43435+76 comment # The turn is an initiative-ordered loop over ac...
+43512+50 comment # named points rather than replacing the sequenc...
+43564+9 identifier turn_hook
+43574+1 operator =
+43576+1 punctuation {
+43578+2 identifier id
+43581+1 operator =
+43583+9 identifier ss_upkeep
+43598+5 identifier phase
+43604+1 operator =
+43606+6 identifier upkeep
+43618+8 identifier priority
+43627+1 operator =
+43629+3 integer 100
+43647+6 identifier script
+43654+1 operator =
+43656+15 identifier ss_tick_effects
+43672+1 punctuation }
+43675+9 identifier turn_hook
+43685+1 operator =
+43687+1 punctuation {
+43689+2 identifier id
+43692+1 operator =
+43694+13 identifier ss_initiative
+43709+5 identifier phase
+43715+1 operator =
+43717+10 identifier initiative
+43729+8 identifier priority
+43738+1 operator =
+43740+3 integer 100
+43758+10 identifier conditions
+43769+1 operator =
+43771+1 punctuation {
+43773+9 identifier any_actor
+43783+1 operator =
+43785+1 punctuation {
+43787+9 identifier in_combat
+43797+2 operator ==
+43800+3 identifier yes
+43804+1 punctuation }
+43806+1 punctuation }
+43822+6 identifier script
+43829+1 operator =
+43831+18 identifier ss_roll_initiative
+43850+1 punctuation }
+43853+9 identifier turn_hook
+43863+1 operator =
+43865+1 punctuation {
+43867+2 identifier id
+43870+1 operator =
+43872+11 identifier ss_reaction
+43887+5 identifier phase
+43893+1 operator =
+43895+8 identifier reaction
+43907+8 identifier priority
+43916+1 operator =
+43918+3 integer 100
+43936+6 identifier script
+43943+1 operator =
+43945+18 identifier ss_offer_reactions
+43964+1 punctuation }
+43967+9 identifier turn_hook
+43977+1 operator =
+43979+1 punctuation {
+43981+2 identifier id
+43984+1 operator =
+43986+12 identifier ss_round_end
+44001+5 identifier phase
+44007+1 operator =
+44009+9 identifier round_end
+44021+8 identifier priority
+44030+1 operator =
+44032+3 integer 100
+44050+6 identifier script
+44057+1 operator =
+44059+15 identifier ss_end_of_round
+44075+1 punctuation }
+44078+77 comment # The default combat response, dispatching on th...
+44156+9 identifier turn_hook
+44166+1 operator =
+44168+1 punctuation {
+44170+2 identifier id
+44173+1 operator =
+44175+18 identifier ss_combat_response
+44195+5 identifier phase
+44201+1 operator =
+44203+11 identifier round_start
+44216+8 identifier priority
+44225+1 operator =
+44227+2 integer 90
+44244+6 identifier script
+44251+1 operator =
+44253+27 identifier ss_dispatch_combat_response
+44281+1 punctuation }
+44285+79 comment # ==============================================...
+44365+77 comment #  13. QUESTS                                   ...
+44443+79 comment # ==============================================...
+44524+5 identifier quest
+44530+1 operator =
+44532+1 punctuation {
+44538+2 identifier id
+44547+1 operator =
+44549+16 identifier find_the_captain
+44570+5 identifier title
+44579+1 operator =
+44581+21 lockey $q_find_captain_title
+44607+7 identifier summary
+44616+1 operator =
+44618+23 lockey $q_find_captain_summary
+44646+8 identifier category
+44655+1 operator =
+44657+4 identifier main
+44684+32 comment # main | side | faction | hidden
+44722+5 identifier stage
+44728+1 operator =
+44730+1 punctuation {
+44740+2 identifier id
+44745+1 operator =
+44747+13 identifier search_bridge
+44769+4 identifier text
+44774+1 operator =
+44776+18 lockey $q_find_captain_s1
+44803+13 identifier complete_when
+44817+1 operator =
+44819+1 punctuation {
+44821+7 identifier visited
+44829+1 operator =
+44831+19 identifier command_bridge_stub
+44851+1 punctuation }
+44857+1 punctuation }
+44863+5 identifier stage
+44869+1 operator =
+44871+1 punctuation {
+44881+2 identifier id
+44886+1 operator =
+44888+18 identifier follow_blood_trail
+44915+4 identifier text
+44920+1 operator =
+44922+18 lockey $q_find_captain_s2
+44949+13 identifier complete_when
+44963+1 operator =
+44965+1 punctuation {
+44979+2 identifier OR
+44982+1 operator =
+44984+1 punctuation {
+45002+8 identifier examined
+45011+1 operator =
+45013+11 identifier blood_trail
+45041+6 identifier script
+45050+1 operator =
+45052+1 punctuation {
+45054+2 identifier fn
+45057+1 operator =
+45059+26 identifier player_asked_about_captain
+45086+1 punctuation }
+45100+1 punctuation }
+45110+1 punctuation }
+45116+1 punctuation }
+45122+5 identifier stage
+45128+1 operator =
+45130+1 punctuation {
+45140+2 identifier id
+45145+1 operator =
+45147+8 identifier confront
+45164+4 identifier text
+45169+1 operator =
+45171+18 lockey $q_find_captain_s3
+45198+13 identifier complete_when
 45212+1 operator =
-45214+6 identifier player
-45221+1 punctuation }
-45227+11 identifier participant
-45239+1 operator =
-45241+1 punctuation {
-45243+5 identifier actor
-45249+1 operator =
-45251+14 identifier companion_kira
-45270+4 identifier role
-45275+1 operator =
-45277+9 identifier companion
-45288+8 identifier optional
-45297+1 operator =
-45299+3 identifier yes
-45303+1 punctuation }
-45310+71 comment # Entry rules are tried in order; the first whos...
-45386+5 identifier entry
-45392+1 operator =
-45394+1 punctuation {
-45396+4 identifier node
-45401+1 operator =
-45403+8 identifier greeting
-45413+10 identifier conditions
-45424+1 operator =
-45426+1 punctuation {
-45428+3 identifier NOT
-45432+1 operator =
-45434+1 punctuation {
-45436+3 identifier met
-45440+1 operator =
-45442+17 identifier quartermaster_vex
-45460+1 punctuation }
-45462+1 punctuation }
-45464+1 punctuation }
-45470+5 identifier entry
-45476+1 operator =
-45478+1 punctuation {
-45480+4 identifier node
-45485+1 operator =
-45487+17 identifier greeting_familiar
-45505+1 punctuation }
-45512+4 identifier node
-45517+1 operator =
-45519+1 punctuation {
-45529+2 identifier id
-45537+1 operator =
-45539+8 identifier greeting
-45556+7 identifier speaker
-45564+1 operator =
-45566+17 identifier quartermaster_vex
-45592+4 identifier text
-45600+1 operator =
-45602+13 lockey $vex_greeting
-45624+8 identifier on_enter
-45633+1 operator =
-45635+1 punctuation {
-45637+7 identifier effects
-45645+1 operator =
-45647+1 punctuation {
-45649+7 identifier set_met
-45657+1 operator =
-45659+17 identifier quartermaster_vex
-45677+1 punctuation }
-45679+1 punctuation }
-45690+6 identifier choice
-45697+1 operator =
-45699+1 punctuation {
-45701+2 identifier id
-45706+1 operator =
-45708+17 identifier ask_about_station
-45745+4 identifier text
-45750+1 operator =
-45752+14 lockey $vex_c_station
-45786+4 identifier goto
-45791+1 operator =
-45793+12 identifier station_info
-45806+1 punctuation }
-45817+6 identifier choice
-45824+1 operator =
-45826+1 punctuation {
-45828+2 identifier id
-45833+1 operator =
-45835+17 identifier ask_about_captain
-45872+4 identifier text
-45877+1 operator =
-45879+14 lockey $vex_c_captain
-45913+10 identifier conditions
-45924+1 operator =
-45926+1 punctuation {
-45928+11 identifier quest_state
-45940+1 operator =
-45942+1 punctuation {
-45944+5 identifier quest
-45950+1 operator =
-45952+16 identifier find_the_captain
-46019+5 identifier state
-46025+1 operator =
-46027+6 identifier active
-46034+1 punctuation }
-46036+1 punctuation }
-46057+4 identifier goto
-46062+1 operator =
-46064+13 identifier captain_topic
-46078+1 punctuation }
-46089+66 comment # A skill check, resolved by the loaded ruleset....
-46164+40 comment # gives the player the odds, cRPG-style.
-46213+6 identifier choice
-46220+1 operator =
-46222+1 punctuation {
-46224+2 identifier id
-46229+1 operator =
-46231+10 identifier intimidate
-46261+4 identifier text
-46266+1 operator =
-46268+17 lockey $vex_c_intimidate
-46305+5 identifier check
-46311+1 operator =
-46313+1 punctuation {
-46315+4 identifier stat
-46320+1 operator =
-46322+8 identifier presence
-46332+10 identifier difficulty
-46343+1 operator =
-46345+2 integer 14
-46348+1 punctuation }
-46369+15 identifier show_difficulty
-46385+1 operator =
-46387+3 identifier yes
-46410+10 identifier on_success
-46421+1 operator =
-46423+1 punctuation {
-46425+4 identifier goto
-46430+1 operator =
-46432+9 identifier vex_cowed
-46442+1 punctuation }
-46463+10 identifier on_failure
-46474+1 operator =
-46476+1 punctuation {
-46478+4 identifier goto
-46483+1 operator =
-46485+12 identifier vex_offended
-46532+7 identifier effects
+45214+1 punctuation {
+45216+10 identifier quest_flag
+45227+1 operator =
+45229+18 identifier captain_confronted
+45248+1 punctuation }
+45254+1 punctuation }
+45261+11 identifier on_complete
+45273+1 operator =
+45275+1 punctuation {
+45285+7 identifier effects
+45293+1 operator =
+45295+1 punctuation {
+45309+3 identifier add
+45318+1 operator =
+45320+1 punctuation {
+45322+6 identifier target
+45329+1 operator =
+45331+6 identifier player
+45339+4 identifier prop
+45344+1 operator =
+45346+2 identifier xp
+45350+6 identifier amount
+45357+1 operator =
+45359+3 integer 250
+45363+1 punctuation }
+45377+8 identifier set_flag
+45386+1 operator =
+45388+13 identifier captain_found
+45410+1 punctuation }
+45416+1 punctuation }
+45422+7 identifier on_fail
+45430+1 operator =
+45432+1 punctuation {
+45442+10 identifier conditions
+45453+1 operator =
+45455+1 punctuation {
+45457+4 identifier dead
+45462+1 operator =
+45464+13 identifier captain_reyes
+45478+1 punctuation }
+45484+1 punctuation }
+45486+1 punctuation }
+45489+70 comment # A hidden quest: tracked, but absent from the j...
+45560+5 identifier quest
+45566+1 operator =
+45568+1 punctuation {
+45574+2 identifier id
+45583+1 operator =
+45585+17 identifier the_real_employer
+45607+5 identifier title
+45616+1 operator =
+45618+17 lockey $q_employer_title
+45640+7 identifier summary
+45649+1 operator =
+45651+19 lockey $q_employer_summary
+45675+8 identifier category
+45684+1 operator =
+45686+6 identifier hidden
+45697+5 identifier stage
+45703+1 operator =
+45705+1 punctuation {
+45707+2 identifier id
+45710+1 operator =
+45712+9 identifier suspicion
+45723+4 identifier text
+45728+1 operator =
+45730+14 lockey $q_employer_s1
+45759+13 identifier complete_when
+45773+1 operator =
+45775+1 punctuation {
+45777+14 identifier COUNT_AT_LEAST
+45792+1 operator =
+45794+1 punctuation {
+45814+1 identifier n
+45816+1 operator =
+45818+1 integer 2
+45838+8 identifier flag_set
+45847+1 operator =
+45849+16 identifier saw_the_manifest
+45884+8 identifier flag_set
+45893+1 operator =
+45895+14 identifier heard_vex_slip
+45928+8 identifier examined
+45937+1 operator =
+45939+12 identifier captains_log
+45952+1 punctuation }
+45954+1 punctuation }
+45956+1 punctuation }
+45958+1 punctuation }
+45962+79 comment # ==============================================...
+46042+79 comment #  14. DIALOGUE                                 ...
+46122+79 comment # ==============================================...
+46203+8 identifier dialogue
+46212+1 operator =
+46214+1 punctuation {
+46220+2 identifier id
+46223+1 operator =
+46225+17 identifier vex_first_meeting
+46248+68 comment # Everyone who can speak or be addressed. Partic...
+46321+65 comment # loaded sector, so a radio conversation uses th...
+46391+11 identifier participant
+46403+1 operator =
+46405+1 punctuation {
+46407+5 identifier actor
+46413+1 operator =
+46415+17 identifier quartermaster_vex
+46434+4 identifier role
+46439+1 operator =
+46441+7 identifier primary
+46449+1 punctuation }
+46455+11 identifier participant
+46467+1 operator =
+46469+1 punctuation {
+46471+5 identifier actor
+46477+1 operator =
+46479+2 identifier pc
+46498+4 identifier role
+46503+1 operator =
+46505+6 identifier player
+46512+1 punctuation }
+46518+11 identifier participant
+46530+1 operator =
+46532+1 punctuation {
+46534+5 identifier actor
 46540+1 operator =
-46542+1 punctuation {
-46544+15 identifier adjust_attitude
-46560+1 operator =
-46562+1 punctuation {
-46602+3 identifier npc
-46606+1 operator =
-46608+17 identifier quartermaster_vex
-46627+6 identifier amount
-46634+1 operator =
-46636+3 integer -20
-46640+1 punctuation }
-46642+1 punctuation }
-46644+1 punctuation }
-46646+1 punctuation }
-46657+62 comment # A line spoken by the companion rather than the...
-46728+53 comment # player's choice to deploy her, but it is her v...
-46790+6 identifier choice
-46797+1 operator =
-46799+1 punctuation {
-46801+2 identifier id
-46809+1 operator =
-46811+12 identifier kira_vouches
-46843+7 identifier speaker
-46851+1 operator =
-46853+14 identifier companion_kira
-46887+4 identifier text
-46895+1 operator =
-46897+13 lockey $kira_c_vouch
-46930+10 identifier conditions
-46941+1 operator =
-46943+1 punctuation {
-46968+7 identifier present
-46977+1 operator =
-46979+14 identifier companion_kira
-47017+8 identifier attitude
-47026+1 operator =
-47028+1 punctuation {
-47030+3 identifier npc
-47034+1 operator =
-47036+14 identifier companion_kira
-47052+6 identifier toward
-47059+1 operator =
-47061+2 identifier pc
-47065+8 identifier at_least
-47074+1 operator =
-47076+2 integer 40
-47079+1 punctuation }
-47100+1 punctuation }
-47121+4 identifier goto
-47126+1 operator =
-47128+13 identifier vex_persuaded
-47142+1 punctuation }
-47153+6 identifier choice
-47160+1 operator =
-47162+1 punctuation {
-47164+2 identifier id
-47167+1 operator =
-47169+5 identifier leave
-47176+4 identifier text
-47181+1 operator =
-47183+8 lockey $c_leave
-47193+4 identifier goto
-47198+1 operator =
-47200+3 identifier END
-47204+1 punctuation }
-47210+1 punctuation }
-47217+4 identifier node
-47222+1 operator =
-47224+1 punctuation {
-47234+2 identifier id
-47242+1 operator =
-47244+17 identifier greeting_familiar
-47270+7 identifier speaker
-47278+1 operator =
-47280+17 identifier quartermaster_vex
-47306+4 identifier text
-47314+1 operator =
-47316+19 lockey $vex_greeting_again
-47344+6 identifier choice
-47352+1 operator =
-47354+1 punctuation {
-47356+2 identifier id
-47359+1 operator =
-47361+17 identifier ask_about_station
-47380+4 identifier text
-47385+1 operator =
-47387+14 lockey $vex_c_station
-47403+4 identifier goto
-47408+1 operator =
-47410+12 identifier station_info
-47423+1 punctuation }
-47433+6 identifier choice
-47441+1 operator =
-47443+1 punctuation {
-47445+2 identifier id
-47448+1 operator =
-47450+5 identifier leave
-47469+4 identifier text
-47474+1 operator =
-47476+8 lockey $c_leave
-47492+4 identifier goto
-47497+1 operator =
-47499+3 identifier END
-47503+1 punctuation }
-47509+1 punctuation }
-47516+4 identifier node
-47521+1 operator =
-47523+1 punctuation {
-47533+2 identifier id
-47541+1 operator =
-47543+12 identifier station_info
-47564+7 identifier speaker
-47572+1 operator =
-47574+17 identifier quartermaster_vex
-47600+4 identifier text
-47608+1 operator =
-47610+17 lockey $vex_station_info
-47636+4 identifier once
-47644+1 operator =
-47646+3 identifier yes
-47670+21 comment # greys out after use
-47701+67 comment # An unprompted third-party line. `joins = yes` ...
-47777+68 comment # active participant for the rest of the convers...
-47854+44 comment # distinguishes an interjection from a bark.
-47907+12 identifier interjection
-47920+1 operator =
-47922+1 punctuation {
-47936+7 identifier speaker
-47944+1 operator =
-47946+14 identifier companion_kira
-47973+4 identifier text
-47981+1 operator =
-47983+15 lockey $kira_i_station
-48011+10 identifier conditions
-48022+1 operator =
-48024+1 punctuation {
-48026+7 identifier present
-48034+1 operator =
-48036+14 identifier companion_kira
-48078+3 identifier NOT
-48082+1 operator =
-48084+1 punctuation {
-48086+11 identifier said_before
-48098+1 operator =
-48100+14 identifier kira_i_station
-48115+1 punctuation }
-48117+1 punctuation }
-48131+6 identifier chance
-48138+1 operator =
-48140+2 integer 60
-48155+5 identifier joins
-48162+1 operator =
-48164+3 identifier yes
-48176+1 punctuation }
-48187+4 identifier goto
-48192+1 operator =
-48194+8 identifier greeting
-48221+15 comment # hub-and-spoke
-48241+1 punctuation }
-48248+4 identifier node
-48253+1 operator =
-48255+1 punctuation {
-48257+2 identifier id
-48260+1 operator =
-48262+13 identifier captain_topic
-48278+7 identifier speaker
-48286+1 operator =
-48288+17 identifier quartermaster_vex
-48319+4 identifier text
-48324+1 operator =
-48326+18 lockey $vex_captain_topic
-48358+8 identifier on_enter
-48367+1 operator =
-48369+1 punctuation {
-48371+7 identifier effects
-48379+1 operator =
-48381+1 punctuation {
-48383+8 identifier set_flag
-48392+1 operator =
-48394+14 identifier heard_vex_slip
-48409+1 punctuation }
-48411+1 punctuation }
-48426+4 identifier goto
-48431+1 operator =
-48433+8 identifier greeting
-48442+1 punctuation }
-48449+4 identifier node
-48454+1 operator =
-48456+1 punctuation {
-48458+2 identifier id
-48461+1 operator =
-48463+9 identifier vex_cowed
-48479+7 identifier speaker
-48487+1 operator =
-48489+17 identifier quartermaster_vex
-48520+4 identifier text
-48525+1 operator =
-48527+10 lockey $vex_cowed
-48542+4 identifier goto
-48547+1 operator =
-48549+8 identifier greeting
-48558+1 punctuation }
-48565+4 identifier node
-48570+1 operator =
-48572+1 punctuation {
-48574+2 identifier id
-48577+1 operator =
-48579+12 identifier vex_offended
-48595+7 identifier speaker
-48603+1 operator =
-48605+17 identifier quartermaster_vex
-48636+4 identifier text
-48641+1 operator =
-48643+13 lockey $vex_offended
-48658+4 identifier goto
-48663+1 operator =
-48665+3 identifier END
-48669+1 punctuation }
-48676+4 identifier node
-48681+1 operator =
-48683+1 punctuation {
-48685+2 identifier id
-48688+1 operator =
-48690+13 identifier vex_persuaded
-48706+7 identifier speaker
-48714+1 operator =
-48716+17 identifier quartermaster_vex
-48747+4 identifier text
-48752+1 operator =
-48754+14 lockey $vex_persuaded
-48769+4 identifier goto
-48774+1 operator =
-48776+8 identifier greeting
-48785+1 punctuation }
-48787+1 punctuation }
-48790+75 comment # A "conversation" with an object, entered from ...
-48866+75 comment # `speaker = none` would give a pure narrator vo...
-48942+39 comment # speaker_name and portrait of its own.
-48982+8 identifier dialogue
-48991+1 operator =
-48993+1 punctuation {
-48999+2 identifier id
-49002+1 operator =
-49004+25 identifier reactor_console_interface
-49035+11 identifier participant
-49047+1 operator =
-49049+1 punctuation {
-49051+5 identifier actor
-49057+1 operator =
-49059+15 identifier reactor_console
-49076+4 identifier role
-49081+1 operator =
-49083+7 identifier primary
-49091+1 punctuation }
-49097+11 identifier participant
-49109+1 operator =
-49111+1 punctuation {
-49113+5 identifier actor
-49119+1 operator =
-49121+2 identifier pc
-49138+4 identifier role
-49143+1 operator =
-49145+6 identifier player
-49152+1 punctuation }
-49159+5 identifier entry
-49165+1 operator =
-49167+1 punctuation {
-49169+4 identifier node
-49174+1 operator =
-49176+9 identifier main_menu
-49186+1 punctuation }
-49193+4 identifier node
-49198+1 operator =
-49200+1 punctuation {
-49210+2 identifier id
-49218+1 operator =
-49220+9 identifier main_menu
-49238+7 identifier speaker
-49246+1 operator =
-49248+15 identifier reactor_console
-49272+4 identifier text
-49280+1 operator =
-49282+13 lockey $console_main
-49304+6 identifier choice
-49312+1 operator =
-49314+1 punctuation {
-49316+2 identifier id
-49319+1 operator =
-49321+11 identifier read_status
-49335+4 identifier text
-49340+1 operator =
-49342+17 lockey $console_c_status
-49362+4 identifier goto
-49367+1 operator =
-49369+6 identifier status
-49376+1 punctuation }
-49386+6 identifier choice
-49394+1 operator =
-49396+1 punctuation {
-49398+2 identifier id
-49401+1 operator =
-49403+12 identifier vent_coolant
-49417+4 identifier text
-49422+1 operator =
-49424+15 lockey $console_c_vent
-49460+10 identifier conditions
-49471+1 operator =
-49473+1 punctuation {
-49475+8 identifier flag_set
-49484+1 operator =
-49486+16 identifier coolant_unlocked
-49503+1 punctuation }
-49525+4 identifier goto
-49530+1 operator =
-49532+4 identifier vent
-49537+1 punctuation }
-49547+6 identifier choice
-49555+1 operator =
-49557+1 punctuation {
-49559+2 identifier id
-49562+1 operator =
-49564+10 identifier disconnect
-49578+4 identifier text
-49583+1 operator =
-49585+16 lockey $console_c_leave
-49605+4 identifier goto
-49610+1 operator =
-49612+3 identifier END
-49616+1 punctuation }
-49622+1 punctuation }
-49629+4 identifier node
-49634+1 operator =
-49636+1 punctuation {
-49638+2 identifier id
-49641+1 operator =
-49643+6 identifier status
-49651+7 identifier speaker
-49659+1 operator =
-49661+15 identifier reactor_console
-49678+4 identifier text
+46542+14 identifier companion_kira
+46561+4 identifier role
+46566+1 operator =
+46568+9 identifier companion
+46579+8 identifier optional
+46588+1 operator =
+46590+3 identifier yes
+46594+1 punctuation }
+46601+71 comment # Entry rules are tried in order; the first whos...
+46677+5 identifier entry
+46683+1 operator =
+46685+1 punctuation {
+46687+4 identifier node
+46692+1 operator =
+46694+8 identifier greeting
+46704+10 identifier conditions
+46715+1 operator =
+46717+1 punctuation {
+46719+3 identifier NOT
+46723+1 operator =
+46725+1 punctuation {
+46727+3 identifier met
+46731+1 operator =
+46733+17 identifier quartermaster_vex
+46751+1 punctuation }
+46753+1 punctuation }
+46755+1 punctuation }
+46761+5 identifier entry
+46767+1 operator =
+46769+1 punctuation {
+46771+4 identifier node
+46776+1 operator =
+46778+17 identifier greeting_familiar
+46796+1 punctuation }
+46803+4 identifier node
+46808+1 operator =
+46810+1 punctuation {
+46820+2 identifier id
+46828+1 operator =
+46830+8 identifier greeting
+46847+7 identifier speaker
+46855+1 operator =
+46857+17 identifier quartermaster_vex
+46883+4 identifier text
+46891+1 operator =
+46893+13 lockey $vex_greeting
+46915+8 identifier on_enter
+46924+1 operator =
+46926+1 punctuation {
+46928+7 identifier effects
+46936+1 operator =
+46938+1 punctuation {
+46940+7 identifier set_met
+46948+1 operator =
+46950+17 identifier quartermaster_vex
+46968+1 punctuation }
+46970+1 punctuation }
+46981+6 identifier choice
+46988+1 operator =
+46990+1 punctuation {
+46992+2 identifier id
+46997+1 operator =
+46999+17 identifier ask_about_station
+47036+4 identifier text
+47041+1 operator =
+47043+14 lockey $vex_c_station
+47077+4 identifier goto
+47082+1 operator =
+47084+12 identifier station_info
+47097+1 punctuation }
+47108+6 identifier choice
+47115+1 operator =
+47117+1 punctuation {
+47119+2 identifier id
+47124+1 operator =
+47126+17 identifier ask_about_captain
+47163+4 identifier text
+47168+1 operator =
+47170+14 lockey $vex_c_captain
+47204+10 identifier conditions
+47215+1 operator =
+47217+1 punctuation {
+47219+11 identifier quest_state
+47231+1 operator =
+47233+1 punctuation {
+47235+5 identifier quest
+47241+1 operator =
+47243+16 identifier find_the_captain
+47310+5 identifier state
+47316+1 operator =
+47318+6 identifier active
+47325+1 punctuation }
+47327+1 punctuation }
+47348+4 identifier goto
+47353+1 operator =
+47355+13 identifier captain_topic
+47369+1 punctuation }
+47380+66 comment # A skill check, resolved by the loaded ruleset....
+47455+40 comment # gives the player the odds, cRPG-style.
+47504+6 identifier choice
+47511+1 operator =
+47513+1 punctuation {
+47515+2 identifier id
+47520+1 operator =
+47522+10 identifier intimidate
+47552+4 identifier text
+47557+1 operator =
+47559+17 lockey $vex_c_intimidate
+47596+5 identifier check
+47602+1 operator =
+47604+1 punctuation {
+47606+4 identifier stat
+47611+1 operator =
+47613+8 identifier presence
+47623+10 identifier difficulty
+47634+1 operator =
+47636+2 integer 14
+47639+1 punctuation }
+47660+15 identifier show_difficulty
+47676+1 operator =
+47678+3 identifier yes
+47701+10 identifier on_success
+47712+1 operator =
+47714+1 punctuation {
+47716+4 identifier goto
+47721+1 operator =
+47723+9 identifier vex_cowed
+47733+1 punctuation }
+47754+10 identifier on_failure
+47765+1 operator =
+47767+1 punctuation {
+47769+4 identifier goto
+47774+1 operator =
+47776+12 identifier vex_offended
+47823+7 identifier effects
+47831+1 operator =
+47833+1 punctuation {
+47835+15 identifier adjust_attitude
+47851+1 operator =
+47853+1 punctuation {
+47893+3 identifier npc
+47897+1 operator =
+47899+17 identifier quartermaster_vex
+47918+6 identifier amount
+47925+1 operator =
+47927+3 integer -20
+47931+1 punctuation }
+47933+1 punctuation }
+47935+1 punctuation }
+47937+1 punctuation }
+47948+62 comment # A line spoken by the companion rather than the...
+48019+53 comment # player's choice to deploy her, but it is her v...
+48081+6 identifier choice
+48088+1 operator =
+48090+1 punctuation {
+48092+2 identifier id
+48100+1 operator =
+48102+12 identifier kira_vouches
+48134+7 identifier speaker
+48142+1 operator =
+48144+14 identifier companion_kira
+48178+4 identifier text
+48186+1 operator =
+48188+13 lockey $kira_c_vouch
+48221+10 identifier conditions
+48232+1 operator =
+48234+1 punctuation {
+48259+7 identifier present
+48268+1 operator =
+48270+14 identifier companion_kira
+48308+8 identifier attitude
+48317+1 operator =
+48319+1 punctuation {
+48321+3 identifier npc
+48325+1 operator =
+48327+14 identifier companion_kira
+48343+6 identifier toward
+48350+1 operator =
+48352+2 identifier pc
+48356+8 identifier at_least
+48365+1 operator =
+48367+2 integer 40
+48370+1 punctuation }
+48391+1 punctuation }
+48412+4 identifier goto
+48417+1 operator =
+48419+13 identifier vex_persuaded
+48433+1 punctuation }
+48444+6 identifier choice
+48451+1 operator =
+48453+1 punctuation {
+48455+2 identifier id
+48458+1 operator =
+48460+5 identifier leave
+48467+4 identifier text
+48472+1 operator =
+48474+8 lockey $c_leave
+48484+4 identifier goto
+48489+1 operator =
+48491+3 identifier END
+48495+1 punctuation }
+48501+1 punctuation }
+48508+4 identifier node
+48513+1 operator =
+48515+1 punctuation {
+48525+2 identifier id
+48533+1 operator =
+48535+17 identifier greeting_familiar
+48561+7 identifier speaker
+48569+1 operator =
+48571+17 identifier quartermaster_vex
+48597+4 identifier text
+48605+1 operator =
+48607+19 lockey $vex_greeting_again
+48635+6 identifier choice
+48643+1 operator =
+48645+1 punctuation {
+48647+2 identifier id
+48650+1 operator =
+48652+17 identifier ask_about_station
+48671+4 identifier text
+48676+1 operator =
+48678+14 lockey $vex_c_station
+48694+4 identifier goto
+48699+1 operator =
+48701+12 identifier station_info
+48714+1 punctuation }
+48724+6 identifier choice
+48732+1 operator =
+48734+1 punctuation {
+48736+2 identifier id
+48739+1 operator =
+48741+5 identifier leave
+48760+4 identifier text
+48765+1 operator =
+48767+8 lockey $c_leave
+48783+4 identifier goto
+48788+1 operator =
+48790+3 identifier END
+48794+1 punctuation }
+48800+1 punctuation }
+48807+4 identifier node
+48812+1 operator =
+48814+1 punctuation {
+48824+2 identifier id
+48832+1 operator =
+48834+12 identifier station_info
+48855+7 identifier speaker
+48863+1 operator =
+48865+17 identifier quartermaster_vex
+48891+4 identifier text
+48899+1 operator =
+48901+17 lockey $vex_station_info
+48927+4 identifier once
+48935+1 operator =
+48937+3 identifier yes
+48961+21 comment # greys out after use
+48992+67 comment # An unprompted third-party line. `joins = yes` ...
+49068+68 comment # active participant for the rest of the convers...
+49145+44 comment # distinguishes an interjection from a bark.
+49198+12 identifier interjection
+49211+1 operator =
+49213+1 punctuation {
+49227+7 identifier speaker
+49235+1 operator =
+49237+14 identifier companion_kira
+49264+4 identifier text
+49272+1 operator =
+49274+15 lockey $kira_i_station
+49302+10 identifier conditions
+49313+1 operator =
+49315+1 punctuation {
+49317+7 identifier present
+49325+1 operator =
+49327+14 identifier companion_kira
+49369+3 identifier NOT
+49373+1 operator =
+49375+1 punctuation {
+49377+11 identifier said_before
+49389+1 operator =
+49391+14 identifier kira_i_station
+49406+1 punctuation }
+49408+1 punctuation }
+49422+6 identifier chance
+49429+1 operator =
+49431+2 integer 60
+49446+5 identifier joins
+49453+1 operator =
+49455+3 identifier yes
+49467+1 punctuation }
+49478+4 identifier goto
+49483+1 operator =
+49485+8 identifier greeting
+49512+15 comment # hub-and-spoke
+49532+1 punctuation }
+49539+4 identifier node
+49544+1 operator =
+49546+1 punctuation {
+49548+2 identifier id
+49551+1 operator =
+49553+13 identifier captain_topic
+49569+7 identifier speaker
+49577+1 operator =
+49579+17 identifier quartermaster_vex
+49610+4 identifier text
+49615+1 operator =
+49617+18 lockey $vex_captain_topic
+49649+8 identifier on_enter
+49658+1 operator =
+49660+1 punctuation {
+49662+7 identifier effects
+49670+1 operator =
+49672+1 punctuation {
+49674+8 identifier set_flag
 49683+1 operator =
-49685+15 lockey $console_status
-49714+4 identifier goto
-49719+1 operator =
-49721+9 identifier main_menu
-49731+1 punctuation }
-49738+4 identifier node
-49743+1 operator =
-49745+1 punctuation {
-49747+2 identifier id
-49750+1 operator =
-49752+4 identifier vent
-49760+7 identifier speaker
-49768+1 operator =
-49770+15 identifier reactor_console
-49787+4 identifier text
-49792+1 operator =
-49794+13 lockey $console_vent
-49821+8 identifier on_enter
-49830+1 operator =
-49832+1 punctuation {
-49834+7 identifier effects
-49842+1 operator =
-49844+1 punctuation {
-49863+8 identifier set_flag
-49872+1 operator =
-49874+14 identifier coolant_vented
-49906+7 identifier trigger
-49915+1 operator =
-49917+1 punctuation {
-49919+5 identifier event
-49925+1 operator =
-49927+12 identifier alarm_raised
-49941+9 identifier in_sector
-49951+1 operator =
-49953+13 identifier station_alpha
-49967+1 punctuation }
-49969+1 punctuation }
-49971+1 punctuation }
-49986+4 identifier goto
-49991+1 operator =
-49993+3 identifier END
-49997+1 punctuation }
-49999+1 punctuation }
-50003+79 comment # ==============================================...
-50083+76 comment #  15. NPC BEHAVIOUR                            ...
-50160+79 comment # ==============================================...
-50241+78 comment # --- 15.1 Goals: multi-round plans, pushed by i...
-50321+8 identifier goal_def
-50330+1 operator =
-50332+1 punctuation {
-50338+2 identifier id
-50345+1 operator =
-50347+11 identifier investigate
-50363+6 identifier params
-50370+1 operator =
-50372+1 punctuation {
-50374+6 identifier target
-50381+7 identifier urgency
-50389+1 punctuation }
-50396+4 identifier step
-50401+1 operator =
-50403+1 punctuation {
-50405+7 identifier move_to
-50413+1 operator =
-50415+6 identifier target
-50423+10 identifier on_blocked
+49685+14 identifier heard_vex_slip
+49700+1 punctuation }
+49702+1 punctuation }
+49717+4 identifier goto
+49722+1 operator =
+49724+8 identifier greeting
+49733+1 punctuation }
+49740+4 identifier node
+49745+1 operator =
+49747+1 punctuation {
+49749+2 identifier id
+49752+1 operator =
+49754+9 identifier vex_cowed
+49770+7 identifier speaker
+49778+1 operator =
+49780+17 identifier quartermaster_vex
+49811+4 identifier text
+49816+1 operator =
+49818+10 lockey $vex_cowed
+49833+4 identifier goto
+49838+1 operator =
+49840+8 identifier greeting
+49849+1 punctuation }
+49856+4 identifier node
+49861+1 operator =
+49863+1 punctuation {
+49865+2 identifier id
+49868+1 operator =
+49870+12 identifier vex_offended
+49886+7 identifier speaker
+49894+1 operator =
+49896+17 identifier quartermaster_vex
+49927+4 identifier text
+49932+1 operator =
+49934+13 lockey $vex_offended
+49949+4 identifier goto
+49954+1 operator =
+49956+3 identifier END
+49960+1 punctuation }
+49967+4 identifier node
+49972+1 operator =
+49974+1 punctuation {
+49976+2 identifier id
+49979+1 operator =
+49981+13 identifier vex_persuaded
+49997+7 identifier speaker
+50005+1 operator =
+50007+17 identifier quartermaster_vex
+50038+4 identifier text
+50043+1 operator =
+50045+14 lockey $vex_persuaded
+50060+4 identifier goto
+50065+1 operator =
+50067+8 identifier greeting
+50076+1 punctuation }
+50078+1 punctuation }
+50081+75 comment # A "conversation" with an object, entered from ...
+50157+75 comment # `speaker = none` would give a pure narrator vo...
+50233+39 comment # speaker_name and portrait of its own.
+50273+8 identifier dialogue
+50282+1 operator =
+50284+1 punctuation {
+50290+2 identifier id
+50293+1 operator =
+50295+25 identifier reactor_console_interface
+50326+11 identifier participant
+50338+1 operator =
+50340+1 punctuation {
+50342+5 identifier actor
+50348+1 operator =
+50350+15 identifier reactor_console
+50367+4 identifier role
+50372+1 operator =
+50374+7 identifier primary
+50382+1 punctuation }
+50388+11 identifier participant
+50400+1 operator =
+50402+1 punctuation {
+50404+5 identifier actor
+50410+1 operator =
+50412+2 identifier pc
+50429+4 identifier role
 50434+1 operator =
-50436+7 identifier abandon
-50444+1 punctuation }
-50450+4 identifier step
-50455+1 operator =
-50457+1 punctuation {
-50459+9 identifier do_action
-50469+1 operator =
-50471+1 punctuation {
-50473+6 identifier action
-50480+1 operator =
-50482+4 identifier look
-50487+1 punctuation }
-50489+1 punctuation }
-50495+4 identifier step
-50500+1 operator =
-50502+1 punctuation {
-50504+6 identifier script
-50511+1 operator =
-50513+17 identifier evaluate_findings
-50531+1 punctuation }
-50538+12 identifier abandon_when
-50551+1 operator =
-50553+1 punctuation {
-50555+2 identifier OR
-50558+1 operator =
-50560+1 punctuation {
-50562+9 identifier in_combat
-50572+2 operator ==
-50575+3 identifier yes
-50580+7 identifier urgency
-50588+1 angle <
-50590+1 integer 1
-50592+1 punctuation }
-50594+1 punctuation }
-50596+1 punctuation }
-50599+8 identifier goal_def
-50608+1 operator =
-50610+1 punctuation {
-50616+2 identifier id
-50623+1 operator =
-50625+6 identifier follow
-50636+6 identifier params
-50643+1 operator =
-50645+1 punctuation {
-50647+6 identifier target
-50654+8 identifier distance
-50663+1 punctuation }
-50669+4 identifier step
-50676+1 operator =
-50678+1 punctuation {
-50680+7 identifier move_to
-50688+1 operator =
-50690+6 identifier target
-50698+10 identifier on_blocked
-50709+1 operator =
-50711+4 identifier wait
-50716+1 punctuation }
-50722+6 identifier repeat
-50729+1 operator =
-50731+3 identifier yes
-50735+1 punctuation }
-50738+78 comment # --- 15.2 Interrupts: event-driven reactions --...
-50818+4 identifier rule
-50823+1 operator =
-50825+1 punctuation {
-50831+8 identifier of_event
-50840+1 operator =
-50842+12 identifier alarm_raised
-50859+4 identifier when
-50868+1 operator =
-50870+1 punctuation {
-50872+4 identifier self
-50877+1 operator =
-50879+1 punctuation {
-50881+9 identifier has_trait
-50891+1 operator =
-50893+7 identifier animate
-50901+1 punctuation }
-50903+1 punctuation }
-50909+10 identifier conditions
-50920+1 operator =
-50922+1 punctuation {
-50924+4 identifier self
-50929+1 operator =
-50931+1 punctuation {
-50933+9 identifier in_sector
-50943+1 operator =
-50945+13 identifier station_alpha
-50959+1 punctuation }
-50961+1 punctuation }
-50967+7 identifier effects
-50976+1 operator =
-50978+1 punctuation {
-50988+6 identifier script
-50995+1 operator =
-50997+1 punctuation {
-50999+2 identifier fn
-51002+1 operator =
-51004+21 identifier push_investigate_goal
-51026+1 punctuation }
-51032+1 punctuation }
-51034+1 punctuation }
-51037+78 comment # --- 15.3 Schedules: time-of-day defaults, catc...
-51117+8 identifier schedule
-51126+1 operator =
-51128+1 punctuation {
-51134+6 identifier of_npc
-51141+1 operator =
-51143+17 identifier quartermaster_vex
-51165+5 identifier entry
-51171+1 operator =
-51173+1 punctuation {
-51175+4 identifier from
-51180+1 operator =
-51182+7 string "06:00"
-51190+2 identifier to
-51193+1 operator =
-51195+7 string "07:00"
-51204+8 identifier location
-51213+1 operator =
-51215+9 identifier your_cell
-51229+8 identifier activity
-51238+1 operator =
-51240+12 identifier idle_morning
-51253+1 punctuation }
-51259+5 identifier entry
-51265+1 operator =
-51267+1 punctuation {
-51269+4 identifier from
-51274+1 operator =
-51276+7 string "07:00"
-51284+2 identifier to
-51287+1 operator =
-51289+7 string "12:00"
-51298+8 identifier location
-51307+1 operator =
-51309+7 identifier storage
-51323+8 identifier activity
-51332+1 operator =
-51334+7 identifier working
-51342+1 punctuation }
-51348+5 identifier entry
-51354+1 operator =
-51356+1 punctuation {
-51358+4 identifier from
-51363+1 operator =
-51365+7 string "12:00"
-51373+2 identifier to
-51376+1 operator =
-51378+7 string "13:00"
-51387+8 identifier location
-51396+1 operator =
-51398+12 identifier front_office
-51412+8 identifier activity
-51421+1 operator =
-51423+6 identifier eating
-51430+1 punctuation }
-51436+5 identifier entry
-51442+1 operator =
-51444+1 punctuation {
-51446+4 identifier from
-51451+1 operator =
-51453+7 string "13:00"
-51461+2 identifier to
-51464+1 operator =
-51466+7 string "19:00"
-51475+8 identifier location
-51484+1 operator =
-51486+7 identifier storage
-51500+8 identifier activity
-51509+1 operator =
-51511+7 identifier working
-51519+1 punctuation }
-51525+5 identifier entry
-51531+1 operator =
-51533+1 punctuation {
-51535+4 identifier from
-51540+1 operator =
-51542+7 string "19:00"
-51550+2 identifier to
-51553+1 operator =
-51555+7 string "23:00"
-51564+8 identifier location
-51573+1 operator =
-51575+8 identifier corridor
-51589+8 identifier activity
-51598+1 operator =
-51600+8 identifier drinking
-51623+10 identifier conditions
-51634+1 operator =
-51636+1 punctuation {
-51638+3 identifier NOT
-51642+1 operator =
-51644+1 punctuation {
-51646+13 identifier faction_alert
-51660+1 operator =
-51662+4 identifier high
-51667+1 punctuation }
-51669+1 punctuation }
-51671+1 punctuation }
-51677+5 identifier entry
-51683+1 operator =
-51685+1 punctuation {
-51687+4 identifier from
+50436+6 identifier player
+50443+1 punctuation }
+50450+5 identifier entry
+50456+1 operator =
+50458+1 punctuation {
+50460+4 identifier node
+50465+1 operator =
+50467+9 identifier main_menu
+50477+1 punctuation }
+50484+4 identifier node
+50489+1 operator =
+50491+1 punctuation {
+50501+2 identifier id
+50509+1 operator =
+50511+9 identifier main_menu
+50529+7 identifier speaker
+50537+1 operator =
+50539+15 identifier reactor_console
+50563+4 identifier text
+50571+1 operator =
+50573+13 lockey $console_main
+50595+6 identifier choice
+50603+1 operator =
+50605+1 punctuation {
+50607+2 identifier id
+50610+1 operator =
+50612+11 identifier read_status
+50626+4 identifier text
+50631+1 operator =
+50633+17 lockey $console_c_status
+50653+4 identifier goto
+50658+1 operator =
+50660+6 identifier status
+50667+1 punctuation }
+50677+6 identifier choice
+50685+1 operator =
+50687+1 punctuation {
+50689+2 identifier id
+50692+1 operator =
+50694+12 identifier vent_coolant
+50708+4 identifier text
+50713+1 operator =
+50715+15 lockey $console_c_vent
+50751+10 identifier conditions
+50762+1 operator =
+50764+1 punctuation {
+50766+8 identifier flag_set
+50775+1 operator =
+50777+16 identifier coolant_unlocked
+50794+1 punctuation }
+50816+4 identifier goto
+50821+1 operator =
+50823+4 identifier vent
+50828+1 punctuation }
+50838+6 identifier choice
+50846+1 operator =
+50848+1 punctuation {
+50850+2 identifier id
+50853+1 operator =
+50855+10 identifier disconnect
+50869+4 identifier text
+50874+1 operator =
+50876+16 lockey $console_c_leave
+50896+4 identifier goto
+50901+1 operator =
+50903+3 identifier END
+50907+1 punctuation }
+50913+1 punctuation }
+50920+4 identifier node
+50925+1 operator =
+50927+1 punctuation {
+50929+2 identifier id
+50932+1 operator =
+50934+6 identifier status
+50942+7 identifier speaker
+50950+1 operator =
+50952+15 identifier reactor_console
+50969+4 identifier text
+50974+1 operator =
+50976+15 lockey $console_status
+51005+4 identifier goto
+51010+1 operator =
+51012+9 identifier main_menu
+51022+1 punctuation }
+51029+4 identifier node
+51034+1 operator =
+51036+1 punctuation {
+51038+2 identifier id
+51041+1 operator =
+51043+4 identifier vent
+51051+7 identifier speaker
+51059+1 operator =
+51061+15 identifier reactor_console
+51078+4 identifier text
+51083+1 operator =
+51085+13 lockey $console_vent
+51112+8 identifier on_enter
+51121+1 operator =
+51123+1 punctuation {
+51125+7 identifier effects
+51133+1 operator =
+51135+1 punctuation {
+51154+8 identifier set_flag
+51163+1 operator =
+51165+14 identifier coolant_vented
+51197+7 identifier trigger
+51206+1 operator =
+51208+1 punctuation {
+51210+5 identifier event
+51216+1 operator =
+51218+12 identifier alarm_raised
+51232+9 identifier in_sector
+51242+1 operator =
+51244+13 identifier station_alpha
+51258+1 punctuation }
+51260+1 punctuation }
+51262+1 punctuation }
+51277+4 identifier goto
+51282+1 operator =
+51284+3 identifier END
+51288+1 punctuation }
+51290+1 punctuation }
+51294+79 comment # ==============================================...
+51374+76 comment #  15. NPC BEHAVIOUR                            ...
+51451+79 comment # ==============================================...
+51532+78 comment # --- 15.1 Goals: multi-round plans, pushed by i...
+51612+8 identifier goal_def
+51621+1 operator =
+51623+1 punctuation {
+51629+2 identifier id
+51636+1 operator =
+51638+11 identifier investigate
+51654+6 identifier params
+51661+1 operator =
+51663+1 punctuation {
+51665+6 identifier target
+51672+7 identifier urgency
+51680+1 punctuation }
+51687+4 identifier step
 51692+1 operator =
-51694+7 string "23:00"
-51702+2 identifier to
-51705+1 operator =
-51707+7 string "06:00"
-51716+8 identifier location
+51694+1 punctuation {
+51696+7 identifier move_to
+51704+1 operator =
+51706+6 identifier target
+51714+10 identifier on_blocked
 51725+1 operator =
-51727+9 identifier your_cell
-51741+8 identifier activity
-51750+1 operator =
-51752+8 identifier sleeping
-51761+1 punctuation }
-51763+1 punctuation }
-51766+8 identifier schedule
-51775+1 operator =
-51777+1 punctuation {
-51783+6 identifier of_npc
-51790+1 operator =
-51792+15 identifier station_janitor
-51812+5 identifier entry
-51818+1 operator =
-51820+1 punctuation {
-51822+4 identifier from
-51827+1 operator =
-51829+7 string "08:00"
-51837+2 identifier to
-51840+1 operator =
-51842+7 string "18:00"
-51851+8 identifier location
-51860+1 operator =
-51862+8 identifier corridor
-51872+8 identifier activity
-51881+1 operator =
-51883+7 identifier mopping
-51891+1 punctuation }
-51897+5 identifier entry
-51903+1 operator =
-51905+1 punctuation {
-51907+4 identifier from
-51912+1 operator =
-51914+7 string "18:00"
-51922+2 identifier to
-51925+1 operator =
-51927+7 string "08:00"
-51936+8 identifier location
-51945+1 operator =
-51947+7 identifier storage
-51957+8 identifier activity
-51966+1 operator =
-51968+8 identifier sleeping
-51977+1 punctuation }
-51979+1 punctuation }
-51982+78 comment # --- 15.4 Barks: fire-and-forget lines, distinc...
-52061+70 comment # A bark changes nothing. An interjection change...
-52133+10 identifier bark_table
-52144+1 operator =
-52146+1 punctuation {
-52152+6 identifier of_npc
+51727+7 identifier abandon
+51735+1 punctuation }
+51741+4 identifier step
+51746+1 operator =
+51748+1 punctuation {
+51750+9 identifier do_action
+51760+1 operator =
+51762+1 punctuation {
+51764+6 identifier action
+51771+1 operator =
+51773+4 identifier look
+51778+1 punctuation }
+51780+1 punctuation }
+51786+4 identifier step
+51791+1 operator =
+51793+1 punctuation {
+51795+6 identifier script
+51802+1 operator =
+51804+17 identifier evaluate_findings
+51822+1 punctuation }
+51829+12 identifier abandon_when
+51842+1 operator =
+51844+1 punctuation {
+51846+2 identifier OR
+51849+1 operator =
+51851+1 punctuation {
+51853+9 identifier in_combat
+51863+2 operator ==
+51866+3 identifier yes
+51871+7 identifier urgency
+51879+1 angle <
+51881+1 integer 1
+51883+1 punctuation }
+51885+1 punctuation }
+51887+1 punctuation }
+51890+8 identifier goal_def
+51899+1 operator =
+51901+1 punctuation {
+51907+2 identifier id
+51914+1 operator =
+51916+6 identifier follow
+51927+6 identifier params
+51934+1 operator =
+51936+1 punctuation {
+51938+6 identifier target
+51945+8 identifier distance
+51954+1 punctuation }
+51960+4 identifier step
+51967+1 operator =
+51969+1 punctuation {
+51971+7 identifier move_to
+51979+1 operator =
+51981+6 identifier target
+51989+10 identifier on_blocked
+52000+1 operator =
+52002+4 identifier wait
+52007+1 punctuation }
+52013+6 identifier repeat
+52020+1 operator =
+52022+3 identifier yes
+52026+1 punctuation }
+52029+78 comment # --- 15.2 Interrupts: event-driven reactions --...
+52109+4 identifier rule
+52114+1 operator =
+52116+1 punctuation {
+52122+8 identifier of_event
+52131+1 operator =
+52133+12 identifier alarm_raised
+52150+4 identifier when
 52159+1 operator =
-52161+15 identifier station_janitor
-52181+4 identifier line
-52186+1 operator =
-52188+1 punctuation {
-52190+4 identifier text
-52195+1 operator =
-52197+15 lockey $janitor_bark_1
-52214+6 identifier weight
-52221+1 operator =
-52223+1 integer 3
-52225+1 punctuation }
-52231+4 identifier line
-52236+1 operator =
-52238+1 punctuation {
-52240+4 identifier text
-52245+1 operator =
-52247+15 lockey $janitor_bark_2
-52264+6 identifier weight
-52271+1 operator =
-52273+1 integer 2
-52288+10 identifier conditions
-52299+1 operator =
-52301+1 punctuation {
-52303+9 identifier any_actor
-52313+1 operator =
-52315+1 punctuation {
-52317+9 identifier in_combat
-52327+2 operator ==
-52330+3 identifier yes
-52334+1 punctuation }
-52336+1 punctuation }
-52338+1 punctuation }
-52344+4 identifier line
-52349+1 operator =
-52351+1 punctuation {
-52353+4 identifier text
-52358+1 operator =
-52360+15 lockey $janitor_bark_3
-52377+6 identifier weight
-52384+1 operator =
-52386+1 integer 1
-52389+4 identifier once
-52394+1 operator =
-52396+3 identifier yes
-52400+1 punctuation }
-52402+1 punctuation }
-52406+79 comment # ==============================================...
-52486+76 comment #  16. THE PARTY                                ...
-52563+79 comment # ==============================================...
-52644+5 identifier party
-52650+1 operator =
-52652+1 punctuation {
-52658+2 identifier id
-52668+1 operator =
-52670+12 identifier player_party
-52687+9 identifier viewpoint
-52697+1 operator =
-52699+2 identifier pc
-52725+42 comment # whose senses drive scope and description
-52772+8 identifier max_size
-52782+1 operator =
-52784+1 integer 4
-52791+6 identifier member
-52798+1 operator =
-52800+1 punctuation {
-52802+5 identifier actor
-52808+1 operator =
-52810+2 identifier pc
-52814+4 identifier role
-52819+1 operator =
-52821+6 identifier leader
-52828+1 punctuation }
-52835+6 identifier member
-52842+1 operator =
-52844+1 punctuation {
-52854+5 identifier actor
-52860+1 operator =
-52862+14 identifier companion_kira
-52885+4 identifier role
-52891+1 operator =
-52893+9 identifier companion
-52911+61 comment # Control is per-member and per-context, and is ...
-52981+64 comment # viewpoint — so player-controlled companions ...
-53054+23 comment # switchable viewpoint.
-53086+7 identifier control
-53094+1 operator =
-53096+1 punctuation {
-53098+9 identifier in_combat
-53108+1 operator =
-53110+6 identifier player
-53118+13 identifier out_of_combat
-53132+1 operator =
-53134+2 identifier ai
-53137+1 punctuation }
-53147+6 identifier follow
-53155+1 operator =
-53157+1 punctuation {
-53159+6 identifier target
-53166+1 operator =
-53168+9 identifier viewpoint
-53179+8 identifier distance
-53188+1 operator =
-53190+9 identifier same_room
-53200+1 punctuation }
-53206+1 punctuation }
-53208+1 punctuation }
-53212+79 comment # ==============================================...
-53292+77 comment #  16b. THE LEXICON                             ...
-53370+79 comment # ==============================================...
-53450+78 comment # The core knows nothing about English. A langua...
-53529+75 comment # rules; this block overrides only the inference...
-53605+75 comment # reports every form it had to infer, so the gue...
-53681+71 comment # rule table can never quietly become the specif...
-53754+7 identifier lexicon
-53762+1 operator =
-53764+1 punctuation {
-53770+4 identifier lang
-53775+1 operator =
-53777+2 identifier en
-53785+4 identifier noun
-53790+1 operator =
-53792+1 punctuation {
-53794+4 identifier base
-53799+1 operator =
-53801+7 string "knife"
-53811+6 identifier plural
-53818+1 operator =
-53820+8 string "knives"
-53829+1 punctuation }
-53835+4 identifier noun
-53840+1 operator =
-53842+1 punctuation {
-53844+4 identifier base
-53849+1 operator =
-53851+7 string "sheep"
-53861+6 identifier plural
-53868+1 operator =
-53870+7 string "sheep"
-53878+1 punctuation }
-53884+4 identifier noun
-53889+1 operator =
-53891+1 punctuation {
-53893+4 identifier base
-53898+1 operator =
-53900+6 string "hour"
-53910+7 identifier article
-53918+1 operator =
-53920+4 string "an"
-53925+1 punctuation }
-53931+28 comment # phonetic, not orthographic
-53964+4 identifier noun
-53969+1 operator =
-53971+1 punctuation {
-53973+4 identifier base
-53978+1 operator =
-53980+9 string "unicorn"
-53990+7 identifier article
-53998+1 operator =
-54000+3 string "a"
-54004+1 punctuation }
-54011+21 comment # ...and the converse
-54038+72 comment # A verb used in author-written messages, outsid...
-54115+4 identifier verb
-54120+1 operator =
-54122+1 punctuation {
-54124+4 identifier base
-54129+1 operator =
-54131+8 string "polish"
-54141+5 identifier third
-54147+1 operator =
-54149+10 string "polishes"
-54161+4 identifier past
-54166+1 operator =
-54168+10 string "polished"
-54192+15 identifier past_participle
-54208+1 operator =
-54210+10 string "polished"
-54222+18 identifier present_participle
-54241+1 operator =
-54243+11 string "polishing"
-54255+1 punctuation }
-54257+1 punctuation }
-54261+79 comment # ==============================================...
-54341+76 comment #  17. LOCALISATION                             ...
-54418+79 comment # ==============================================...
-54498+78 comment # Inline strings elsewhere in this file are impl...
-54577+73 comment # at compile time, so a game can be localised af...
-54651+52 comment # translator should see are written explicitly h...
-54705+3 identifier loc
-54709+1 operator =
-54711+1 punctuation {
-54717+4 identifier lang
-54722+1 operator =
-54724+2 identifier en
-54732+12 identifier fmt_stardate
-54751+1 operator =
-54753+26 string "Stardate [stardate(now)]"
-54785+7 comment # Rooms
-54797+14 identifier room_your_cell
-54816+1 operator =
-54818+14 string "Holding Cell"
-54837+13 identifier room_corridor
-54856+1 operator =
-54858+17 string "Spinal Corridor"
-54880+17 identifier room_control_room
-54899+1 operator =
-54901+14 string "Control Room"
-54920+17 identifier room_front_office
-54939+1 operator =
-54941+14 string "Front Office"
-54960+12 identifier room_storage
-54979+1 operator =
-54981+13 string "Storage Bay"
-54999+14 identifier room_antecourt
-55018+1 operator =
-55020+11 string "Antecourt"
-55036+12 identifier room_airlock
-55055+1 operator =
-55057+9 string "Airlock"
-55071+11 identifier room_gantry
+52161+1 punctuation {
+52163+4 identifier self
+52168+1 operator =
+52170+1 punctuation {
+52172+9 identifier has_trait
+52182+1 operator =
+52184+7 identifier animate
+52192+1 punctuation }
+52194+1 punctuation }
+52200+10 identifier conditions
+52211+1 operator =
+52213+1 punctuation {
+52215+4 identifier self
+52220+1 operator =
+52222+1 punctuation {
+52224+9 identifier in_sector
+52234+1 operator =
+52236+13 identifier station_alpha
+52250+1 punctuation }
+52252+1 punctuation }
+52258+7 identifier effects
+52267+1 operator =
+52269+1 punctuation {
+52279+6 identifier script
+52286+1 operator =
+52288+1 punctuation {
+52290+2 identifier fn
+52293+1 operator =
+52295+21 identifier push_investigate_goal
+52317+1 punctuation }
+52323+1 punctuation }
+52325+1 punctuation }
+52328+78 comment # --- 15.3 Schedules: time-of-day defaults, catc...
+52408+8 identifier schedule
+52417+1 operator =
+52419+1 punctuation {
+52425+6 identifier of_npc
+52432+1 operator =
+52434+17 identifier quartermaster_vex
+52456+5 identifier entry
+52462+1 operator =
+52464+1 punctuation {
+52466+4 identifier from
+52471+1 operator =
+52473+7 string "06:00"
+52481+2 identifier to
+52484+1 operator =
+52486+7 string "07:00"
+52495+8 identifier location
+52504+1 operator =
+52506+9 identifier your_cell
+52520+8 identifier activity
+52529+1 operator =
+52531+12 identifier idle_morning
+52544+1 punctuation }
+52550+5 identifier entry
+52556+1 operator =
+52558+1 punctuation {
+52560+4 identifier from
+52565+1 operator =
+52567+7 string "07:00"
+52575+2 identifier to
+52578+1 operator =
+52580+7 string "12:00"
+52589+8 identifier location
+52598+1 operator =
+52600+7 identifier storage
+52614+8 identifier activity
+52623+1 operator =
+52625+7 identifier working
+52633+1 punctuation }
+52639+5 identifier entry
+52645+1 operator =
+52647+1 punctuation {
+52649+4 identifier from
+52654+1 operator =
+52656+7 string "12:00"
+52664+2 identifier to
+52667+1 operator =
+52669+7 string "13:00"
+52678+8 identifier location
+52687+1 operator =
+52689+12 identifier front_office
+52703+8 identifier activity
+52712+1 operator =
+52714+6 identifier eating
+52721+1 punctuation }
+52727+5 identifier entry
+52733+1 operator =
+52735+1 punctuation {
+52737+4 identifier from
+52742+1 operator =
+52744+7 string "13:00"
+52752+2 identifier to
+52755+1 operator =
+52757+7 string "19:00"
+52766+8 identifier location
+52775+1 operator =
+52777+7 identifier storage
+52791+8 identifier activity
+52800+1 operator =
+52802+7 identifier working
+52810+1 punctuation }
+52816+5 identifier entry
+52822+1 operator =
+52824+1 punctuation {
+52826+4 identifier from
+52831+1 operator =
+52833+7 string "19:00"
+52841+2 identifier to
+52844+1 operator =
+52846+7 string "23:00"
+52855+8 identifier location
+52864+1 operator =
+52866+8 identifier corridor
+52880+8 identifier activity
+52889+1 operator =
+52891+8 identifier drinking
+52914+10 identifier conditions
+52925+1 operator =
+52927+1 punctuation {
+52929+3 identifier NOT
+52933+1 operator =
+52935+1 punctuation {
+52937+13 identifier faction_alert
+52951+1 operator =
+52953+4 identifier high
+52958+1 punctuation }
+52960+1 punctuation }
+52962+1 punctuation }
+52968+5 identifier entry
+52974+1 operator =
+52976+1 punctuation {
+52978+4 identifier from
+52983+1 operator =
+52985+7 string "23:00"
+52993+2 identifier to
+52996+1 operator =
+52998+7 string "06:00"
+53007+8 identifier location
+53016+1 operator =
+53018+9 identifier your_cell
+53032+8 identifier activity
+53041+1 operator =
+53043+8 identifier sleeping
+53052+1 punctuation }
+53054+1 punctuation }
+53057+8 identifier schedule
+53066+1 operator =
+53068+1 punctuation {
+53074+6 identifier of_npc
+53081+1 operator =
+53083+15 identifier station_janitor
+53103+5 identifier entry
+53109+1 operator =
+53111+1 punctuation {
+53113+4 identifier from
+53118+1 operator =
+53120+7 string "08:00"
+53128+2 identifier to
+53131+1 operator =
+53133+7 string "18:00"
+53142+8 identifier location
+53151+1 operator =
+53153+8 identifier corridor
+53163+8 identifier activity
+53172+1 operator =
+53174+7 identifier mopping
+53182+1 punctuation }
+53188+5 identifier entry
+53194+1 operator =
+53196+1 punctuation {
+53198+4 identifier from
+53203+1 operator =
+53205+7 string "18:00"
+53213+2 identifier to
+53216+1 operator =
+53218+7 string "08:00"
+53227+8 identifier location
+53236+1 operator =
+53238+7 identifier storage
+53248+8 identifier activity
+53257+1 operator =
+53259+8 identifier sleeping
+53268+1 punctuation }
+53270+1 punctuation }
+53273+78 comment # --- 15.4 Barks: fire-and-forget lines, distinc...
+53352+70 comment # A bark changes nothing. An interjection change...
+53424+10 identifier bark_table
+53435+1 operator =
+53437+1 punctuation {
+53443+6 identifier of_npc
+53450+1 operator =
+53452+15 identifier station_janitor
+53472+4 identifier line
+53477+1 operator =
+53479+1 punctuation {
+53481+4 identifier text
+53486+1 operator =
+53488+15 lockey $janitor_bark_1
+53505+6 identifier weight
+53512+1 operator =
+53514+1 integer 3
+53516+1 punctuation }
+53522+4 identifier line
+53527+1 operator =
+53529+1 punctuation {
+53531+4 identifier text
+53536+1 operator =
+53538+15 lockey $janitor_bark_2
+53555+6 identifier weight
+53562+1 operator =
+53564+1 integer 2
+53579+10 identifier conditions
+53590+1 operator =
+53592+1 punctuation {
+53594+9 identifier any_actor
+53604+1 operator =
+53606+1 punctuation {
+53608+9 identifier in_combat
+53618+2 operator ==
+53621+3 identifier yes
+53625+1 punctuation }
+53627+1 punctuation }
+53629+1 punctuation }
+53635+4 identifier line
+53640+1 operator =
+53642+1 punctuation {
+53644+4 identifier text
+53649+1 operator =
+53651+15 lockey $janitor_bark_3
+53668+6 identifier weight
+53675+1 operator =
+53677+1 integer 1
+53680+4 identifier once
+53685+1 operator =
+53687+3 identifier yes
+53691+1 punctuation }
+53693+1 punctuation }
+53697+79 comment # ==============================================...
+53777+76 comment #  16. THE PARTY                                ...
+53854+79 comment # ==============================================...
+53935+5 identifier party
+53941+1 operator =
+53943+1 punctuation {
+53949+2 identifier id
+53959+1 operator =
+53961+12 identifier player_party
+53978+9 identifier viewpoint
+53988+1 operator =
+53990+2 identifier pc
+54016+42 comment # whose senses drive scope and description
+54063+8 identifier max_size
+54073+1 operator =
+54075+1 integer 4
+54082+6 identifier member
+54089+1 operator =
+54091+1 punctuation {
+54093+5 identifier actor
+54099+1 operator =
+54101+2 identifier pc
+54105+4 identifier role
+54110+1 operator =
+54112+6 identifier leader
+54119+1 punctuation }
+54126+6 identifier member
+54133+1 operator =
+54135+1 punctuation {
+54145+5 identifier actor
+54151+1 operator =
+54153+14 identifier companion_kira
+54176+4 identifier role
+54182+1 operator =
+54184+9 identifier companion
+54202+61 comment # Control is per-member and per-context, and is ...
+54272+64 comment # viewpoint — so player-controlled companions ...
+54345+23 comment # switchable viewpoint.
+54377+7 identifier control
+54385+1 operator =
+54387+1 punctuation {
+54389+9 identifier in_combat
+54399+1 operator =
+54401+6 identifier player
+54409+13 identifier out_of_combat
+54423+1 operator =
+54425+2 identifier ai
+54428+1 punctuation }
+54438+6 identifier follow
+54446+1 operator =
+54448+1 punctuation {
+54450+6 identifier target
+54457+1 operator =
+54459+9 identifier viewpoint
+54470+8 identifier distance
+54479+1 operator =
+54481+9 identifier same_room
+54491+1 punctuation }
+54497+1 punctuation }
+54499+1 punctuation }
+54503+79 comment # ==============================================...
+54583+77 comment #  16b. THE LEXICON                             ...
+54661+79 comment # ==============================================...
+54741+78 comment # The core knows nothing about English. A langua...
+54820+75 comment # rules; this block overrides only the inference...
+54896+75 comment # reports every form it had to infer, so the gue...
+54972+71 comment # rule table can never quietly become the specif...
+55045+7 identifier lexicon
+55053+1 operator =
+55055+1 punctuation {
+55061+4 identifier lang
+55066+1 operator =
+55068+2 identifier en
+55076+4 identifier noun
+55081+1 operator =
+55083+1 punctuation {
+55085+4 identifier base
 55090+1 operator =
-55092+16 string "Docking Gantry"
-55113+20 identifier room_wayfarer_bridge
-55134+1 operator =
-55136+21 string "Wayfarer — Bridge"
-55162+11 identifier room_bridge
-55181+1 operator =
-55183+16 string "Command Bridge"
-55205+9 comment # Sectors
-55219+20 identifier sector_station_alpha
-55240+1 operator =
-55242+16 string "Kepler Station"
-55263+19 identifier sector_docking_ring
-55284+1 operator =
-55286+14 string "Docking Ring"
-55305+15 identifier sector_wayfarer
-55326+1 operator =
-55328+13 string "SS Wayfarer"
-55346+14 identifier sector_surface
-55367+1 operator =
-55369+23 string "Kepler IV — Surface"
-55398+8 comment # Things
-55411+16 identifier thing_ornate_box
-55430+1 operator =
-55432+12 string "ornate box"
-55449+15 identifier thing_brass_key
-55468+1 operator =
-55470+11 string "brass key"
-55486+16 identifier thing_mess_table
-55505+1 operator =
-55507+12 string "mess table"
-55524+9 identifier thing_mug
-55543+1 operator =
-55545+15 string "tarnished mug"
-55565+13 identifier thing_console
-55584+1 operator =
-55586+17 string "reactor console"
-55608+18 identifier thing_access_panel
-55627+1 operator =
-55629+14 string "access panel"
-55648+12 identifier thing_potato
-55667+1 operator =
-55669+14 string "baked potato"
-55688+12 identifier thing_gloves
-55707+1 operator =
-55709+22 string "firefighter's gloves"
-55736+12 identifier thing_cutter
-55755+1 operator =
-55757+15 string "plasma cutter"
-55777+12 identifier thing_ration
-55796+1 operator =
-55798+13 string "ration pack"
-55816+9 identifier thing_log
-55835+1 operator =
-55837+15 string "captain's log"
-55857+13 identifier thing_crowbar
-55876+1 operator =
-55878+9 string "crowbar"
-55892+11 identifier thing_picks
-55911+1 operator =
-55913+18 string "set of lockpicks"
-55936+15 identifier thing_plain_box
-55955+1 operator =
-55957+5 string "box"
-55967+13 identifier thing_navcomp
-55986+1 operator =
-55988+21 string "navigation computer"
-56014+11 identifier thing_flask
-56033+1 operator =
-56035+13 string "water flask"
-56053+12 identifier thing_whisky
-56072+1 operator =
-56074+18 string "bottle of whisky"
-56097+10 identifier too_feeble
-56116+1 operator =
-56118+31 string "That would barely scratch it."
-56154+17 identifier g_alert_level_doc
-56173+1 operator =
-56175+53 string "Station-wide alert state. Drives NPC schedules ...
-56254+42 string "the quartermaster's willingness to talk."
-56301+9 identifier thing_sky
-56320+1 operator =
-56322+5 string "sky"
-56332+9 identifier thing_hum
-56351+1 operator =
-56353+13 string "reactor hum"
-56371+11 identifier hatch_inner
-56390+1 operator =
-56392+13 string "inner hatch"
-56410+11 identifier hatch_outer
-56429+1 operator =
-56431+13 string "outer hatch"
-56449+16 identifier hatch_inner_desc
-56468+1 operator =
-56470+53 string "A blast hatch, scuffed where a thousand boots h...
-56549+13 string "crossed it."
-56567+11 identifier thing_blood
-56586+1 operator =
-56588+13 string "blood trail"
-56607+8 comment # People
-56620+9 identifier person_pc
-56639+1 operator =
-56641+10 string "yourself"
-56656+11 identifier person_kira
-56675+1 operator =
-56677+6 string "Kira"
-56688+10 identifier person_vex
-56707+1 operator =
-56709+19 string "Quartermaster Vex"
-56733+14 identifier person_janitor
-56752+1 operator =
-56754+13 string "the janitor"
-56772+12 identifier person_reyes
-56791+1 operator =
-56793+15 string "Captain Reyes"
-56813+20 identifier console_speaker_name
+55092+7 string "knife"
+55102+6 identifier plural
+55109+1 operator =
+55111+8 string "knives"
+55120+1 punctuation }
+55126+4 identifier noun
+55131+1 operator =
+55133+1 punctuation {
+55135+4 identifier base
+55140+1 operator =
+55142+7 string "sheep"
+55152+6 identifier plural
+55159+1 operator =
+55161+7 string "sheep"
+55169+1 punctuation }
+55175+4 identifier noun
+55180+1 operator =
+55182+1 punctuation {
+55184+4 identifier base
+55189+1 operator =
+55191+6 string "hour"
+55201+7 identifier article
+55209+1 operator =
+55211+4 string "an"
+55216+1 punctuation }
+55222+28 comment # phonetic, not orthographic
+55255+4 identifier noun
+55260+1 operator =
+55262+1 punctuation {
+55264+4 identifier base
+55269+1 operator =
+55271+9 string "unicorn"
+55281+7 identifier article
+55289+1 operator =
+55291+3 string "a"
+55295+1 punctuation }
+55302+21 comment # ...and the converse
+55329+72 comment # A verb used in author-written messages, outsid...
+55406+4 identifier verb
+55411+1 operator =
+55413+1 punctuation {
+55415+4 identifier base
+55420+1 operator =
+55422+8 string "polish"
+55432+5 identifier third
+55438+1 operator =
+55440+10 string "polishes"
+55452+4 identifier past
+55457+1 operator =
+55459+10 string "polished"
+55483+15 identifier past_participle
+55499+1 operator =
+55501+10 string "polished"
+55513+18 identifier present_participle
+55532+1 operator =
+55534+11 string "polishing"
+55546+1 punctuation }
+55548+1 punctuation }
+55552+79 comment # ==============================================...
+55632+76 comment #  17. LOCALISATION                             ...
+55709+79 comment # ==============================================...
+55789+78 comment # Inline strings elsewhere in this file are impl...
+55868+73 comment # at compile time, so a game can be localised af...
+55942+52 comment # translator should see are written explicitly h...
+55996+3 identifier loc
+56000+1 operator =
+56002+1 punctuation {
+56008+4 identifier lang
+56013+1 operator =
+56015+2 identifier en
+56023+12 identifier fmt_stardate
+56042+1 operator =
+56044+26 string "Stardate [stardate(now)]"
+56076+7 comment # Rooms
+56088+14 identifier room_your_cell
+56107+1 operator =
+56109+14 string "Holding Cell"
+56128+13 identifier room_corridor
+56147+1 operator =
+56149+17 string "Spinal Corridor"
+56171+17 identifier room_control_room
+56190+1 operator =
+56192+14 string "Control Room"
+56211+17 identifier room_front_office
+56230+1 operator =
+56232+14 string "Front Office"
+56251+12 identifier room_storage
+56270+1 operator =
+56272+13 string "Storage Bay"
+56290+14 identifier room_antecourt
+56309+1 operator =
+56311+11 string "Antecourt"
+56327+12 identifier room_airlock
+56346+1 operator =
+56348+9 string "Airlock"
+56362+11 identifier room_gantry
+56381+1 operator =
+56383+16 string "Docking Gantry"
+56404+20 identifier room_wayfarer_bridge
+56425+1 operator =
+56427+21 string "Wayfarer — Bridge"
+56453+11 identifier room_bridge
+56472+1 operator =
+56474+16 string "Command Bridge"
+56496+9 comment # Sectors
+56510+20 identifier sector_station_alpha
+56531+1 operator =
+56533+16 string "Kepler Station"
+56554+19 identifier sector_docking_ring
+56575+1 operator =
+56577+14 string "Docking Ring"
+56596+15 identifier sector_wayfarer
+56617+1 operator =
+56619+13 string "SS Wayfarer"
+56637+14 identifier sector_surface
+56658+1 operator =
+56660+23 string "Kepler IV — Surface"
+56689+8 comment # Things
+56702+16 identifier thing_ornate_box
+56721+1 operator =
+56723+12 string "ornate box"
+56740+15 identifier thing_brass_key
+56759+1 operator =
+56761+11 string "brass key"
+56777+16 identifier thing_mess_table
+56796+1 operator =
+56798+12 string "mess table"
+56815+9 identifier thing_mug
 56834+1 operator =
-56836+17 string "REACTOR CONSOLE"
-56859+10 comment # Messages
-56874+12 identifier already_open
-56893+1 operator =
-56895+21 string "It is already open."
-56921+14 identifier opened_default
-56940+1 operator =
-56942+22 string "You open [the noun]."
-56969+15 identifier already_holding
-56988+1 operator =
-56990+37 string "You are already holding [the noun]."
-57032+15 identifier cant_take_fixed
-57051+1 operator =
-57053+38 string "[The noun] [is noun] fixed in place."
-57096+16 identifier closed_container
-57115+1 operator =
-57117+25 string "[The second] is closed."
-57147+12 identifier not_openable
-57166+1 operator =
-57168+50 string "[The noun] [is noun] not something you can open...
-57223+10 identifier its_locked
-57242+1 operator =
-57244+14 string "It's locked."
-57263+10 identifier not_locked
-57282+1 operator =
-57284+20 string "That isn't locked."
-57309+12 identifier no_lockpicks
-57328+1 operator =
-57330+39 string "You have nothing to pick a lock with."
-57374+15 identifier lock_too_fiddly
-57393+1 operator =
-57395+53 string "Your hands aren't steady enough for work this f...
-57453+11 identifier lock_picked
-57472+1 operator =
-57474+49 string "The lock yields with a small, satisfying click....
-57529+68 comment # Adaptive text: one template, correct for any a...
-57602+39 comment #   player -> "You take the brass key."
-57646+40 comment #   NPC    -> "Vex takes the brass key."
-57691+7 identifier took_it
-57710+1 operator =
-57712+45 string "[The actor] [verb(actor, take)] [the noun]."
-57762+11 identifier polished_it
-57781+1 operator =
-57783+47 string "[The actor] [verb(actor, polish)] [the noun] "
-57856+34 string "with [possessive(actor)] sleeve."
-57896+75 comment # The last resort in the failureMsg fallback cha...
-57976+73 comment # It is a loc key rather than a hard-coded strin...
-58054+70 comment # it once — but reaching it in play means a re...
-58129+42 comment # message, which the compiler warns about.
-58176+22 identifier action_blocked_default
-58199+1 operator =
-58201+30 string "You can't do that right now."
-58236+16 identifier cant_flee_combat
-58255+1 operator =
-58257+46 string "Not while [ThreatName()] has your attention."
-58308+7 identifier c_leave
-58327+1 operator =
-58329+10 string "(Leave.)"
-58345+55 comment # A conditional fragment and a plural, in one te...
-58405+16 identifier inventory_header
-58424+1 operator =
-58426+35 string "You are carrying [number(count)] "
-58487+38 string "[plural(count, \\"item\\", \\"items\\")]"
-58551+57 string "[if carrying_nothing] — that is, nothing at a...
-58614+8 comment # Quests
-58627+20 identifier q_find_captain_title
-58650+1 operator =
-58652+18 string "Find the Captain"
-58675+22 identifier q_find_captain_summary
-58698+1 operator =
-58700+69 string "Reyes was aboard when the alarm sounded. Nobody...
-58774+17 identifier q_find_captain_s1
-58797+1 operator =
-58799+28 string "Search the command bridge."
-58832+17 identifier q_find_captain_s2
-58855+1 operator =
-58857+25 string "Follow the blood trail."
-58887+17 identifier q_find_captain_s3
-58910+1 operator =
-58912+25 string "Confront what you find."
-58942+16 identifier q_employer_title
-58965+1 operator =
-58967+19 string "The Real Employer"
-58991+18 identifier q_employer_summary
-59014+1 operator =
-59016+48 string "Something about this contract does not add up."
-59069+13 identifier q_employer_s1
-59092+1 operator =
-59094+27 string "Gather what does not fit."
-59127+10 comment # Dialogue
-59142+12 identifier vex_greeting
-59161+1 operator =
-59163+65 string "Vex looks up. \\"You're the one from the cell. W...
-59233+18 identifier vex_greeting_again
-59252+1 operator =
-59254+16 string "\\"You again.\\""
-59275+13 identifier vex_c_station
-59294+1 operator =
-59296+25 string "\\"What happened here?\\""
-59326+13 identifier vex_c_captain
-59345+1 operator =
-59347+29 string "\\"Where is Captain Reyes?\\""
-59381+16 identifier vex_c_intimidate
-59400+1 operator =
-59402+50 string "\\"You're going to tell me what I want to know.\\...
-59457+16 identifier vex_station_info
-59476+1 operator =
-59478+65 string "\\"Reactor scrammed. Then the doors locked. Then...
-59548+17 identifier vex_captain_topic
-59567+1 operator =
-59569+61 string "\\"Reyes? She went aft. That's all I — that's ...
-59635+9 identifier vex_cowed
-59654+1 operator =
-59656+27 string "\\"All right! All right.\\""
-59688+12 identifier vex_offended
-59707+1 operator =
-59709+24 string "\\"Get out of my bay.\\""
-59738+13 identifier vex_persuaded
-59757+1 operator =
-59759+52 string "Vex glances at Kira, then relents. \\"Fine. Fine...
-59816+12 identifier kira_c_vouch
-59835+1 operator =
-59837+30 string "Kira: \\"He's with me, Vex.\\""
-59872+14 identifier kira_i_station
-59891+1 operator =
-59893+48 string "Kira, quietly: \\"He's leaving something out.\\""
-59947+12 identifier console_main
-59966+1 operator =
-59968+37 string "REACTOR CONSOLE — DIAGNOSTIC MODE"
-60010+16 identifier console_c_status
-60029+1 operator =
-60031+20 string "Query core status."
-60056+14 identifier console_c_vent
-60075+1 operator =
-60077+27 string "Vent coolant to the ring."
-60109+15 identifier console_c_leave
-60128+1 operator =
-60130+13 string "Disconnect."
-60148+14 identifier console_status
-60167+1 operator =
-60169+62 string "CORE: SCRAMMED. COOLANT: NOMINAL. CREW: 1 REGIS...
-60236+12 identifier console_vent
-60255+1 operator =
-60257+23 string "VENTING. STAND CLEAR."
-60286+14 identifier janitor_bark_1
+56836+15 string "tarnished mug"
+56856+13 identifier thing_console
+56875+1 operator =
+56877+17 string "reactor console"
+56899+18 identifier thing_access_panel
+56918+1 operator =
+56920+14 string "access panel"
+56939+12 identifier thing_potato
+56958+1 operator =
+56960+14 string "baked potato"
+56979+12 identifier thing_gloves
+56998+1 operator =
+57000+22 string "firefighter's gloves"
+57027+12 identifier thing_cutter
+57046+1 operator =
+57048+15 string "plasma cutter"
+57068+12 identifier thing_ration
+57087+1 operator =
+57089+13 string "ration pack"
+57107+9 identifier thing_log
+57126+1 operator =
+57128+15 string "captain's log"
+57148+13 identifier thing_crowbar
+57167+1 operator =
+57169+9 string "crowbar"
+57183+11 identifier thing_picks
+57202+1 operator =
+57204+18 string "set of lockpicks"
+57227+15 identifier thing_plain_box
+57246+1 operator =
+57248+5 string "box"
+57258+13 identifier thing_navcomp
+57277+1 operator =
+57279+21 string "navigation computer"
+57305+11 identifier thing_flask
+57324+1 operator =
+57326+13 string "water flask"
+57344+12 identifier thing_whisky
+57363+1 operator =
+57365+18 string "bottle of whisky"
+57388+10 identifier too_feeble
+57407+1 operator =
+57409+31 string "That would barely scratch it."
+57445+17 identifier g_alert_level_doc
+57464+1 operator =
+57466+53 string "Station-wide alert state. Drives NPC schedules ...
+57545+42 string "the quartermaster's willingness to talk."
+57592+9 identifier thing_sky
+57611+1 operator =
+57613+5 string "sky"
+57623+9 identifier thing_hum
+57642+1 operator =
+57644+13 string "reactor hum"
+57662+11 identifier hatch_inner
+57681+1 operator =
+57683+13 string "inner hatch"
+57701+11 identifier hatch_outer
+57720+1 operator =
+57722+13 string "outer hatch"
+57740+16 identifier hatch_inner_desc
+57759+1 operator =
+57761+53 string "A blast hatch, scuffed where a thousand boots h...
+57840+13 string "crossed it."
+57858+11 identifier thing_blood
+57877+1 operator =
+57879+13 string "blood trail"
+57898+8 comment # People
+57911+9 identifier person_pc
+57930+1 operator =
+57932+10 string "yourself"
+57947+11 identifier person_kira
+57966+1 operator =
+57968+6 string "Kira"
+57979+10 identifier person_vex
+57998+1 operator =
+58000+19 string "Quartermaster Vex"
+58024+14 identifier person_janitor
+58043+1 operator =
+58045+13 string "the janitor"
+58063+12 identifier person_reyes
+58082+1 operator =
+58084+15 string "Captain Reyes"
+58104+20 identifier console_speaker_name
+58125+1 operator =
+58127+17 string "REACTOR CONSOLE"
+58150+10 comment # Messages
+58165+12 identifier already_open
+58184+1 operator =
+58186+21 string "It is already open."
+58212+14 identifier opened_default
+58231+1 operator =
+58233+22 string "You open [the noun]."
+58260+15 identifier already_holding
+58279+1 operator =
+58281+37 string "You are already holding [the noun]."
+58323+15 identifier cant_take_fixed
+58342+1 operator =
+58344+38 string "[The noun] [is noun] fixed in place."
+58387+16 identifier closed_container
+58406+1 operator =
+58408+25 string "[The second] is closed."
+58438+12 identifier not_openable
+58457+1 operator =
+58459+50 string "[The noun] [is noun] not something you can open...
+58514+10 identifier its_locked
+58533+1 operator =
+58535+14 string "It's locked."
+58554+10 identifier not_locked
+58573+1 operator =
+58575+20 string "That isn't locked."
+58600+12 identifier no_lockpicks
+58619+1 operator =
+58621+39 string "You have nothing to pick a lock with."
+58665+15 identifier lock_too_fiddly
+58684+1 operator =
+58686+53 string "Your hands aren't steady enough for work this f...
+58744+11 identifier lock_picked
+58763+1 operator =
+58765+49 string "The lock yields with a small, satisfying click....
+58820+68 comment # Adaptive text: one template, correct for any a...
+58893+39 comment #   player -> "You take the brass key."
+58937+40 comment #   NPC    -> "Vex takes the brass key."
+58982+7 identifier took_it
+59001+1 operator =
+59003+45 string "[The actor] [verb(actor, take)] [the noun]."
+59053+11 identifier polished_it
+59072+1 operator =
+59074+47 string "[The actor] [verb(actor, polish)] [the noun] "
+59147+34 string "with [possessive(actor)] sleeve."
+59187+75 comment # The last resort in the failureMsg fallback cha...
+59267+73 comment # It is a loc key rather than a hard-coded strin...
+59345+70 comment # it once — but reaching it in play means a re...
+59420+42 comment # message, which the compiler warns about.
+59467+22 identifier action_blocked_default
+59490+1 operator =
+59492+30 string "You can't do that right now."
+59527+16 identifier cant_flee_combat
+59546+1 operator =
+59548+46 string "Not while [ThreatName()] has your attention."
+59599+7 identifier c_leave
+59618+1 operator =
+59620+10 string "(Leave.)"
+59636+55 comment # A conditional fragment and a plural, in one te...
+59696+16 identifier inventory_header
+59715+1 operator =
+59717+35 string "You are carrying [number(count)] "
+59778+38 string "[plural(count, \\"item\\", \\"items\\")]"
+59842+57 string "[if carrying_nothing] — that is, nothing at a...
+59905+8 comment # Quests
+59918+20 identifier q_find_captain_title
+59941+1 operator =
+59943+18 string "Find the Captain"
+59966+22 identifier q_find_captain_summary
+59989+1 operator =
+59991+69 string "Reyes was aboard when the alarm sounded. Nobody...
+60065+17 identifier q_find_captain_s1
+60088+1 operator =
+60090+28 string "Search the command bridge."
+60123+17 identifier q_find_captain_s2
+60146+1 operator =
+60148+25 string "Follow the blood trail."
+60178+17 identifier q_find_captain_s3
+60201+1 operator =
+60203+25 string "Confront what you find."
+60233+16 identifier q_employer_title
+60256+1 operator =
+60258+19 string "The Real Employer"
+60282+18 identifier q_employer_summary
 60305+1 operator =
-60307+50 string "The janitor works his mop in slow figure-eights...
-60362+14 identifier janitor_bark_2
-60381+1 operator =
-60383+75 string "The janitor sighs at the spreading stain and re...
-60463+14 identifier janitor_bark_3
-60482+1 operator =
-60484+68 string "\\"Twenty-two years,\\" the janitor says, to nobo...
-60558+22 comment # Schema documentation
-60585+21 identifier schema_loot_table_doc
-60607+1 operator =
-60609+64 string "A weighted table of items produced when a conta...
-60678+18 identifier lib_starscape_name
-60700+1 operator =
-60702+11 string "Starscape"
-60714+1 punctuation }
-60718+79 comment # ==============================================...
-60798+77 comment #  18. SYNTAX CORNERS                           ...
-60876+79 comment # ==============================================...
-60956+78 comment # Constructs with no natural home in a scenario,...
-61035+26 comment # the whole specification.
-61063+78 comment # --- 18.1 Every operator ----------------------...
-61143+15 identifier class_extension
-61159+1 operator =
-61161+1 punctuation {
-61167+8 identifier of_class
-61176+1 operator =
-61178+5 identifier thing
-61188+8 identifier prop_def
-61197+1 operator =
-61199+1 punctuation {
-61201+8 identifier synonyms
-61210+1 operator =
-61212+4 identifier list
-61216+1 angle <
-61217+10 identifier identifier
-61227+1 angle >
-61230+5 identifier notes
-61236+1 operator =
-61238+6 identifier string
-61245+1 punctuation }
-61252+8 identifier synonyms
-61262+1 operator =
-61264+1 punctuation {
-61266+5 identifier thing
-61272+6 identifier object
-61279+1 punctuation }
-61288+11 comment # `=`  bind
-61304+8 identifier synonyms
-61313+2 operator +=
-61316+1 punctuation {
-61318+4 identifier item
-61323+1 punctuation }
-61340+13 comment # `+=` extend
-61358+8 identifier synonyms
-61367+2 operator -=
-61370+1 punctuation {
-61372+6 identifier object
-61379+1 punctuation }
-61394+13 comment # `-=` reduce
-61412+5 identifier notes
-61423+1 operator =
-61425+15 string "plainly bound"
-61448+36 comment # `?=` was removed; see spec §6.3.1
-61485+1 punctuation }
-61488+57 comment # Comparison operators appear only in condition ...
-61546+4 identifier rule
-61551+1 operator =
-61553+1 punctuation {
-61559+9 identifier of_action
-61569+1 operator =
-61571+4 identifier take
-61580+4 identifier when
-61590+1 operator =
-61592+1 punctuation {
-61594+4 identifier noun
-61599+1 operator =
-61601+1 punctuation {
-61603+6 identifier weight
-61610+1 angle >
-61612+5 decimal 0.000
-61618+1 punctuation }
-61620+1 punctuation }
-61626+10 identifier conditions
-61637+1 operator =
-61639+1 punctuation {
-61649+5 identifier actor
-61655+1 operator =
-61657+1 punctuation {
-61671+8 identifier strength
-61680+2 operator >=
-61683+2 integer 10
-61698+8 identifier strength
-61707+2 operator <=
-61710+2 integer 30
-61725+8 identifier presence
-61734+2 operator !=
-61737+1 integer 0
-61747+1 punctuation }
-61757+4 identifier noun
-61762+1 operator =
-61764+1 punctuation {
-61766+6 identifier weight
-61773+1 angle <
-61775+6 decimal 50.000
-61782+1 punctuation }
-61792+6 identifier second
-61799+1 operator =
-61801+1 punctuation {
-61803+4 identifier open
-61808+2 operator ==
-61811+3 identifier yes
-61815+1 punctuation }
-61821+1 punctuation }
-61827+12 identifier restrictions
-61840+1 operator =
-61842+1 punctuation {
-61844+1 punctuation }
-61863+32 comment # empty block: explicit override
-61896+1 punctuation }
-61899+78 comment # --- 18.2 Every scalar kind -------------------...
-61979+15 identifier class_extension
-61995+1 operator =
-61997+1 punctuation {
-62003+8 identifier of_class
-62012+1 operator =
-62014+5 identifier thing
-62024+8 identifier prop_def
-62033+1 operator =
-62035+1 punctuation {
-62045+13 identifier an_identifier
-62059+1 operator =
-62061+10 identifier identifier
-62080+10 identifier an_integer
-62094+1 operator =
-62096+3 identifier int
-62108+9 identifier a_decimal
-62122+1 operator =
-62124+7 identifier decimal
-62140+7 identifier a_float
-62154+1 operator =
-62156+5 identifier float
-62170+8 identifier a_string
-62184+1 operator =
-62186+6 identifier string
-62201+6 identifier a_text
-62215+1 operator =
-62217+4 identifier text
-62230+6 identifier a_bool
-62244+1 operator =
-62246+4 identifier bool
-62259+5 identifier a_ref
-62273+1 operator =
-62275+3 identifier ref
-62278+1 angle <
-62279+5 identifier thing
-62284+1 angle >
-62294+7 identifier an_enum
-62308+1 operator =
-62310+4 identifier enum
-62314+1 angle <
-62315+14 identifier condition_enum
-62329+1 angle >
-62339+10 identifier a_resource
-62353+1 operator =
-62355+8 identifier resource
-62372+12 identifier a_clock_time
-62386+1 operator =
-62388+10 identifier clock_time
-62407+10 identifier a_duration
-62421+1 operator =
-62423+8 identifier duration
-62440+6 identifier a_dice
-62454+1 operator =
-62456+4 identifier dice
-62469+8 identifier a_script
-62483+1 operator =
-62485+6 identifier script
-62500+10 identifier a_flag_set
-62514+1 operator =
-62516+5 identifier flags
-62521+1 angle <
-62522+16 identifier damage_type_enum
-62538+1 angle >
-62548+6 identifier a_list
-62562+1 operator =
-62564+4 identifier list
-62568+1 angle <
-62569+3 identifier int
-62572+1 angle >
-62582+5 identifier a_set
-62596+1 operator =
-62598+3 identifier set
-62601+1 angle <
-62602+10 identifier identifier
-62612+1 angle >
-62622+5 identifier a_map
-62636+1 operator =
-62638+3 identifier map
-62641+1 angle <
-62642+10 identifier identifier
-62652+1 punctuation ,
-62654+3 identifier int
-62657+1 angle >
-62663+1 punctuation }
-62670+13 identifier an_identifier
-62684+1 operator =
-62686+11 identifier some_symbol
-62702+10 identifier an_integer
-62716+1 operator =
-62718+3 integer -42
-62726+9 identifier a_decimal
-62740+1 operator =
-62742+6 decimal -3.750
-62753+7 identifier a_float
-62767+1 operator =
-62769+5 decimal 0.333
-62779+8 identifier a_string
-62793+1 operator =
-62795+38 string "raw, never localised or interpolated"
-62838+6 identifier a_text
-62852+1 operator =
-62854+17 lockey $flavour_text_key
-62876+6 identifier a_bool
+60307+48 string "Something about this contract does not add up."
+60360+13 identifier q_employer_s1
+60383+1 operator =
+60385+27 string "Gather what does not fit."
+60418+10 comment # Dialogue
+60433+12 identifier vex_greeting
+60452+1 operator =
+60454+65 string "Vex looks up. \\"You're the one from the cell. W...
+60524+18 identifier vex_greeting_again
+60543+1 operator =
+60545+16 string "\\"You again.\\""
+60566+13 identifier vex_c_station
+60585+1 operator =
+60587+25 string "\\"What happened here?\\""
+60617+13 identifier vex_c_captain
+60636+1 operator =
+60638+29 string "\\"Where is Captain Reyes?\\""
+60672+16 identifier vex_c_intimidate
+60691+1 operator =
+60693+50 string "\\"You're going to tell me what I want to know.\\...
+60748+16 identifier vex_station_info
+60767+1 operator =
+60769+65 string "\\"Reactor scrammed. Then the doors locked. Then...
+60839+17 identifier vex_captain_topic
+60858+1 operator =
+60860+61 string "\\"Reyes? She went aft. That's all I — that's ...
+60926+9 identifier vex_cowed
+60945+1 operator =
+60947+27 string "\\"All right! All right.\\""
+60979+12 identifier vex_offended
+60998+1 operator =
+61000+24 string "\\"Get out of my bay.\\""
+61029+13 identifier vex_persuaded
+61048+1 operator =
+61050+52 string "Vex glances at Kira, then relents. \\"Fine. Fine...
+61107+12 identifier kira_c_vouch
+61126+1 operator =
+61128+30 string "Kira: \\"He's with me, Vex.\\""
+61163+14 identifier kira_i_station
+61182+1 operator =
+61184+48 string "Kira, quietly: \\"He's leaving something out.\\""
+61238+12 identifier console_main
+61257+1 operator =
+61259+37 string "REACTOR CONSOLE — DIAGNOSTIC MODE"
+61301+16 identifier console_c_status
+61320+1 operator =
+61322+20 string "Query core status."
+61347+14 identifier console_c_vent
+61366+1 operator =
+61368+27 string "Vent coolant to the ring."
+61400+15 identifier console_c_leave
+61419+1 operator =
+61421+13 string "Disconnect."
+61439+14 identifier console_status
+61458+1 operator =
+61460+62 string "CORE: SCRAMMED. COOLANT: NOMINAL. CREW: 1 REGIS...
+61527+12 identifier console_vent
+61546+1 operator =
+61548+23 string "VENTING. STAND CLEAR."
+61577+14 identifier janitor_bark_1
+61596+1 operator =
+61598+50 string "The janitor works his mop in slow figure-eights...
+61653+14 identifier janitor_bark_2
+61672+1 operator =
+61674+75 string "The janitor sighs at the spreading stain and re...
+61754+14 identifier janitor_bark_3
+61773+1 operator =
+61775+68 string "\\"Twenty-two years,\\" the janitor says, to nobo...
+61849+22 comment # Schema documentation
+61876+21 identifier schema_loot_table_doc
+61898+1 operator =
+61900+64 string "A weighted table of items produced when a conta...
+61969+18 identifier lib_starscape_name
+61991+1 operator =
+61993+11 string "Starscape"
+62005+1 punctuation }
+62009+79 comment # ==============================================...
+62089+77 comment #  18. SYNTAX CORNERS                           ...
+62167+79 comment # ==============================================...
+62247+78 comment # Constructs with no natural home in a scenario,...
+62326+26 comment # the whole specification.
+62354+78 comment # --- 18.1 Every operator ----------------------...
+62434+15 identifier class_extension
+62450+1 operator =
+62452+1 punctuation {
+62458+8 identifier of_class
+62467+1 operator =
+62469+5 identifier thing
+62479+8 identifier prop_def
+62488+1 operator =
+62490+1 punctuation {
+62492+8 identifier synonyms
+62501+1 operator =
+62503+4 identifier list
+62507+1 angle <
+62508+10 identifier identifier
+62518+1 angle >
+62521+5 identifier notes
+62527+1 operator =
+62529+6 identifier string
+62536+1 punctuation }
+62543+8 identifier synonyms
+62553+1 operator =
+62555+1 punctuation {
+62557+5 identifier thing
+62563+6 identifier object
+62570+1 punctuation }
+62579+11 comment # `=`  bind
+62595+8 identifier synonyms
+62604+2 operator +=
+62607+1 punctuation {
+62609+4 identifier item
+62614+1 punctuation }
+62631+13 comment # `+=` extend
+62649+8 identifier synonyms
+62658+2 operator -=
+62661+1 punctuation {
+62663+6 identifier object
+62670+1 punctuation }
+62685+13 comment # `-=` reduce
+62703+5 identifier notes
+62714+1 operator =
+62716+15 string "plainly bound"
+62739+36 comment # `?=` was removed; see spec §6.3.1
+62776+1 punctuation }
+62779+57 comment # Comparison operators appear only in condition ...
+62837+4 identifier rule
+62842+1 operator =
+62844+1 punctuation {
+62850+9 identifier of_action
+62860+1 operator =
+62862+4 identifier take
+62871+4 identifier when
+62881+1 operator =
+62883+1 punctuation {
+62885+4 identifier noun
 62890+1 operator =
-62892+3 identifier yes
-62900+5 identifier a_ref
-62914+1 operator =
-62916+4 identifier none
-62936+27 comment # `none` clears a reference
-62968+7 identifier an_enum
-62982+1 operator =
-62984+6 identifier vacuum
-62995+10 identifier a_resource
-63009+1 operator =
-63011+19 string "res/audio/hum.ogg"
-63035+12 identifier a_clock_time
-63049+1 operator =
-63051+10 string "18:45:30"
-63066+10 identifier a_duration
-63080+1 operator =
-63082+2 integer 90
-63089+6 identifier a_dice
-63103+1 operator =
-63105+8 string "1d20+4"
-63118+8 identifier a_script
-63132+1 operator =
-63134+18 identifier some_function_name
-63157+10 identifier a_flag_set
-63171+1 operator =
-63173+1 punctuation {
-63175+7 identifier kinetic
-63183+9 identifier corrosive
-63193+1 punctuation }
-63199+6 identifier a_list
-63213+1 operator =
-63215+1 punctuation {
-63217+1 integer 1
-63219+1 integer 2
-63221+1 integer 3
-63223+1 integer 3
-63225+1 punctuation }
-63235+32 comment # duplicates permitted in a list
-63272+5 identifier a_set
+62892+1 punctuation {
+62894+6 identifier weight
+62901+1 angle >
+62903+5 decimal 0.000
+62909+1 punctuation }
+62911+1 punctuation }
+62917+10 identifier conditions
+62928+1 operator =
+62930+1 punctuation {
+62940+5 identifier actor
+62946+1 operator =
+62948+1 punctuation {
+62962+8 identifier strength
+62971+2 operator >=
+62974+2 integer 10
+62989+8 identifier strength
+62998+2 operator <=
+63001+2 integer 30
+63016+8 identifier presence
+63025+2 operator !=
+63028+1 integer 0
+63038+1 punctuation }
+63048+4 identifier noun
+63053+1 operator =
+63055+1 punctuation {
+63057+6 identifier weight
+63064+1 angle <
+63066+6 decimal 50.000
+63073+1 punctuation }
+63083+6 identifier second
+63090+1 operator =
+63092+1 punctuation {
+63094+4 identifier open
+63099+2 operator ==
+63102+3 identifier yes
+63106+1 punctuation }
+63112+1 punctuation }
+63118+12 identifier restrictions
+63131+1 operator =
+63133+1 punctuation {
+63135+1 punctuation }
+63154+32 comment # empty block: explicit override
+63187+1 punctuation }
+63190+78 comment # --- 18.2 Every scalar kind -------------------...
+63270+15 identifier class_extension
 63286+1 operator =
 63288+1 punctuation {
-63290+5 identifier alpha
-63296+4 identifier beta
-63301+5 identifier gamma
-63307+1 punctuation }
-63313+5 identifier a_map
-63327+1 operator =
-63329+1 punctuation {
-63331+5 identifier alpha
-63337+1 operator =
-63339+1 integer 1
-63342+4 identifier beta
-63347+1 operator =
-63349+1 integer 2
-63351+1 punctuation }
-63353+1 punctuation }
-63356+78 comment # --- 18.3 Adjacent-literal concatenation, and e...
-63436+3 identifier loc
-63440+1 operator =
-63442+1 punctuation {
-63448+4 identifier lang
-63453+1 operator =
-63455+2 identifier en
-63463+16 identifier flavour_text_key
-63480+1 operator =
-63482+29 string "Concatenated across lines, "
-63535+47 string "with no separator inserted between the parts."
-63588+12 identifier escapes_demo
-63601+1 operator =
-63603+49 string "A quote: \\" · a backslash: \\\\ · a newline: \\n...
-63672+64 string "a tab: \\t · a bracket: \\[ and \\] · a dollar: ...
-63756+26 string " · a unicode escape: é"
-63788+62 comment # `#` inside a string is an ordinary character, ...
-63855+9 identifier hash_demo
-63865+1 operator =
-63867+34 string "Cell block #4 — not a comment."
-63907+64 comment # A template with a conditional fragment, an els...
-63976+53 comment # explicit tooltip span over text that is not a ...
-64034+16 identifier conditional_demo
-64051+1 operator =
-64053+33 string "[if is_dark]You can't see much."
-64110+28 string "[else]The bay is lit by a "
-64162+48 string "[tip(plasma_cutter)]guttering blue glare[end]."
-64234+7 string "[end]"
-64242+1 punctuation }
-64245+77 comment # --- 18.4 A key written as a string -----------...
-64323+75 comment # Permitted where the schema allows it, for keys...
-64399+21 comment # the identifier set.
-64422+3 identifier loc
-64426+1 operator =
-64428+1 punctuation {
-64434+4 identifier lang
-64439+1 operator =
-64441+2 identifier en
-64448+29 string "key.with.unusual-characters"
-64478+1 operator =
-64480+26 string "Legal, if rarely wanted."
-64507+1 punctuation }
-64510+77 comment # --- 18.5 `inherit`, and combination annotation...
-64589+4 identifier rule
-64594+1 operator =
-64596+1 punctuation {
-64602+9 identifier of_action
-64615+1 operator =
-64617+7 identifier examine
-64629+4 identifier when
-64642+1 operator =
-64644+1 punctuation {
-64646+4 identifier noun
-64651+1 operator =
-64653+1 punctuation {
-64655+8 identifier of_class
-64664+1 operator =
-64666+6 identifier weapon
-64673+1 punctuation }
-64675+1 punctuation }
-64681+10 identifier conditions
-64694+1 operator =
-64696+7 identifier inherit
-64717+37 comment # identical to omitting the statement
-64759+12 identifier restrictions
-64772+1 operator =
-64774+7 identifier inherit
-64786+7 identifier effects
-64799+1 operator =
-64801+7 identifier inherit
-64813+10 identifier successMsg
-64826+1 operator =
-64828+6 annotation @after
-64835+30 string "It is heavier than it looks."
-64866+1 punctuation }
-64869+4 identifier rule
-64874+1 operator =
-64876+1 punctuation {
-64882+9 identifier of_action
-64893+1 operator =
-64895+7 identifier examine
-64907+4 identifier when
-64918+1 operator =
-64920+1 punctuation {
-64922+4 identifier noun
-64927+1 operator =
-64929+1 punctuation {
-64931+8 identifier of_class
-64940+1 operator =
-64942+5 identifier armor
-64948+1 punctuation }
-64950+1 punctuation }
-64956+10 identifier successMsg
-64967+1 operator =
-64969+7 annotation @before
-64977+33 string "You turn it over in your hands."
-65011+1 punctuation }
-65014+15 identifier class_extension
-65030+1 operator =
-65032+1 punctuation {
-65038+8 identifier of_class
-65047+1 operator =
-65049+6 identifier weapon
-65060+8 identifier prop_def
-65069+1 operator =
-65071+6 annotation @merge
-65078+1 punctuation {
-65080+13 identifier serial_number
-65094+1 operator =
-65096+6 identifier string
-65103+1 punctuation }
-65105+1 punctuation }
-65108+15 identifier class_extension
-65124+1 operator =
-65126+1 punctuation {
-65132+8 identifier of_class
-65141+1 operator =
-65143+5 identifier thing
-65153+8 identifier synonyms
-65162+1 operator =
-65164+7 annotation @remove
-65172+1 punctuation {
-65174+5 identifier thing
-65180+1 punctuation }
-65182+1 punctuation }
-65185+78 comment # --- 18.6 Library metadata --------------------...
-65264+76 comment # Normally in the library's own tree; included h...
-65342+7 identifier library
-65350+1 operator =
-65352+1 punctuation {
-65358+2 identifier id
-65371+1 operator =
-65373+9 identifier starscape
-65387+7 identifier version
-65400+1 operator =
-65402+7 string "1.0.0"
-65414+12 identifier display_name
-65427+1 operator =
-65429+19 lockey $lib_starscape_name
-65453+8 identifier requires
-65466+1 operator =
-65468+1 punctuation {
-65470+6 identifier stdlib
-65477+2 operator >=
-65480+7 string "1.0.0"
-65488+1 punctuation }
-65494+19 identifier uses_editor_feature
-65514+1 operator =
-65516+1 punctuation {
-65518+3 identifier rpg
-65522+6 identifier quests
-65529+8 identifier dialogue
-65538+1 punctuation }
-65544+15 identifier provides_schema
-65564+1 operator =
-65566+1 punctuation {
-65568+10 identifier stat_block
-65579+12 identifier combat_style
-65592+10 identifier loot_table
-65603+1 punctuation }
-65605+1 punctuation }
-65608+77 comment # --- 18.7 An empty file is legal; so is an empt...
-65687+6 identifier action
-65694+1 operator =
-65696+1 punctuation {
-65702+2 identifier id
-65711+1 operator =
-65713+4 identifier wait
-65722+5 identifier match
-65731+1 operator =
-65733+1 punctuation {
-65735+8 string "z/wait"
-65744+1 punctuation }
-65750+7 identifier effects
-65759+1 operator =
-65761+1 punctuation {
-65763+1 punctuation }
-65769+10 identifier successMsg
-65780+1 operator =
-65782+14 string "Time passes."
-65797+1 punctuation }
-65800+78 comment # --- 18.8 Superseding a declaration -----------...
-65879+75 comment # No declaration may be duplicated. `@replaces` ...
-65955+75 comment # naming the SOURCE is what makes it useful: if ...
-66031+76 comment # a `wait` action, or renamed it, this becomes a...
-66108+54 comment # second declaration that silently never takes e...
-66163+1 comment #
-66165+79 comment # Replacement is total — nothing is merged fro...
-66245+47 comment # class_extension and schema_extension are for.
-66293+6 identifier action
-66300+1 operator =
-66302+9 annotation @replaces
-66311+1 punctuation (
-66312+6 identifier stdlib
-66318+1 punctuation )
-66320+1 punctuation {
-66326+2 identifier id
-66337+1 operator =
-66339+4 identifier wait
-66348+5 identifier match
-66359+1 operator =
-66361+1 punctuation {
-66363+23 string "wait for/until [text]"
-66387+1 punctuation }
-66393+7 identifier effects
-66404+1 operator =
-66406+1 punctuation {
-66408+1 punctuation }
-66414+10 identifier successMsg
-66425+1 operator =
-66427+11 string "You wait."
-66439+1 punctuation }
-66442+79 comment # ==============================================...
-66522+19 comment #  End of tour.star
-66542+79 comment # ==============================================...
-66622+0 eof 
+63294+8 identifier of_class
+63303+1 operator =
+63305+5 identifier thing
+63315+8 identifier prop_def
+63324+1 operator =
+63326+1 punctuation {
+63336+13 identifier an_identifier
+63350+1 operator =
+63352+10 identifier identifier
+63371+10 identifier an_integer
+63385+1 operator =
+63387+3 identifier int
+63399+9 identifier a_decimal
+63413+1 operator =
+63415+7 identifier decimal
+63431+7 identifier a_float
+63445+1 operator =
+63447+5 identifier float
+63461+8 identifier a_string
+63475+1 operator =
+63477+6 identifier string
+63492+6 identifier a_text
+63506+1 operator =
+63508+4 identifier text
+63521+6 identifier a_bool
+63535+1 operator =
+63537+4 identifier bool
+63550+5 identifier a_ref
+63564+1 operator =
+63566+3 identifier ref
+63569+1 angle <
+63570+5 identifier thing
+63575+1 angle >
+63585+7 identifier an_enum
+63599+1 operator =
+63601+4 identifier enum
+63605+1 angle <
+63606+14 identifier condition_enum
+63620+1 angle >
+63630+10 identifier a_resource
+63644+1 operator =
+63646+8 identifier resource
+63663+12 identifier a_clock_time
+63677+1 operator =
+63679+10 identifier clock_time
+63698+10 identifier a_duration
+63712+1 operator =
+63714+8 identifier duration
+63731+6 identifier a_dice
+63745+1 operator =
+63747+4 identifier dice
+63760+8 identifier a_script
+63774+1 operator =
+63776+6 identifier script
+63791+10 identifier a_flag_set
+63805+1 operator =
+63807+5 identifier flags
+63812+1 angle <
+63813+16 identifier damage_type_enum
+63829+1 angle >
+63839+6 identifier a_list
+63853+1 operator =
+63855+4 identifier list
+63859+1 angle <
+63860+3 identifier int
+63863+1 angle >
+63873+5 identifier a_set
+63887+1 operator =
+63889+3 identifier set
+63892+1 angle <
+63893+10 identifier identifier
+63903+1 angle >
+63913+5 identifier a_map
+63927+1 operator =
+63929+3 identifier map
+63932+1 angle <
+63933+10 identifier identifier
+63943+1 punctuation ,
+63945+3 identifier int
+63948+1 angle >
+63954+1 punctuation }
+63961+13 identifier an_identifier
+63975+1 operator =
+63977+11 identifier some_symbol
+63993+10 identifier an_integer
+64007+1 operator =
+64009+3 integer -42
+64017+9 identifier a_decimal
+64031+1 operator =
+64033+6 decimal -3.750
+64044+7 identifier a_float
+64058+1 operator =
+64060+5 decimal 0.333
+64070+8 identifier a_string
+64084+1 operator =
+64086+38 string "raw, never localised or interpolated"
+64129+6 identifier a_text
+64143+1 operator =
+64145+17 lockey $flavour_text_key
+64167+6 identifier a_bool
+64181+1 operator =
+64183+3 identifier yes
+64191+5 identifier a_ref
+64205+1 operator =
+64207+4 identifier none
+64227+27 comment # `none` clears a reference
+64259+7 identifier an_enum
+64273+1 operator =
+64275+6 identifier vacuum
+64286+10 identifier a_resource
+64300+1 operator =
+64302+19 string "res/audio/hum.ogg"
+64326+12 identifier a_clock_time
+64340+1 operator =
+64342+10 string "18:45:30"
+64357+10 identifier a_duration
+64371+1 operator =
+64373+2 integer 90
+64380+6 identifier a_dice
+64394+1 operator =
+64396+8 string "1d20+4"
+64409+8 identifier a_script
+64423+1 operator =
+64425+18 identifier some_function_name
+64448+10 identifier a_flag_set
+64462+1 operator =
+64464+1 punctuation {
+64466+7 identifier kinetic
+64474+9 identifier corrosive
+64484+1 punctuation }
+64490+6 identifier a_list
+64504+1 operator =
+64506+1 punctuation {
+64508+1 integer 1
+64510+1 integer 2
+64512+1 integer 3
+64514+1 integer 3
+64516+1 punctuation }
+64526+32 comment # duplicates permitted in a list
+64563+5 identifier a_set
+64577+1 operator =
+64579+1 punctuation {
+64581+5 identifier alpha
+64587+4 identifier beta
+64592+5 identifier gamma
+64598+1 punctuation }
+64604+5 identifier a_map
+64618+1 operator =
+64620+1 punctuation {
+64622+5 identifier alpha
+64628+1 operator =
+64630+1 integer 1
+64633+4 identifier beta
+64638+1 operator =
+64640+1 integer 2
+64642+1 punctuation }
+64644+1 punctuation }
+64647+78 comment # --- 18.3 Adjacent-literal concatenation, and e...
+64727+3 identifier loc
+64731+1 operator =
+64733+1 punctuation {
+64739+4 identifier lang
+64744+1 operator =
+64746+2 identifier en
+64754+16 identifier flavour_text_key
+64771+1 operator =
+64773+29 string "Concatenated across lines, "
+64826+47 string "with no separator inserted between the parts."
+64879+12 identifier escapes_demo
+64892+1 operator =
+64894+49 string "A quote: \\" · a backslash: \\\\ · a newline: \\n...
+64963+64 string "a tab: \\t · a bracket: \\[ and \\] · a dollar: ...
+65047+26 string " · a unicode escape: é"
+65079+62 comment # `#` inside a string is an ordinary character, ...
+65146+9 identifier hash_demo
+65156+1 operator =
+65158+34 string "Cell block #4 — not a comment."
+65198+64 comment # A template with a conditional fragment, an els...
+65267+53 comment # explicit tooltip span over text that is not a ...
+65325+16 identifier conditional_demo
+65342+1 operator =
+65344+33 string "[if is_dark]You can't see much."
+65401+28 string "[else]The bay is lit by a "
+65453+48 string "[tip(plasma_cutter)]guttering blue glare[end]."
+65525+7 string "[end]"
+65533+1 punctuation }
+65536+77 comment # --- 18.4 A key written as a string -----------...
+65614+75 comment # Permitted where the schema allows it, for keys...
+65690+21 comment # the identifier set.
+65713+3 identifier loc
+65717+1 operator =
+65719+1 punctuation {
+65725+4 identifier lang
+65730+1 operator =
+65732+2 identifier en
+65739+29 string "key.with.unusual-characters"
+65769+1 operator =
+65771+26 string "Legal, if rarely wanted."
+65798+1 punctuation }
+65801+77 comment # --- 18.5 `inherit`, and combination annotation...
+65880+4 identifier rule
+65885+1 operator =
+65887+1 punctuation {
+65893+9 identifier of_action
+65906+1 operator =
+65908+7 identifier examine
+65920+4 identifier when
+65933+1 operator =
+65935+1 punctuation {
+65937+4 identifier noun
+65942+1 operator =
+65944+1 punctuation {
+65946+8 identifier of_class
+65955+1 operator =
+65957+6 identifier weapon
+65964+1 punctuation }
+65966+1 punctuation }
+65972+10 identifier conditions
+65985+1 operator =
+65987+7 identifier inherit
+66008+37 comment # identical to omitting the statement
+66050+12 identifier restrictions
+66063+1 operator =
+66065+7 identifier inherit
+66077+7 identifier effects
+66090+1 operator =
+66092+7 identifier inherit
+66104+10 identifier successMsg
+66117+1 operator =
+66119+6 annotation @after
+66126+30 string "It is heavier than it looks."
+66157+1 punctuation }
+66160+4 identifier rule
+66165+1 operator =
+66167+1 punctuation {
+66173+9 identifier of_action
+66184+1 operator =
+66186+7 identifier examine
+66198+4 identifier when
+66209+1 operator =
+66211+1 punctuation {
+66213+4 identifier noun
+66218+1 operator =
+66220+1 punctuation {
+66222+8 identifier of_class
+66231+1 operator =
+66233+5 identifier armor
+66239+1 punctuation }
+66241+1 punctuation }
+66247+10 identifier successMsg
+66258+1 operator =
+66260+7 annotation @before
+66268+33 string "You turn it over in your hands."
+66302+1 punctuation }
+66305+15 identifier class_extension
+66321+1 operator =
+66323+1 punctuation {
+66329+8 identifier of_class
+66338+1 operator =
+66340+6 identifier weapon
+66351+8 identifier prop_def
+66360+1 operator =
+66362+6 annotation @merge
+66369+1 punctuation {
+66371+13 identifier serial_number
+66385+1 operator =
+66387+6 identifier string
+66394+1 punctuation }
+66396+1 punctuation }
+66399+15 identifier class_extension
+66415+1 operator =
+66417+1 punctuation {
+66423+8 identifier of_class
+66432+1 operator =
+66434+5 identifier thing
+66444+8 identifier synonyms
+66453+1 operator =
+66455+7 annotation @remove
+66463+1 punctuation {
+66465+5 identifier thing
+66471+1 punctuation }
+66473+1 punctuation }
+66476+78 comment # --- 18.6 Library metadata --------------------...
+66555+76 comment # Normally in the library's own tree; included h...
+66633+7 identifier library
+66641+1 operator =
+66643+1 punctuation {
+66649+2 identifier id
+66662+1 operator =
+66664+9 identifier starscape
+66678+7 identifier version
+66691+1 operator =
+66693+7 string "1.0.0"
+66705+12 identifier display_name
+66718+1 operator =
+66720+19 lockey $lib_starscape_name
+66744+8 identifier requires
+66757+1 operator =
+66759+1 punctuation {
+66761+6 identifier stdlib
+66768+2 operator >=
+66771+7 string "1.0.0"
+66779+1 punctuation }
+66785+19 identifier uses_editor_feature
+66805+1 operator =
+66807+1 punctuation {
+66809+3 identifier rpg
+66813+6 identifier quests
+66820+8 identifier dialogue
+66829+1 punctuation }
+66835+15 identifier provides_schema
+66855+1 operator =
+66857+1 punctuation {
+66859+10 identifier stat_block
+66870+12 identifier combat_style
+66883+10 identifier loot_table
+66894+1 punctuation }
+66896+1 punctuation }
+66899+77 comment # --- 18.7 An empty file is legal; so is an empt...
+66978+6 identifier action
+66985+1 operator =
+66987+1 punctuation {
+66993+2 identifier id
+67002+1 operator =
+67004+4 identifier wait
+67013+5 identifier match
+67022+1 operator =
+67024+1 punctuation {
+67026+8 string "z/wait"
+67035+1 punctuation }
+67041+7 identifier effects
+67050+1 operator =
+67052+1 punctuation {
+67054+1 punctuation }
+67060+10 identifier successMsg
+67071+1 operator =
+67073+14 string "Time passes."
+67088+1 punctuation }
+67091+78 comment # --- 18.8 Superseding a declaration -----------...
+67170+75 comment # No declaration may be duplicated. `@replaces` ...
+67246+75 comment # naming the SOURCE is what makes it useful: if ...
+67322+76 comment # a `wait` action, or renamed it, this becomes a...
+67399+54 comment # second declaration that silently never takes e...
+67454+1 comment #
+67456+79 comment # Replacement is total — nothing is merged fro...
+67536+47 comment # class_extension and schema_extension are for.
+67584+6 identifier action
+67591+1 operator =
+67593+9 annotation @replaces
+67602+1 punctuation (
+67603+6 identifier stdlib
+67609+1 punctuation )
+67611+1 punctuation {
+67617+2 identifier id
+67628+1 operator =
+67630+4 identifier wait
+67639+5 identifier match
+67650+1 operator =
+67652+1 punctuation {
+67654+23 string "wait for/until [text]"
+67678+1 punctuation }
+67684+7 identifier effects
+67695+1 operator =
+67697+1 punctuation {
+67699+1 punctuation }
+67705+10 identifier successMsg
+67716+1 operator =
+67718+11 string "You wait."
+67730+1 punctuation }
+67733+79 comment # ==============================================...
+67813+19 comment #  End of tour.star
+67833+79 comment # ==============================================...
+67913+0 eof 

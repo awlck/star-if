@@ -1,0 +1,18 @@
+# tests/corpus/invalid/annotation-unknown.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-UNKNOWN-ANNOTATION: '@prepend' is not an annotation I know
+  --> tests/corpus/invalid/annotation-unknown.star:9:18
+  |
+9 |     successMsg = @prepend "You turn it over in your hands."
+  |                  ^^^^^^^^
+note: the annotations are @before, @after, @override, @merge, @remove, @priority, @debug, @platform, @style and @replaces (spec §5.4.1)
+note: an unknown annotation is an error rather than something to ignore, because ignoring one changes what the value means with nothing on screen to say so (spec §3.8)
+
+error: E-UNKNOWN-ANNOTATION: '@since' is reserved, and means nothing yet
+  --> tests/corpus/invalid/annotation-unknown.star:18:18
+   |
+18 |     successMsg = @since "You take it."
+   |                  ^^^^^^
+note: spec §15 holds @deprecated, @since and @experimental back so that defining one later is not a breaking change -- which only works if writing one today is refused
+note: an unknown annotation is an error rather than something to ignore, because ignoring one changes what the value means with nothing on screen to say so (spec §3.8)

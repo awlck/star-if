@@ -1,0 +1,6 @@
+# tests/corpus/invalid/annotation-unknown.star
+# declared E-UNKNOWN-ANNOTATION
+# lexer and parser report (none)
+# E-UNKNOWN-ANNOTATION is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

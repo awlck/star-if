@@ -1,0 +1,30 @@
+# tests/corpus/invalid/platform-overlap.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-DUP-KEY: 'successMsg' is set twice in this 'action'
+  --> tests/corpus/invalid/platform-overlap.star:15:5
+   |
+15 |     successMsg = @platform(glk, cli)     "The lock yields."
+   |     ^^^^^^^^^^
+note: first set here
+  --> tests/corpus/invalid/platform-overlap.star:14:5
+   |
+14 |     successMsg = @platform(qt, web, cli) "The lock yields with a soft chime."
+   |     ^^^^^^^^^^
+note: 'successMsg' holds one value, so the second line would silently win over the first. A key that may repeat says `arity = many` in its schema (spec §5.3, §7.2)
+note: `+=` and `-=` are not bindings and never collide: write `successMsg += ...` to add to what is already there
+note: these two apply together somewhere. `@platform` tells them apart only when their frontends do not overlap -- and a statement without one runs on every frontend, so it overlaps them all. `@debug` tells nothing apart: a development build has the annotated statement and the plain one both (spec §5.4.1)
+
+error: E-DUP-KEY: 'successMsg' is set twice in this 'action'
+  --> tests/corpus/invalid/platform-overlap.star:27:5
+   |
+27 |     successMsg = @platform(glk) "The hatch seals with a clunk."
+   |     ^^^^^^^^^^
+note: first set here
+  --> tests/corpus/invalid/platform-overlap.star:26:5
+   |
+26 |     successMsg = "The hatch seals."
+   |     ^^^^^^^^^^
+note: 'successMsg' holds one value, so the second line would silently win over the first. A key that may repeat says `arity = many` in its schema (spec §5.3, §7.2)
+note: `+=` and `-=` are not bindings and never collide: write `successMsg += ...` to add to what is already there
+note: these two apply together somewhere. `@platform` tells them apart only when their frontends do not overlap -- and a statement without one runs on every frontend, so it overlaps them all. `@debug` tells nothing apart: a development build has the annotated statement and the plain one both (spec §5.4.1)

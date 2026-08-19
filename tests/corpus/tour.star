@@ -1260,7 +1260,8 @@ rule = {
     }
 }
 
-# Development-only: stripped entirely from a release build.
+# Development-only. `@debug` resolves at COMPILE time: the compiler strips
+# this from a release build, and what ships never contained it.
 rule = @debug {
     of_action = examine
     when      = { }
@@ -1269,10 +1270,33 @@ rule = @debug {
 }
 
 # Frontend-specific: a text-only fallback where there is no tooltip.
+#
+# `@platform` resolves at RUN time, and the difference from `@debug` above is
+# not cosmetic. One .spak is signed and shipped for every frontend, and which
+# one is running is not known until it declares its capabilities at session
+# start — so the compiler keeps every alternative and the engine chooses.
 rule = @platform(glk, cli) {
     of_action  = examine
     when       = { noun = { of_class = weapon } }
     successMsg = @after "([DamageString(noun)], range [noun.range])"
+}
+
+# Which is what makes the pair below legal on an `arity = one` key. These are
+# two bindings of `successMsg` in one block, and they are not a duplicate:
+# their frontends are disjoint, so exactly one is selected per session and the
+# key is bound once wherever the game runs (spec §5.4.1, §5.3).
+#
+# Overlapping them — or leaving one of them unannotated, which means every
+# frontend — is E-DUP-KEY, because the engine would then hold two candidates
+# and no rule to pick between them. There is deliberately no fallback
+# precedence: the general case is written as its own alternative, so what runs
+# where is legible here rather than inferred.
+action = {
+    id    = unlock_the_hatch
+    match = { "unlock hatch" "unlock hatch with [something]" }
+
+    successMsg = @platform(qt, web, mobile) "The lock yields with a soft chime."
+    successMsg = @platform(glk, cli)        "The lock yields."
 }
 
 

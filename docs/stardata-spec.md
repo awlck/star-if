@@ -371,11 +371,24 @@ Multiple annotations MAY be applied; they are processed left to right. Contradic
 | `@remove` | block | Remove the listed entries from the inherited collection |
 | `@priority(n)` | block | Ordering tiebreak within a phase; `n` is an integer, default 0, higher runs first |
 | `@debug` | any | Present only in development builds; the compiler strips it from a release build |
-| `@platform(id, …)` | any | Present only on the listed frontends (`qt`, `web`, `glk`, `cli`, `mobile`) |
+| `@platform(id, …)` | any | Present only on the listed frontends (`qt`, `web`, `glk`, `cli`, `mobile`); selected at run time, not compiled away |
 | `@style(id)` | string | The string's default text style (§9.3) |
 | `@replaces(lib)` | a whole top-level declaration | This declaration supersedes the one of the same id from library `lib` (§7.6) |
 
-`@debug` and `@platform` are **conditional presence** annotations: they do not modify combination, they determine whether the statement exists at all in a given build. A statement removed by `@debug` or `@platform` MUST behave exactly as though it had not been written, including for arity checking.
+`@debug` and `@platform` are **conditional presence** annotations: neither modifies combination, and each determines whether the statement is there at all. They resolve at different times, and the difference is not a detail.
+
+**`@debug` resolves at compile time.** The compiler strips it from a release build, and a statement it strips MUST behave exactly as though it had not been written, including for arity checking. It follows that a `@debug` statement does *not* stand apart from an unannotated one: a development build contains both, so two bindings of one `arity = one` key — one of them `@debug` — are a duplicate and MUST be reported as one.
+
+**`@platform` resolves at run time.** A compiled game is frontend-agnostic: one artefact runs under every frontend, and which frontend is present is not known until it declares itself at session start. A compiler therefore MUST retain every `@platform` alternative rather than selecting among them, and the engine MUST select when the frontend is known. Stripping here would mean one build per frontend, which the distribution model does not have.
+
+Arity follows from that. A set of statements binding one key, each carrying a `@platform` whose frontends are **pairwise disjoint**, is a single binding with a run-time selector, and is legal for `arity = one`:
+
+```stardata
+successMsg = @platform(qt, web, mobile) "The lock yields with a soft chime."
+successMsg = @platform(glk, cli)        "The lock yields."
+```
+
+Two alternatives whose frontends **overlap** MUST be reported as a duplicate key (§5.3), citing both spans: under the frontend they share, the engine would hold two candidates and no rule to choose between them. A statement carrying no `@platform` is present on every frontend, and so overlaps every gated one — an unannotated binding and a `@platform`-gated binding of the same key are a duplicate, not a default and an exception. There is no fallback precedence; an author wanting one writes the general case as its own alternative over the remaining frontends, so that what runs where is legible at the point of writing rather than inferred from a rule.
 
 #### 5.4.2 Default combination
 
@@ -1943,7 +1956,11 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | Mixed list and record contents in one block (§5.2) | error |
 | Duplicate key where `arity = one` (§5.3), citing both spans | error |
 | Unknown key in a closed schema (§7.3), with suggestion | error |
-| Unknown annotation (§3.7) | error |
+| Unknown annotation (§3.8), or one §15 reserves | error |
+| Two combining annotations on one value — `@before` `@after` (§5.4.1) | error, citing both |
+| An annotation on a value its "Applies to" column excludes (§5.4.1) | error |
+| An annotation whose arguments are not what it takes (§3.8, §5.4.1) | error |
+| `@platform` naming a frontend the specification does not list (§5.4.1) | error |
 | `==` in a binding context (§3.6) | error |
 | The removed `?=` operator (§6.3.1, §15) | error, naming the removal and suggesting `=` |
 | Bare `=` in a condition context (§3.6) | warning |
@@ -2016,6 +2033,9 @@ The proposal left the following under-determined. This specification settles the
 | A3 | `true`/`false` reserved but invalid (§3.8) | Purely to give arrivals from other formats a good diagnostic |
 | A4 | Annotations may take arguments; `@priority(3)`, `@platform(glk, cli)` (§3.7) | The proposal used both parenthesised and bare forms; unified |
 | A5 | `combine` modes named and `smart` introduced (§5.4.2) | The proposal specified the rule-block defaults behaviourally; this names the mechanism so libraries can use it |
+| A36 | `@debug` resolves at compile time, `@platform` at run time; a set of disjoint `@platform` alternatives is **one** binding (§5.4.1) | §5.4.1 previously called both "conditional presence" and said a statement either removed "behaves as though it had not been written". That is true of `@debug`, whose stripping produces a release build; it cannot be true of `@platform`, because one `.spak` is signed and shipped for every frontend and the frontend declares itself at session start (proposal §12.2). Compiling `@platform` away would mean one artefact per frontend |
+| A37 | Overlapping `@platform` alternatives are a duplicate key; there is no fallback precedence (§5.4.1, §5.3) | Under a shared frontend the engine would hold two candidates and no rule to pick. Making the unannotated binding a silent default would put the answer in a precedence rule rather than in what the author wrote, which is the failure mode `@override` versus a bare value already avoids |
+| A38 | The five combining annotations are mutually exclusive; at most one per value (§5.4.1) | §5.4 required "contradictory combinations" to be rejected and gave `@before @after` as the example without saying what made it contradictory. Each of the five answers one question, so a second is not a refinement but a second answer |
 | A6 | `none` as a distinct value from `inherit` (§5.5) | "Explicitly empty" and "unchanged" are different, and conflating them makes clearing a reference impossible |
 | A7 | `string` type distinct from `text` (§6.2) | Machine-facing values should not be localisable or interpolatable |
 | A8 | `@style(name)` spans to the next style directive or end (§9.3) | Matches the proposal's example; the alternative (explicit closing) is noisier |

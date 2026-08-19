@@ -1,0 +1,26 @@
+# tests/corpus/invalid/annotation-conflict.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-ANNOT-CONFLICT: this value is combined two ways, '@before' and '@after'
+  --> tests/corpus/invalid/annotation-conflict.star:9:28
+  |
+9 |     restrictions = @before @after {
+  |                            ^^^^^^
+note: '@before' is here
+  --> tests/corpus/invalid/annotation-conflict.star:9:20
+  |
+9 |     restrictions = @before @after {
+  |                    ^^^^^^^
+note: each of @before, @after, @override, @merge and @remove says what this value does to the one it inherits, so a value carries at most one of them (spec §5.4, §5.4.1)
+
+error: E-ANNOT-CONFLICT: '@override' is written on this value twice
+  --> tests/corpus/invalid/annotation-conflict.star:19:27
+   |
+19 |     effects   = @override @override { }
+   |                           ^^^^^^^^^
+note: '@override' is here
+  --> tests/corpus/invalid/annotation-conflict.star:19:17
+   |
+19 |     effects   = @override @override { }
+   |                 ^^^^^^^^^
+note: each of @before, @after, @override, @merge and @remove says what this value does to the one it inherits, so a value carries at most one of them (spec §5.4, §5.4.1)

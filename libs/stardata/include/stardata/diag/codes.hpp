@@ -77,7 +77,16 @@ enum class Code : std::uint8_t {
     BlockMixed,             // E-BLOCK-MIXED           §5.2    mixed list/record contents in one block
     DuplicateKey,           // E-DUP-KEY               §5.3    duplicate key, arity = one; cites both spans
     UnknownKey,              // E-UNKNOWN-KEY           §7.3    unknown key in a closed schema
-    UnknownAnnotation,        // E-UNKNOWN-ANNOTATION    §3.7    unknown annotation
+    UnknownAnnotation,        // E-UNKNOWN-ANNOTATION    §3.8    an annotation §5.4.1 does not define
+    // The rest of what §5.4 says about an annotation, which §14.3's table
+    // covered with one row and which is three different mistakes: writing two
+    // annotations that answer the same question, writing one on a value its
+    // "Applies to" column excludes, and getting its arguments wrong. They are
+    // separate codes because the fixes are separate -- delete one of two,
+    // change the value's shape, and correct an argument.
+    AnnotationConflict,       // E-ANNOT-CONFLICT        §5.4.1  two combination annotations on one value
+    AnnotationMisapplied,     // E-ANNOT-MISAPPLIED      §5.4.1  an annotation on a value it does not apply to
+    AnnotationArgument,       // E-ANNOT-ARGUMENT        §3.8    an annotation's arguments are not what it takes
     EqInBinding,              // E-EQ-IN-BINDING         §3.6    '==' used in a binding context
     AssignInCondition,        // W-ASSIGN-IN-COND        §3.6    bare '=' used in a condition context
     ReservedWord,             // E-RESERVED-WORD         §3.8    true/false used as a value

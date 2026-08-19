@@ -105,16 +105,24 @@ CODES = {
     "E-EXCLUSIVE-GROUP":    "§7.2.1 two or more keys of one exclusive_group in a block",
     "E-EXCLUSIVE-MISSING":  "§7.2.1 no key of a required exclusive_group",
     "E-TYPE-MISMATCH":      "§6.2 a value that does not match its declared type",
+    "E-UNKNOWN-ANNOTATION": "§3.8 an annotation §5.4.1 does not define",
+    "E-ANNOT-CONFLICT":     "§5.4.1 two combination annotations on one value",
+    "E-ANNOT-MISAPPLIED":   "§5.4.1 an annotation on a value it does not apply to",
+    "E-ANNOT-ARGUMENT":     "§3.8 an annotation's arguments are not what it takes",
 }
 
 # Codes this script structurally cannot produce, and the fixtures that
 # declare them are therefore skipped by --self-test rather than failed.
 #
-# Every one of these is a schema-layer diagnostic (spec §7.2, §7.2.2), and
-# the reason is not that the check is hard: it is that the check is
-# meaningless without the core-owned schema set. "This redefines a sealed
-# form" requires knowing which forms are sealed, which means loading
+# Most are schema-layer diagnostics (spec §7.2, §7.2.2) whose check is not
+# hard but is meaningless without the core-owned schema set: "this redefines
+# a sealed form" requires knowing which forms are sealed, which means loading
 # libs/starcore/builtin/ -- a validator, not a linter.
+#
+# The four annotation codes are here for the other reason. §5.4.1 needs no
+# schema set at all, and this script could check it; it does not, because
+# adding a pass to something backlog H4 exists to delete would be paying
+# twice for a check the C++ already makes from these same fixtures.
 #
 # The C++ suite asserts every one of them, from these same fixtures, in
 # tests/unit/schema/corpus_test.cpp. This list is the seam between the two
@@ -138,6 +146,10 @@ NEEDS_SCHEMA_LAYER = {
     "E-EXCLUSIVE-GROUP",
     "E-EXCLUSIVE-MISSING",
     "E-TYPE-MISMATCH",
+    "E-UNKNOWN-ANNOTATION",
+    "E-ANNOT-CONFLICT",
+    "E-ANNOT-MISAPPLIED",
+    "E-ANNOT-ARGUMENT",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:

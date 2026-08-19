@@ -1,0 +1,16 @@
+# tests/corpus/invalid/annotation-argument.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-ANNOT-ARGUMENT: '@priority' takes one whole number, and this one has none
+  --> tests/corpus/invalid/annotation-argument.star:9:18
+  |
+9 |     conditions = @priority { actor = { in_combat == yes } }
+  |                  ^^^^^^^^^
+note: spec §3.8 gives an annotation's arguments, and §5.4.1 says what each annotation does with them
+
+error: E-ANNOT-ARGUMENT: 'gtk' is not a frontend I know
+  --> tests/corpus/invalid/annotation-argument.star:16:18
+   |
+16 | rule = @platform(gtk) {
+   |                  ^^^
+note: the frontends are qt, web, glk, cli and mobile, and the running one declares itself at session start -- an alternative gated on a name none of them reports can never be selected (spec §5.4.1)

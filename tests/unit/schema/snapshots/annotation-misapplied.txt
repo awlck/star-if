@@ -1,0 +1,16 @@
+# tests/corpus/invalid/annotation-misapplied.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-ANNOT-MISAPPLIED: '@merge' applies to a block, and this value is a string
+  --> tests/corpus/invalid/annotation-misapplied.star:8:18
+  |
+8 |     successMsg = @merge "You take it, carefully."
+  |                  ^^^^^^
+note: §5.4.1 gives each annotation what it applies to, and an annotation written where it cannot act is one an author has every reason to think is working
+
+error: E-ANNOT-MISAPPLIED: '@replaces' supersedes a whole declaration, and this is a key inside one
+  --> tests/corpus/invalid/annotation-misapplied.star:17:13
+   |
+17 |     match = @replaces(stdlib) { "polish bell" }
+   |             ^^^^^^^^^^^^^^^^^
+note: a key's value is combined with what it inherits by @override, @merge and the rest; superseding a declaration by id is what @replaces does, at the top level (spec §5.4.1, §7.6)

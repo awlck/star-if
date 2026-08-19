@@ -176,7 +176,11 @@ private:
 // since the first schema block is validated before anything is registered.
 // A null set checks everything except types.
 //
-// Combination modes are F5's, and are read into the KeyDecl already.
+// Annotations are checked by `check_annotations` (schema/annotation.hpp)
+// rather than here, since §5.4.1 needs no schema to answer -- but §5.4.1 does
+// reach this function: the arity check counts two `@platform` alternatives
+// with disjoint frontends as one binding, because both ship and the engine
+// selects one per session.
 void validate_block(const ast::Block& block, const Schema& schema, const SchemaSet* set,
                     diag::DiagnosticSink& sink);
 

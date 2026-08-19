@@ -638,9 +638,92 @@ through a trait is not yet type-checked on an instantiation.
 ### F5 · Combination modes
 **Size:** M · **Depends on:** F3
 
-- [ ] Annotations of spec §5.4.1, and the `combine` defaults of §5.4.2 including `smart`.
-- [ ] `@debug` and `@platform` remove statements entirely, including for arity checks.
-- [ ] Unknown annotation → error (never silently ignored).
+- [x] Annotations of spec §5.4.1, and the `combine` defaults of §5.4.2 including `smart`.
+- [x] ~~`@debug` and `@platform` remove statements entirely, including for arity checks.~~
+      **`@debug` does; `@platform` does not.** See below — this bullet was
+      written against a sentence of §5.4.1 that turned out to be wrong.
+- [x] Unknown annotation → error (never silently ignored), and a reserved one
+      (§15) says it is reserved rather than unrecognised.
+- [x] Contradictory combinations rejected: at most one of the five combining
+      annotations per value (§5.4).
+- [x] Each annotation checked against §5.4.1's "Applies to" column and §3.8's
+      argument grammar.
+
+**`@platform` is resolved at run time, and the bullet above said otherwise.**
+§5.4.1 called `@debug` and `@platform` both "conditional presence" and then
+said, of the two together, that a statement either removes "MUST behave
+exactly as though it had not been written, including for arity checking".
+That is true of `@debug`, whose stripping is what produces a release build
+(and which proposal §13 confirms, with `debug_locked = yes` "set on a release
+build"). It cannot be true of `@platform`: proposal §14.2 ships **one**
+`.spak`, §14.4 has the author signing it, and proposal §12.2 has the frontend
+declaring its capabilities *at session start* — so the running frontend is not
+a fact any compiler has. Compiling `@platform` away would mean one signed
+artefact per frontend, which is not the distribution model anywhere in either
+document. §5.4.1's own table had it right in the row and wrong in the
+paragraph underneath: the row for `@debug` says "the compiler strips it", and
+the row for `@platform` never did.
+
+So the compiler **keeps every `@platform` alternative** and the engine selects
+among them. `Presence` says which of the two an annotation is, through
+`stripped_from_release()` and `selected_at_runtime()`, because those are the
+two questions Starforge will ask and they have different answers.
+
+The arity rule falls out of the timing rather than out of the annotations
+looking alike, and lands in the same place from a better argument: several
+bindings of one `arity = one` key are **one** binding when their frontends are
+pairwise disjoint, since exactly one is selected per session. Overlapping sets
+are a duplicate — under the shared frontend the engine holds two candidates
+and no rule to choose. A statement with no `@platform` runs on every frontend
+and so overlaps every gated one; **there is deliberately no fallback
+precedence**, because making the unannotated binding a silent default would
+put the answer in a rule rather than in what the author wrote. `@debug`
+separates nothing at all: a development build has the annotated statement and
+the plain one both. Same treatment for `exclusive_group`, which asks the same
+"can these two apply at once" question.
+
+Spec §5.4.1 is amended accordingly, tour.star carries the legal disjoint pair,
+and `tests/corpus/invalid/platform-overlap.star` carries both illegal ones.
+Decisions A36–A38.
+
+**Three new codes, and one that finally fires.** E-UNKNOWN-ANNOTATION was in
+the table from C2 and nothing raised it. §14.3 had one row for annotations and
+§5.4 states three separable rules, so E-ANNOT-CONFLICT, E-ANNOT-MISAPPLIED and
+E-ANNOT-ARGUMENT join it — separate because the fixes are separate: delete one
+of two, change the value's shape, correct an argument. §14.3 gains a row each.
+
+The pass **walks the whole tree** and needs no registry. Every question §3.8
+and §5.4.1 ask is answered by those two sections, which is why it runs before
+the schema passes: an author who wrote `@merge` on a string should hear that
+before they hear what the schema thinks of the string. The one annotation
+argument naming something declared is `@style(id)`, and whether that style
+exists is E-STYLE-UNDECLARED, which is F7's.
+
+**`combine` meant nothing until now.** F2 read it into `KeyDecl` and F3 left
+it there; a schema declaring `combine = smart` and one declaring nothing
+produced identical behaviour, so the field was unfalsifiable. `combination_of`
+is §5.4.2's table, and `smart` is the row that has to look at the value — an
+empty block is an explicit override with no content (§5.2), a non-empty one
+appends. `annotated` records whether the mode was *written*, which an editor
+rewriting a statement needs so it does not invent an annotation the author did
+not put there.
+
+Reading §5.4.2 back against the built-in set found one key it disagreed with:
+the table declares `prop_def` as `combine = merge` and `builtin/schema.star`
+declared no mode at all, which defaults to `override`. Under `override`, a
+`class_extension` adding a property would replace the class's property set
+rather than add to it — which is the one thing §8.2 exists to do. Now declared
+on `class`, `class_extension` and `trait`.
+
+Still parsed and acted on by nobody: `default` and `editor`, as F3 left them.
+Performing a combination is the compiler's, since there is nothing to combine
+until load order is resolved (§13.2); Phase 0 computes and checks it.
+
+**[OPEN]** A required key bound only under `@platform` is satisfied here,
+because required-key checking asks whether the key is written and not where it
+applies. A key that is required but bound only on `glk` is a hole on four
+frontends. Left alone because the fix wants a notion of "required on every
+frontend" that §7.2 does not currently have a spelling for.
 
 ### F6 · Suggestions
 **Size:** S · **Depends on:** F3

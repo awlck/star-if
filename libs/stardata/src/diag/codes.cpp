@@ -81,6 +81,12 @@ std::string_view code_string(Code code) noexcept {
         return "E-UNKNOWN-KEY";
     case Code::UnknownAnnotation:
         return "E-UNKNOWN-ANNOTATION";
+    case Code::AnnotationConflict:
+        return "E-ANNOT-CONFLICT";
+    case Code::AnnotationMisapplied:
+        return "E-ANNOT-MISAPPLIED";
+    case Code::AnnotationArgument:
+        return "E-ANNOT-ARGUMENT";
     case Code::EqInBinding:
         return "E-EQ-IN-BINDING";
     case Code::AssignInCondition:

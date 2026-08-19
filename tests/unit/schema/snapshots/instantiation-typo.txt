@@ -1,0 +1,20 @@
+# tests/corpus/invalid/instantiation-typo.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-UNKNOWN-KEY: nothing declares 'outdoor_room', so I don't know what this is
+  --> tests/corpus/invalid/instantiation-typo.star:14:1
+   |
+14 | outdoor_room = {
+   | ^^^^^^^^^^^^
+note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
+fix-it: did you mean 'outdoors_room'?
+  replace tests/corpus/invalid/instantiation-typo.star:14:1 with `outdoors_room`
+
+error: E-UNKNOWN-KEY: 'always_residnt' is not a key that 'sector' has
+  --> tests/corpus/invalid/instantiation-typo.star:25:5
+   |
+25 |     always_residnt = yes
+   |     ^^^^^^^^^^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
+fix-it: did you mean 'always_resident'?
+  replace tests/corpus/invalid/instantiation-typo.star:25:5 with `always_resident`

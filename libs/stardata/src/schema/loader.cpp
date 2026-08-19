@@ -9,6 +9,7 @@
 #include "stardata/cst/parser.hpp"
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/annotation.hpp"
+#include "stardata/schema/suggest.hpp"
 #include "stardata/schema/types.hpp"
 
 namespace stardata::schema {
@@ -145,7 +146,19 @@ SchemaSet::Outcome SchemaSet::offer(Declaration declaration,
             diagnostic.with_note("`@replaces` supersedes a declaration that already exists; if "
                                  "this is meant to be a new one, write it without the annotation "
                                  "(spec §7.6)");
-            diagnostic.with_fix_it(replaces->span, "", "remove the `@replaces` annotation");
+            // §14.3 wants a suggestion on this row, and the useful one is
+            // over the ids in the same `unique_in` namespace: replacing
+            // `stdlib`'s `wait` and misspelling it is a likelier mistake
+            // than inventing an id outright.
+            std::vector<std::string_view> siblings;
+            for (const Declaration& other : declarations_) {
+                if (other.space == declaration.space) {
+                    siblings.emplace_back(other.id);
+                }
+            }
+            if (!suggest(diagnostic, declaration.span, declaration.id, siblings)) {
+                diagnostic.with_fix_it(replaces->span, "", "remove the `@replaces` annotation");
+            }
             sink.report(std::move(diagnostic));
             return Outcome::Rejected;
         }
@@ -540,14 +553,19 @@ void validate_block(const ast::Block& block, const Schema& schema, const SchemaS
         if (schema.open) {
             continue; // §7.3: permitted and retained
         }
-        // The "did you mean ...?" suggestion §7.3 requires is backlog F6,
-        // which computes it by edit distance for keys, form names and enum
-        // values alike. Reporting the unknown key without one is still worth
-        // doing now: a wrong key that loads silently is the failure mode.
         Diagnostic diagnostic(Code::UnknownKey, statement.report_span(),
                               "'" + *name + "' is not a key that '" + schema.id + "' has");
         diagnostic.with_note("a form is closed unless it says otherwise, so that a mistyped key "
                              "is caught rather than quietly ignored (spec §7.3)");
+        // §7.3 asks for the suggestion by name, and this is the case it
+        // names: the keys of the schema that just refused one.
+        std::vector<std::string_view> declared;
+        declared.reserve(schema.keys.size());
+        for (const KeyDecl& key : schema.keys) {
+            declared.emplace_back(key.name);
+        }
+        suggest(diagnostic, statement.key() ? statement.key()->span() : statement.report_span(),
+                *name, declared);
         sink.report(std::move(diagnostic));
     }
 
@@ -734,6 +752,23 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
                               "nothing declares '" + key + "', so I don't know what this is");
         diagnostic.with_note("a top-level statement names either a form declared by a schema, or "
                              "a class, in which case it creates one of them (spec §7.2, §7.4)");
+        // Proposal §4.9's worked example: a `class` declaring `outdoors_room`
+        // and an instantiation writing `outdoor_room`. Both namespaces are
+        // candidates because both are legal here, and a typo does not know
+        // which of the two it was aiming at.
+        std::vector<std::string_view> candidates;
+        for (const Schema& declared : set.schemas()) {
+            if (declared.top_level) {
+                candidates.emplace_back(declared.id);
+            }
+        }
+        for (const ClassDecl& declared : set.classes()) {
+            if (!declared.is_trait) {
+                candidates.emplace_back(declared.id);
+            }
+        }
+        suggest(diagnostic, statement.key() ? statement.key()->span() : statement.report_span(),
+                key, candidates);
         sink.report(std::move(diagnostic));
         return;
     }

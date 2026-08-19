@@ -1,0 +1,6 @@
+# tests/corpus/invalid/instantiation-typo.star
+# declared E-UNKNOWN-KEY
+# lexer and parser report (none)
+# E-UNKNOWN-KEY is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

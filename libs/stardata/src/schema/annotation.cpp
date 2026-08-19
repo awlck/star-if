@@ -14,6 +14,7 @@
 
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/schema.hpp"
+#include "stardata/schema/suggest.hpp"
 
 namespace stardata::schema {
 
@@ -300,6 +301,28 @@ void check_value_annotations(const ast::Value& value, bool top_level, diag::Diag
             diagnostic.with_note("an unknown annotation is an error rather than something to "
                                  "ignore, because ignoring one changes what the value means with "
                                  "nothing on screen to say so (spec §3.8)");
+            // Backlog F6 lists keys, form names and enum values; the same
+            // machinery answers `@ovveride` for free, and this is the one
+            // vocabulary in the format an author cannot look up by reading
+            // their own schemas.
+            if (!is_reserved(*name)) {
+                // Spelled with their '@', so the fix-it replaces the whole
+                // annotation with something that is one -- and so the
+                // distance is measured between two strings of the same
+                // shape.
+                std::vector<std::string> spellings;
+                std::vector<std::string_view> defined;
+                for (std::size_t i = 0; i <= static_cast<std::size_t>(AnnotationKind::Replaces);
+                     ++i) {
+                    spellings.push_back("@" +
+                                        std::string(to_string(static_cast<AnnotationKind>(i))));
+                }
+                defined.reserve(spellings.size());
+                for (const std::string& spelling : spellings) {
+                    defined.emplace_back(spelling);
+                }
+                suggest(diagnostic, annotation.span(), "@" + std::string(*name), defined);
+            }
             sink.report(std::move(diagnostic));
             continue;
         }

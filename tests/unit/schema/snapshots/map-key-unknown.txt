@@ -11,3 +11,5 @@ note: this map is keyed by direction, which is north, south, east, west, northea
    |
 26 |     id     = direction
    |     ^^
+fix-it: did you mean 'north'?
+  replace tests/corpus/invalid/map-key-unknown.star:11:15 with `north`

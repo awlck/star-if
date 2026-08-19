@@ -858,6 +858,13 @@ The restriction is worth stating as a rule rather than leaving to convention, be
 
 A schema is **closed** by default: an unknown key MUST be an error, with a "did you mean …?" suggestion computed by edit distance against the declared keys.
 
+The suggestion is subject to two constraints, which apply wherever this document asks for one (§14.3 lists the other places):
+
+- **It MUST be deterministic** (§14.1). Where two candidates are equally near, an implementation MUST prefer the one declared first — declaration order being load order (§13.2) — rather than the alphabetically first or whichever a hash table produced. An author comparing two builds must get the same advice from both.
+- **It MUST be withheld when no candidate is near.** A suggestion offered for a name that resembles nothing reads as knowledge the checker does not have. What counts as near is an implementation's to choose; a distance of at most a third of the longer name is the recommended bar.
+
+A candidate differing from what was written only in letter case SHOULD be suggested regardless of distance, since case is the one difference edit distance measures badly.
+
 A schema MAY declare `open = yes`, permitting unknown keys, which are retained and made available to scripts. This is intended for author-defined metadata and SHOULD be rare.
 
 ### 7.4 Object instantiation forms
@@ -1956,6 +1963,8 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | Mixed list and record contents in one block (§5.2) | error |
 | Duplicate key where `arity = one` (§5.3), citing both spans | error |
 | Unknown key in a closed schema (§7.3), with suggestion | error |
+| A top-level statement naming neither a declared form nor a declared class (§7.2, §7.4) | error, with a suggestion |
+| A type expression naming no builtin type, declared `enum`, form or class (§6.2) | error, with a suggestion |
 | Unknown annotation (§3.8), or one §15 reserves | error |
 | Two combining annotations on one value — `@before` `@after` (§5.4.1) | error, citing both |
 | An annotation on a value its "Applies to" column excludes (§5.4.1) | error |
@@ -2055,6 +2064,7 @@ The proposal left the following under-determined. This specification settles the
 | A32 | No declaration may be duplicated; `@replaces(lib)` is the deliberate form (§7.6) | Naming the source turns a typo or an upstream rename into a build failure, rather than a new declaration that silently never takes effect |
 | A33 | `@replaces` rather than reusing `@override` (§7.6) | `@override` combines a value within a key; this supersedes a whole declaration. One word for two operations would hide the difference |
 | A34 | `schema_extension` mirrors `class_extension`; `provides_schema` demoted to a checked manifest (§7.5, §13.3) | The spec previously pointed at a manifest field as though it were a mechanism, which it never was |
+| A39 | Suggestions are deterministic by declaration order, and withheld when nothing is near (§7.3) | A "did you mean" is unusually prone to depending on iteration order, which §14.1 forbids and which nobody notices until two machines disagree. Withholding matters for the opposite reason: a confident wrong suggestion costs more trust than a missing one costs convenience |
 | A29 | `includes` overloaded on `value` / `key` rather than a separate `has_key` (§6.5.1) | One question over two domains, with the argument name saying which. Acceptable because `exclusive_group` was already required by `rule`, `list_remove` and `present_in` — this makes an unmet need visible rather than inventing one |
 | A30 | `exclusive_group` added to the schema layer (§7.2.1) | Three forms already documented mutually exclusive arguments in prose with no way to enforce them |
 | A27 | Map keys are path segments — `location.exits.north` (§6.6.1) | Reads far better than the reader form for the overwhelmingly common literal-key case, and the compiler distinguishes key from property by the preceding segment's declared type. `map_get` remains for computed and non-identifier keys |

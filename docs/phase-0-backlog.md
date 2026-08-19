@@ -728,8 +728,61 @@ frontend" that §7.2 does not currently have a spelling for.
 ### F6 · Suggestions
 **Size:** S · **Depends on:** F3
 
-- [ ] Edit-distance "did you mean …?" for unknown keys, form names, and enum values.
-- [ ] The `outdoors_room` / `outdoor_room` case from proposal §4.9 as a test.
+- [x] Edit-distance "did you mean …?" for unknown keys, form names, and enum values.
+- [x] The `outdoors_room` / `outdoor_room` case from proposal §4.9 as a test.
+
+Seven diagnostics offer one, which is more than the bullet lists because the
+bullet named the categories and the categories turned out to have seven sites
+between them: an unknown key in a closed schema (§7.3's own sentence), a
+top-level statement naming neither form nor class (proposal §4.9's case), an
+enum value, a map key outside its domain (§14.3's `exits.nrth`), a type
+expression naming no type, a type argument naming no enum/form/class, and
+`@replaces` naming an id nothing declares (§14.3 again). Unknown *annotations*
+get one too — not on the list, but the same machinery, and the one vocabulary
+in the format an author cannot look up by reading their own schemas.
+
+**Damerau, not plain Levenshtein.** A transposition is one edit here rather
+than two, because `nroth` for `north` is a single-finger slip and a plain
+Levenshtein charges it two — enough to push it past the threshold on a
+five-character name, which is most of the names anybody mistypes. The limit is
+a third of the longer name, never below 1.
+
+**Two properties matter as much as the suggestions**, and both are easy to
+lose in a later refactor, so both are tested and both are now stated in §7.3:
+
+- **Deterministic.** §14.1 requires it and a "did you mean" is unusually prone
+  to breaking it. Candidates are considered in declaration order — load order,
+  §13.2 — and the *first* of equally-near candidates wins, so the answer never
+  comes from a hash table's iteration order. The test reverses the candidate
+  list and requires the answer to reverse with it, which is the check that the
+  order is really the input's and not something incidental.
+- **Withheld when nothing is near.** A suggestion for a name resembling
+  nothing reads as knowledge the checker does not have. Refusing to guess is
+  the half that keeps the other half worth reading.
+
+A candidate differing only in case wins outright, whatever the distance:
+`SUCCESSMSG` is nine edits from `successMsg` and obviously meant to be it.
+Decision A39, and §7.3 now carries all three rules since they bind every site
+rather than this implementation.
+
+**The fix-it span is not the diagnostic's span**, and conflating them was the
+one real bug this task had. A type expression that names no enum is reported
+*at the key*, because that is where an author looks; the fix-it has to rewrite
+the *type*, or applying it renames the key. `TypeRef` already carried the
+source range of the name it was read from, which is what makes the second span
+available. There is a test that reads the bytes under the fix-it span back out
+of the source and requires them to be the type name.
+
+Suggestion candidates are drawn from the namespace the mistake was reaching
+into — enums for an `enum<…>` argument, the schema's own keys for a key,
+same-`unique_in` ids for `@replaces` — rather than from every identifier in
+scope. §7.3 asks for exactly this ("against the declared keys"), and the wider
+pool mostly produces confident nonsense.
+
+**[OPEN]** Nothing suggests a *property* name inside an instantiation, because
+F4 deliberately leaves a key naming no property alone: which keys are
+permitted there is F11's question. When F11 answers it, that site wants a
+suggestion too, and the machinery is already sitting in `schema/suggest.hpp`.
 
 ### F7 · Template parsing and validation
 **Size:** M · **Depends on:** F4

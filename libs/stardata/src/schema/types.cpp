@@ -11,6 +11,7 @@
 
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/loader.hpp"
+#include "stardata/schema/suggest.hpp"
 
 namespace stardata::schema {
 
@@ -146,9 +147,19 @@ void report_mismatch(std::string_view what, diag::Span at, const std::string& fo
     sink.report(std::move(diagnostic));
 }
 
+// An enum's values, as suggestion candidates.
+[[nodiscard]] std::vector<std::string_view> values_of(const EnumDecl& decl) {
+    std::vector<std::string_view> values;
+    values.reserve(decl.values.size());
+    for (const std::string& value : decl.values) {
+        values.emplace_back(value);
+    }
+    return values;
+}
+
 // An enum's values, listed for a diagnostic. Kept short: a long enum makes
-// the message unreadable, and F6's edit-distance suggestion is the right
-// answer for one of those rather than a wall of names.
+// the message unreadable, and the edit-distance suggestion beside it is the
+// right answer for one of those rather than a wall of names.
 [[nodiscard]] std::string list_values(const EnumDecl& decl) {
     std::string text;
     const std::size_t shown = std::min<std::size_t>(decl.values.size(), 8);
@@ -251,6 +262,7 @@ void check_scalar(std::string_view what, const ast::Scalar& scalar, const ast::T
             diagnostic.with_note(type.args[0].name + " is " + list_values(*declared) +
                                      " (spec §6.2)",
                                  declared->span);
+            suggest(diagnostic, scalar.span(), text, values_of(*declared));
             sink.report(std::move(diagnostic));
         }
         return;
@@ -419,6 +431,10 @@ void check_value(std::string_view what, const ast::Value& value, const ast::Type
             diagnostic.with_note("this map is keyed by " + key_type.args[0].name + ", which is " +
                                      list_values(*keys) + " (spec §6.2, §6.6.1)",
                                  keys->span);
+            // §14.3 names this row and this example: `exits.nrth` on a
+            // `map<direction, ...>`, "error, with a suggestion".
+            suggest(diagnostic, statement.key() ? statement.key()->span() : statement.report_span(),
+                    *key, values_of(*keys));
             sink.report(std::move(diagnostic));
         }
         if (const std::optional<ast::Value> entry = statement.value()) {
@@ -526,6 +542,52 @@ bool is_clock_time(std::string_view text) noexcept {
 
 namespace {
 
+// The span of one name inside a type expression, for a fix-it to rewrite.
+//
+// Necessary because `at` below is the span of the KEY, which is where the
+// diagnostic points -- a fix-it over that span would replace the key's name
+// with a type. `TypeRef` carries the range of the name it was read from, and
+// the type expression is in the same file as the key that declares it.
+[[nodiscard]] std::optional<diag::Span> span_of(const ast::TypeRef& type,
+                                                diag::Span in_file) noexcept {
+    if (type.range.length == 0) {
+        return std::nullopt;
+    }
+    return diag::Span{in_file.source, type.range.offset, type.range.length};
+}
+
+// The names §6.2 gives a type, plus the enums §4.2's shorthand admits.
+[[nodiscard]] std::vector<std::string_view> type_names(const SchemaSet& set) {
+    std::vector<std::string_view> names = {"bool",
+                                           "int",
+                                           "decimal",
+                                           "float",
+                                           "text",
+                                           "string",
+                                           "identifier",
+                                           "script",
+                                           "resource",
+                                           "clock_time",
+                                           "duration",
+                                           "dice",
+                                           "condition_block",
+                                           "effect_block",
+                                           "text_or_script",
+                                           "type_expr",
+                                           "scalar",
+                                           "ref",
+                                           "enum",
+                                           "flags",
+                                           "list",
+                                           "set",
+                                           "block",
+                                           "map"};
+    for (const EnumDecl& declared : set.enums()) {
+        names.emplace_back(declared.id);
+    }
+    return names;
+}
+
 // One type expression, checked for meaning rather than for use. Recurses
 // through the arguments, so `map<direction, ref<no_such_class>>` is reported
 // at the inner name that is wrong.
@@ -540,6 +602,9 @@ void check_type(const ast::TypeRef& type, diag::Span at, std::string_view contex
                                   ", and nothing declares a type called '" + resolved.name + "'");
         diagnostic.with_note("a type is one of spec §6.2's, or the id of a declared `enum` -- a "
                              "key typed by a name nobody declares is a key nothing can check");
+        if (const std::optional<diag::Span> name_at = span_of(type, at)) {
+            suggest(diagnostic, *name_at, resolved.name, type_names(set));
+        }
         sink.report(std::move(diagnostic));
         return;
     }
@@ -563,6 +628,34 @@ void check_type(const ast::TypeRef& type, diag::Span at, std::string_view contex
         diagnostic.with_note("the whole point of naming it is that this is checked: a rename "
                              "upstream becomes a build failure rather than a type that silently "
                              "stops meaning anything (spec §6.2, §13.2)");
+        // Candidates from whichever namespace the type expression was
+        // reaching into, so `enum<mood_eunm>` is offered enums and not the
+        // hundred class names it was never going to mean.
+        std::vector<std::string_view> candidates;
+        if (kind == std::string_view("enum")) {
+            for (const EnumDecl& declared : set.enums()) {
+                candidates.emplace_back(declared.id);
+            }
+        } else if (kind == std::string_view("form")) {
+            for (const Schema& declared : set.schemas()) {
+                candidates.emplace_back(declared.id);
+            }
+        } else {
+            for (const ClassDecl& declared : set.classes()) {
+                candidates.emplace_back(declared.id);
+            }
+            for (const Schema& declared : set.schemas()) {
+                candidates.emplace_back(declared.id);
+            }
+        }
+        // Over the argument's own span, not `at`: `at` is the key, and a
+        // fix-it there would replace the key's name with a type name.
+        const ast::TypeRef* argument = resolved.args.empty() ? nullptr : &resolved.args[0];
+        if (argument != nullptr) {
+            if (const std::optional<diag::Span> name_at = span_of(*argument, at)) {
+                suggest(diagnostic, *name_at, id, candidates);
+            }
+        }
         sink.report(std::move(diagnostic));
     };
 

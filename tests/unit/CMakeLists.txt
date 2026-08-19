@@ -57,6 +57,7 @@ add_executable(stardata_unit_tests
     schema/keys_test.cpp
     schema/annotation_test.cpp
     schema/suggest_test.cpp
+    schema/local_prop_test.cpp
     schema/types_test.cpp
     lex/token_test.cpp
     lex/lexer_test.cpp
@@ -82,6 +83,7 @@ starif_enable_sanitizers(stardata_unit_tests)
 add_executable(starcore_unit_tests
     main.cpp
     starcore/placement_test.cpp
+    starcore/narrowing_test.cpp
 )
 
 target_link_libraries(starcore_unit_tests PRIVATE starif_test_support starcore::starcore)

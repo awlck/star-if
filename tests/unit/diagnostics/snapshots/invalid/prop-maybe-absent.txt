@@ -1,0 +1,6 @@
+# tests/corpus/invalid/prop-maybe-absent.star
+# declared E-PROP-MAYBE-ABSENT
+# lexer and parser report (none)
+# E-PROP-MAYBE-ABSENT is starcore's -- asserted in unit/starcore/placement_test.cpp
+
+(no diagnostics)

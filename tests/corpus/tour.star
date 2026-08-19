@@ -298,10 +298,12 @@ class_extension = {
         combat_response = combat_response_enum
         strength        = int
         presence        = int
+        in_combat       = bool
     }
     combat_response = flee            # the safe default; see project.simulation
     strength        = 10
     presence        = 10
+    in_combat       = no
 }
 
 # --- 6.2 New classes --------------------------------------------------------
@@ -891,7 +893,11 @@ action = {
                  "remove [something] from [something]" }
     restrictions = {
         containing = { holder = second  obj = noun }
-        second = { open == yes  failureMsg = $closed_container }
+        # `has_trait` narrows `second` for everything after it in this
+        # conjunction, which is what makes `open` legal to read (spec §8.8.3).
+        # Without it the compiler cannot know a `second` has the property, and
+        # says so — this is the narrowing that buys the static knowledge.
+        second = { has_trait = openable  open == yes  failureMsg = $closed_container }
     }
     effects    = { move = { obj = noun  to = actor  relation = carried } }
     successMsg = "You take [the noun] from [the second]."
@@ -951,7 +957,7 @@ action = {
 
         # Deliberately carries no message: it falls through to the action's
         # own failureMsg below (spec §10.5.3, step 4).
-        actor = { presence >= 10 }
+        actor = { of_class = person  presence >= 10 }
     }
 
     # The action-level fallback, covering any restriction that supplies no
@@ -1187,7 +1193,7 @@ rule = {
 rule = {
     of_action  = examine
     when       = { noun = { is = blood_trail } }
-    conditions = { location = { exits.north == corridor } }
+    conditions = { location = { of_class = room  exits.north == corridor } }
     effects    = { set_flag = heard_vex_slip }
 }
 
@@ -1197,7 +1203,7 @@ rule = {
 rule = {
     of_action  = go
     when       = { }
-    conditions = { location = { exits.north == none } }
+    conditions = { location = { of_class = room  exits.north == none } }
     effects    = { add_global = { id = times_caught  amount = 1 } }
 }
 
@@ -1254,7 +1260,7 @@ rule = {
 rule = {
     of_action = go
     when      = { }
-    conditions = @priority(50) { actor = { in_combat == yes } }
+    conditions = @priority(50) { actor = { of_class = person  in_combat == yes } }
     restrictions = {
         script = { fn = can_disengage  failureMsg = $cant_flee_combat }
     }
@@ -1789,15 +1795,20 @@ class_extension = {
 # Comparison operators appear only in condition contexts.
 rule = {
     of_action = take
-    when      = { noun = { weight > 0.000 } }
+    # Each slot is narrowed once, in `when`, and stays narrowed for every
+    # stage after it — that forward flow through the stage order is §8.8.3's,
+    # and the stage sequence itself is read from the schema rather than known
+    # to the compiler.
+    when      = { noun = { of_class = thing  weight > 0.000 } }
     conditions = {
         actor = {
+            of_class = person
             strength >= 10
             strength <= 30
             presence != 0
         }
         noun = { weight < 50.000 }
-        second = { open == yes }
+        second = { has_trait = openable  open == yes }
     }
     restrictions = { }                  # empty block: explicit override
 }

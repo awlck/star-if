@@ -1,0 +1,6 @@
+# tests/corpus/invalid/prop-absent.star
+# declared E-PROP-ABSENT
+# lexer and parser report (none)
+# E-PROP-ABSENT is starcore's -- asserted in unit/starcore/placement_test.cpp
+
+(no diagnostics)

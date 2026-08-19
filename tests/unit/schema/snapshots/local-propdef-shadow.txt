@@ -1,0 +1,28 @@
+# tests/corpus/invalid/local-propdef-shadow.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-PROPDEF-TYPE-MISMATCH: 'times_rebooted' is already a int on every 'console', and this would make it a string here
+  --> tests/corpus/invalid/local-propdef-shadow.star:20:18
+   |
+20 |     prop_def = { times_rebooted = string }
+   |                  ^^^^^^^^^^^^^^
+note: declared here
+  --> tests/corpus/invalid/local-propdef-shadow.star:15:18
+   |
+15 |     prop_def = { times_rebooted = int }
+   |                  ^^^^^^^^^^^^^^
+note: an object may declare properties of its own, and may not give an inherited one a second type -- everything that reads this class reads that slot at the type the class declared (spec §8.7, §8.4)
+
+warning: W-PROPDEF-REDUNDANT: 'times_rebooted' is already a int on every 'console'
+  --> tests/corpus/invalid/local-propdef-shadow.star:25:18
+   |
+25 |     prop_def = { times_rebooted = int }
+   |                  ^^^^^^^^^^^^^^
+note: declared here
+  --> tests/corpus/invalid/local-propdef-shadow.star:15:18
+   |
+15 |     prop_def = { times_rebooted = int }
+   |                  ^^^^^^^^^^^^^^
+note: harmless, but the line does nothing -- this object would have the property either way (spec §8.7)
+fix-it: remove the redundant declaration
+  replace tests/corpus/invalid/local-propdef-shadow.star:25:18 with ``

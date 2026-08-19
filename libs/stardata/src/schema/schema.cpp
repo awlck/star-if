@@ -36,6 +36,25 @@ using diag::Diagnostic;
     return {};
 }
 
+// The identifiers of a list block: `traits = { openable lockable }` and
+// `stage_order = { when conditions restrictions effects }` are both this
+// shape, and both want source order preserved (§5.1).
+[[nodiscard]] std::vector<std::string> identifiers_of(const ast::Block& block,
+                                                      std::string_view key) {
+    std::vector<std::string> names;
+    const std::optional<ast::Value> value = block.value_of(key);
+    const std::optional<ast::Block> list = value ? value->as_block() : std::nullopt;
+    if (!list) {
+        return names;
+    }
+    for (const ast::Scalar& entry : list->values()) {
+        if (const std::optional<std::string_view> name = entry.as_identifier()) {
+            names.emplace_back(*name);
+        }
+    }
+    return names;
+}
+
 [[nodiscard]] bool flag_of(const ast::Block& block, std::string_view key) {
     const std::optional<ast::Value> value = block.value_of(key);
     if (!value) {
@@ -406,6 +425,14 @@ std::optional<Schema> read_schema(const ast::Statement& statement, std::string_v
     schema.sealed = flag_of(*block, "sealed");
     schema.doc = text_of(*block, "doc");
 
+    // §7.2's last row. A field of the schema rather than of a key, which is
+    // why it is read here and not in `read_key`.
+    schema.stage_order = identifiers_of(*block, "stage_order");
+    schema.stage_order_span = schema.span;
+    if (const std::optional<ast::Statement> stages = block->find("stage_order")) {
+        schema.stage_order_span = stages->report_span();
+    }
+
     for (const ast::Statement& key : block->find_all("key")) {
         if (std::optional<KeyDecl> decl = read_key(key, sink)) {
             schema.keys.push_back(*std::move(decl));
@@ -462,6 +489,8 @@ std::optional<ClassDecl> read_class(const ast::Statement& statement, std::string
         sink.report(std::move(diagnostic));
         decl.of_class.clear();
     }
+
+    decl.traits = identifiers_of(*block, "traits");
 
     read_prop_defs(*block, markers, decl.properties, sink);
     return decl;
@@ -556,6 +585,13 @@ std::optional<Replaces> read_replaces(const ast::Statement& statement) {
         return replaces;
     }
     return std::nullopt;
+}
+
+std::vector<PropDecl> read_local_prop_defs(const ast::Block& block, const Schema* markers,
+                                           diag::DiagnosticSink& sink) {
+    std::vector<PropDecl> properties;
+    read_prop_defs(block, markers, properties, sink);
+    return properties;
 }
 
 std::optional<EnumDecl> read_enum(const ast::Statement& statement, std::string_view owner,
@@ -657,6 +693,7 @@ const Schema& schema_of_schemas() {
         result.keys.push_back(bootstrap_key("top_level", "bool"));
         result.keys.push_back(bootstrap_key("open", "bool"));
         result.keys.push_back(bootstrap_key("sealed", "bool"));
+        result.keys.push_back(bootstrap_key("stage_order", "list<identifier>"));
         result.keys.push_back(bootstrap_key("key", "block<key>", /*required=*/false, Arity::Many));
         return result;
     }();

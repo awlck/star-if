@@ -474,17 +474,87 @@ namespace {
 
 } // namespace
 
+const PropDecl* resolve_property(std::string_view name, const std::vector<PropDecl>& local,
+                                 const ClassDecl& decl, const SchemaSet& set) {
+    // §8.4, step 1: the object's own declarations come first. That ordering
+    // is the whole of what makes §8.7 a *declaration* rather than an override
+    // -- a local `prop_def` shadows nothing, because §8.7 forbids it from
+    // colliding with an inherited name at a different type in the first
+    // place, and the redundant case is reported where it is written.
+    for (const PropDecl& property : local) {
+        if (property.name == name) {
+            return &property;
+        }
+    }
+    return find_declared_property(decl, name, set);
+}
+
+// §8.7's last bullet, which is the rule that keeps a local declaration from
+// quietly becoming a second, differently-typed property of the same name:
+//
+//   "A local `prop_def` MUST NOT redeclare a name the object already
+//    inherits, with a different type. Redeclaring with the *same* type is
+//    redundant and SHOULD be reported as such."
+//
+// Both halves matter for different reasons. The type mismatch is a
+// correctness failure -- the save format and every reader of that class
+// disagree about the slot's width. The redundancy is only noise, but it is
+// the kind of noise that accumulates: a property promoted to the class
+// leaves its local declarations behind, and nothing would otherwise say so.
+void check_local_prop_defs(const std::vector<PropDecl>& local, const ClassDecl& decl,
+                           const SchemaSet& set, diag::DiagnosticSink& sink) {
+    for (const PropDecl& property : local) {
+        const PropDecl* inherited = find_declared_property(decl, property.name, set);
+        if (inherited == nullptr) {
+            continue; // the ordinary case: a one-off, belonging to this object
+        }
+        if (inherited->type.same_as(property.type)) {
+            Diagnostic diagnostic(Code::PropDefRedundant, property.span,
+                                  "'" + property.name + "' is already a " +
+                                      inherited->type.to_string() + " on every '" + decl.id + "'");
+            diagnostic.with_note("declared here", inherited->span);
+            diagnostic.with_note("harmless, but the line does nothing -- this object would have "
+                                 "the property either way (spec §8.7)");
+            diagnostic.with_fix_it(property.span, "", "remove the redundant declaration");
+            sink.report(std::move(diagnostic));
+            continue;
+        }
+        Diagnostic diagnostic(
+            Code::PropDefTypeMismatch, property.span,
+            "'" + property.name + "' is already a " + inherited->type.to_string() + " on every '" +
+                decl.id + "', and this would make it a " + property.type.to_string() + " here");
+        diagnostic.with_note("declared here", inherited->span);
+        diagnostic.with_note("an object may declare properties of its own, and may not give an "
+                             "inherited one a second type -- everything that reads this class "
+                             "reads that slot at the type the class declared (spec §8.7, §8.4)");
+        sink.report(std::move(diagnostic));
+    }
+}
+
 void check_instantiation(const ast::Block& block, const ClassDecl& decl, const SchemaSet& set,
                          diag::DiagnosticSink& sink) {
+    // §8.7: the object's own `prop_def`. Read before anything else in the
+    // block is looked at, because §8.4 puts these first and a value written
+    // above its own declaration is still that property's value -- block
+    // contents are ordered (§5.1), but resolution is not positional.
+    const std::vector<PropDecl> local = read_local_prop_defs(block, set.find("prop_marker"), sink);
+    check_local_prop_defs(local, decl, set, sink);
+
     for (const ast::Statement& statement : block.statements()) {
         const std::optional<std::string> name = statement.key_name();
         if (!name || name->empty()) {
             continue;
         }
-        const PropDecl* property = find_declared_property(decl, *name, set);
+        const PropDecl* property = resolve_property(*name, local, decl, set);
         const std::optional<ast::Value> value = statement.value();
         if (property == nullptr || !value) {
-            continue; // a universal key (§7.4), or a property F11 will find
+            // A universal key of §7.4 -- `id`, `traits`, `sector`, or one of
+            // §8.5's placement keywords -- or a key naming nothing at all.
+            // Telling those two apart is what §7.4's permitted-key rule
+            // needs, and its list of universals is core vocabulary, so the
+            // check cannot live in this library. See the note on
+            // `check_instantiation` in the header.
+            continue;
         }
         check_value("'" + *name + "'", *value, property->type, set, sink);
     }

@@ -109,6 +109,8 @@ CODES = {
     "E-ANNOT-CONFLICT":     "§5.4.1 two combination annotations on one value",
     "E-ANNOT-MISAPPLIED":   "§5.4.1 an annotation on a value it does not apply to",
     "E-ANNOT-ARGUMENT":     "§3.8 an annotation's arguments are not what it takes",
+    "E-PROP-ABSENT":        "§8.8.2 a property read that is definitely absent for the slot's type",
+    "E-PROP-MAYBE-ABSENT":  "§8.8.3 a property read that is possibly absent and not narrowed",
 }
 
 # Codes this script structurally cannot produce, and the fixtures that
@@ -123,6 +125,12 @@ CODES = {
 # schema set at all, and this script could check it; it does not, because
 # adding a pass to something backlog H4 exists to delete would be paying
 # twice for a check the C++ already makes from these same fixtures.
+#
+# The two property-read codes are `libs/starcore`'s rather than the schema
+# layer's, and are here for the first reason at its strongest: §8.8's
+# classification needs the whole class graph, every trait, and every
+# object-local `prop_def` in the program before it can say whether one read
+# is legal.
 #
 # The C++ suite asserts every one of them, from these same fixtures, in
 # tests/unit/schema/corpus_test.cpp. This list is the seam between the two
@@ -150,6 +158,8 @@ NEEDS_SCHEMA_LAYER = {
     "E-ANNOT-CONFLICT",
     "E-ANNOT-MISAPPLIED",
     "E-ANNOT-ARGUMENT",
+    "E-PROP-ABSENT",
+    "E-PROP-MAYBE-ABSENT",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:

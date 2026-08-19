@@ -725,7 +725,7 @@ Fields of a `key` declaration:
 | `editor` | identifier | a hint for the inspector widget (`text_area`, `object_picker`, `slider`, …) |
 | `deprecated` | text | if present, using this key produces a warning carrying this message |
 | `exclusive_group` | identifier | this key belongs to a mutually exclusive group; see §7.2.1 |
-| `stage_order` | list of identifiers | *on the schema, not a key.* The ordered stages of this form, through which type narrowing flows (§8.8.3). Declaring it keeps the narrowing analysis free of any knowledge of what the stages are |
+| `stage_order` | list of identifiers | *on the schema, not a key.* The ordered stages of this form, through which type narrowing flows (§8.8.3). Declaring it keeps the narrowing analysis free of any knowledge of what the stages are. A form declaring none has no stages, and narrowing within it does not flow between keys |
 
 #### 7.2.1 Exclusive groups
 
@@ -1172,6 +1172,10 @@ Every slot has a static type, and most of them are narrower than "some object":
 | `noun`, `second` | determined by the action's grammar token (proposal §6.2) |
 
 Grammar tokens carry some of this information: `[something]` yields `thing`, `[class:weapon]` yields `weapon`.
+
+The names in that table are the standard library's, and an implementation MUST NOT assume them: §7.2.4 makes `thing`, `person` and `room` replaceable, so a compiler that hard-coded them would be depending on a library it also claims is optional. Absent a declaration from the ruleset, the static type an implementation is entitled to assume is the **root class** for `[something]` and its relatives, and for `actor`, `self` and `speaker`; `location` resolves to the core room class. A narrower token — `[class:weapon]` — names its own class and is assumed exactly.
+
+The consequence is deliberate and matches the advice below: a broad token yields broad static knowledge, and narrowing it is the author's to do where the meaning is, in a restriction that also produces a message. **[OPEN]** There is no spelling yet by which a ruleset declares that its `actor` slot is a `person`; until there is, every read on those slots is narrowed at the point of use.
 
 **But narrowing is a poor reason to choose a narrow token, and an earlier draft of this section gave the opposite advice.** A token controls three separate things, and conflating them produces bad games:
 

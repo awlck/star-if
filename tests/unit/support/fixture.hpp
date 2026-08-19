@@ -59,7 +59,8 @@ namespace stardata::test {
 
 // `libs/starcore`'s: the vocabulary of spec §8-§12.
 [[nodiscard]] inline const std::set<std::string>& starcore_codes() {
-    static const std::set<std::string> codes = {"E-PLACEMENT-CONFLICT"};
+    static const std::set<std::string> codes = {"E-PLACEMENT-CONFLICT", "E-PROP-ABSENT",
+                                                "E-PROP-MAYBE-ABSENT"};
     return codes;
 }
 

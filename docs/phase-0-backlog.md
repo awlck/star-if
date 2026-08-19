@@ -812,23 +812,131 @@ Spec §10.5.1 — the rule is subtle and entirely mechanical, so it is cheap to 
 ### F11 · Object-local `prop_def`
 **Size:** S · **Depends on:** F3
 
-- [ ] `prop_def` inside an object instantiation declares a property on that object only (spec §8.7).
-- [ ] Resolution order puts object-local declarations first (§8.4).
-- [ ] Redeclaring an inherited name: error on type mismatch, warning on redundancy.
+- [x] `prop_def` inside an object instantiation declares a property on that object only (spec §8.7).
+- [x] Resolution order puts object-local declarations first (§8.4).
+- [x] Redeclaring an inherited name: error on type mismatch, warning on redundancy.
+
+Read by the same `read_prop_defs` that `class` and `trait` use, markers and
+all, because §8.7 says a local property "is otherwise an ordinary property" —
+a second reader would agree with the first until it didn't.
+
+**The corpus was already carrying the feature untested.** tour.star has §8.7's
+own example, `reactor_console` with `times_rebooted` and `diagnostic_code`;
+until now those keys resolved to nothing and the two values written against
+them were never checked at all. They are now, which is the difference between
+the syntax being present and the rule being enforced.
+
+`resolve_property` is §8.4's order as a function, so the ordering is
+assertable directly rather than only through a diagnostic — a test that
+watched for an error would pass just as well if the class won and happened to
+agree about the type.
+
+**[OPEN] §7.4's permitted-key rule is still not enforced, and F4 deferred it
+here on the assumption that F11 would close it.** It cannot, in this library.
+§7.4 permits "those of the class's property set, plus the universal keys `id`,
+`traits`, `in`, `on`, `part_of`, and `sector`" — and four of those six are
+core vocabulary: `in`, `on` and `part_of` are values of the relation enum
+(§8.5), `sector` is a core-owned form. `libs/stardata` may not name them
+(proposal §2.1.1, and `check_layering.py` would fail the build), so it cannot
+tell a universal key from a typo, and guessing would reject `in = ornate_box`
+on every object in the corpus.
+
+So §8.7's typo detection — "`times_reboofed` is an error rather than a second
+property", which is the first thing §8.7 lists as what the declaration buys —
+wants a pass in `libs/starcore`, beside the placement pass that already reads
+these same blocks for the same reason. That is the F2c shape and it is a small
+task; it is left out here only because F11's list does not name it and the
+alternative was to solve it wrongly.
+
+**[OPEN] Traits are still not in the resolution walk.** §8.4 step 2 is traits
+mixed into the object and step 3 checks each class's traits, and `read_class`
+does not read the `traits` key into `ClassDecl` at all — so a property
+arriving through a trait resolves to nothing. F4 recorded this; F11 inherits
+it and F12 has to close it, since §8.8.2 classifies a read by whether "`T` or
+an ancestor **or trait** of `T`" declares the property.
 
 ### F12 · Property access and narrowing — **owner: split**
-**Size:** M · **Depends on:** F11, F9
+**Size:** M · **Depends on:** F11 (**not F9** — see below)
 
 The one genuinely novel piece of static analysis in Phase 0. Spec §8.8.
 
-- [ ] Static type for each slot, taken from the action's grammar token where present.
-- [ ] Three-way classification: definitely present / definitely absent / possibly present.
-- [ ] Narrowing through `of_class`, `has_trait`, `is` in a conjunction.
-- [ ] Narrowing flows forward through pipeline stages: `when` → `conditions` → `restrictions` → `effects` and messages. The last hop is what lets a broad grammar token keep its static knowledge (spec §8.8.1).
-- [ ] **The stage sequence is read from the schema's `stage_order`, not hard-coded.** `stardata` implements the dataflow over whatever sequence it finds and knows none of the stage names; `starcore` declares the order. This is the task that most threatened the layering, and parameterising it is what saves it (proposal §2.1.1).
-- [ ] Narrowing does not escape `OR` or `NOT`.
-- [ ] `has_prop` and `prop_or` as the explicit escapes.
-- [ ] Error carries the slot's static type, the property, and the classes that do declare it.
+- [x] Static type for each slot, taken from the action's grammar token where present.
+- [x] Three-way classification: definitely present / definitely absent / possibly present.
+- [x] Narrowing through `of_class`, `has_trait`, `is` in a conjunction.
+- [x] Narrowing flows forward through pipeline stages: `when` → `conditions` → `restrictions` → `effects` and messages. The last hop is what lets a broad grammar token keep its static knowledge (spec §8.8.1).
+- [x] **The stage sequence is read from the schema's `stage_order`, not hard-coded.** `stardata` implements the dataflow over whatever sequence it finds and knows none of the stage names; `starcore` declares the order.
+- [x] Narrowing does not escape `OR` or `NOT`.
+- [x] `has_prop` and ~~`prop_or`~~ **`value_or`** as the explicit escapes — the bullet
+      misnamed it; §8.8.3 case 3 and §10.6.1 both say `value_or`. `has_prop` is a
+      narrowing operator and is implemented; `value_or` goes through `compare`,
+      which is §10.6 and unimplemented, so it is recorded rather than done.
+- [x] Error carries the slot's static type, the property, and the classes that do declare it.
+
+**The split, and where it actually fell.** `libs/stardata` gets
+`schema/property.hpp`: §8.8.2's three answers, the class-and-trait walk they are
+computed from, and nothing else. It names no slot, no predicate and no stage.
+`libs/starcore` gets `narrowing.{hpp,cpp}`: §10.2's slots, §10.4's `of_class` /
+`has_trait` / `is` / `has_prop`, §10.3's `OR` and `NOT` barriers, and the walk
+that drives them. The deletion test of proposal §2.1.1 still passes — remove
+`libs/starcore` and what is left is a graph query about classes.
+
+**`stage_order` is what made that possible**, and it is now declared on `action`,
+`rule` and `turn_hook` in `builtin/schema.star` and read into `Schema`. The claim
+that the analysis knows no stage names is asserted rather than asserted-to: a test
+declares a form whose stages are `sniff` and `pounce` — names appearing nowhere in
+this repository — and requires narrowing to flow from the first into the second.
+Reversing the declared order has to make the same file fail, which is the control
+that stops the test passing by staying quiet. It did pass by staying quiet, on the
+first attempt, for want of a grammar line.
+
+**One parameter crosses the line, deliberately.** `classify_property` takes the
+class a declaration with no `of_class` descends from. §8.1.1's "absent means
+`starcore.object`" is a rule of the object model, and §1.2.1 puts §8 in core's
+column, so the *name* is core's to supply. This is not the mistake F2c corrected
+in the placement pass: there a `vector<string>` of relation keywords made a
+semantic pass look generic while having exactly one possible caller, and the
+parameter was hiding the pass. Here the pass really is a graph walk, and the
+parameter carries one fact from a document this library does not implement.
+
+**F9 was never a dependency.** The listed one does not survive contact: no bullet
+needs an id resolved, only the class graph, which F2 built. What F9 *would* add is
+cross-file reach — a rule whose `of_action` names an action declared in another
+file gets no slot types today and is skipped rather than guessed at.
+
+**What it found on first run.** Eleven reads in `tour.star`, one of them a real
+bug: `in_combat` is used five times and was declared nowhere, which is exactly
+§8.8.2's "definitely absent — this is the case that catches typos, and it is the
+common one". The corpus now declares it and narrows the other ten the way §8.8.3
+prescribes, which is what the reference corpus should have been demonstrating all
+along.
+
+It also found three faults in its own first draft, each worth recording because
+each was silent:
+
+- **`thing` never reached the root.** stdlib's `thing` declares no `of_class`, and
+  §8.1.1's implicit link was not being followed — so every stdlib class sat in a
+  tree disjoint from `starcore.object`, and every read on a broad slot came back
+  *definitely absent* instead of *possibly present*. A false error, which is far
+  worse than a missed one.
+- **A dotted key is a path, not a property.** `location.exits.north` reads `exits`
+  and then indexes a map (§6.6.1); classifying `exits.north` as a property name
+  reported a property nobody had written.
+- **A rule has no grammar of its own.** §8.8.1 types `noun` from "the action's
+  grammar token", and a rule reaches that only through `of_action`. Until that was
+  wired, every read inside a rule was skipped for want of a slot type — the pass
+  was quietly analysing almost nothing.
+
+**[OPEN] Reads inside message templates are not checked.** §8.8.3's own worked
+example is `successMsg = "It is rated for [noun.damage] damage."`, and finding
+that read needs the template grammar of §9.1, which is F7's. The classifier is
+ready for it; the caller is not there yet.
+
+**[OPEN] A ruleset cannot declare a slot's static type.** §8.8.1 says `actor` is
+"`person`, or whatever the ruleset narrows it to" and gives no spelling for the
+narrowing. Core cannot name `person` — it is stdlib's, and §7.2.4 says stdlib is
+replaceable — so `actor`, `self` and `speaker` are typed at the root, and every
+read on them needs narrowing at the point of use. `location` fares better only
+because §8.8.1's answer for it, a room, has a core-owned class.
 
 ### F9 · Reference resolution — **phase boundary, keep small**
 **Size:** M · **Depends on:** F4

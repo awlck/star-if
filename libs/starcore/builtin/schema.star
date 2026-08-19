@@ -153,6 +153,14 @@ schema = {
     sealed    = yes
     doc       = "Something the player can attempt, and what happens when they do."
 
+    # §8.8.3: the stages a narrowing flows forward through, in order. Declared
+    # here rather than built into the analysis, so that `libs/stardata` runs
+    # the dataflow without knowing that a thing called `restrictions` exists —
+    # which is what keeps the one genuinely novel static analysis in Phase 0
+    # on the mechanism side of proposal §2.1.1. A ruleset adding a stage gets
+    # narrowing through it by declaring it here.
+    stage_order = { conditions restrictions effects successMsg failureMsg }
+
     key = { name = id            type = identifier          required = yes  unique_in = action }
     key = { name = match         type = list<string>        required = yes
             doc  = "The parser grammar lines this action answers to." }
@@ -174,6 +182,10 @@ schema = {
     sealed    = yes
     doc       = "A response to an action or an event, run when its conditions hold."
 
+    # A rule opens with `when`, which an action has no equivalent of: the
+    # action is already chosen by the time its own stages run (§8.8.3).
+    stage_order = { when conditions restrictions effects successMsg failureMsg }
+
     key = { name = id            type = identifier }
     key = { name = of_action     type = ref<action>      exclusive_group = subject
             doc  = "The action this rule responds to." }
@@ -194,6 +206,8 @@ schema = {
     top_level = yes
     sealed    = yes
     doc       = "Runs at a fixed point in the turn sequence, independently of any action."
+
+    stage_order = { when effects }
 
     key = { name = id       type = identifier       required = yes  unique_in = turn_hook }
     key = { name = when     type = condition_block  combine = smart }

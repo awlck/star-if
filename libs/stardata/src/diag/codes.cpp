@@ -133,10 +133,16 @@ std::string_view code_string(Code code) noexcept {
         return "W-FAILMSG-MISSING";
     case Code::TryActionCycle:
         return "E-TRYACTION-CYCLE";
+    case Code::TemplateBrackets:
+        return "E-TEMPLATE-BRACKETS";
     case Code::StyleUndeclared:
         return "E-STYLE-UNDECLARED";
     case Code::LocDuplicate:
         return "E-LOC-DUPLICATE";
+    case Code::LocUndefined:
+        return "E-LOC-UNDEFINED";
+    case Code::LocUnused:
+        return "W-LOC-UNUSED";
     case Code::RemoveAbsent:
         return "W-REMOVE-ABSENT";
     case Code::ClassExtensionConflict:
@@ -157,6 +163,7 @@ Severity default_severity(Code code) noexcept {
     case Code::GlobalUnused:
     case Code::FailmsgMissing:
     case Code::RemoveAbsent:
+    case Code::LocUnused:
         return Severity::Warning;
     case Code::ClassExtensionConflict:
     case Code::TraitCountHigh:

@@ -30,6 +30,7 @@
 
 #include "starcore/narrowing.hpp"
 #include "starcore/placement.hpp"
+#include "starcore/text.hpp"
 #include "support/corpus.hpp"
 #include "support/cst_harness.hpp"
 #include "support/fixture.hpp"
@@ -313,6 +314,12 @@ TEST_CASE("each invalid fixture reports the starcore codes it declares", "[starc
         diag::DiagnosticSink sink;
         starcore::check_placements(parsed.ast(), loaded.set, sink);
         starcore::check_property_reads(parsed.ast(), loaded.set, sink);
+        // The text layer is two-phase (§13.2 lets a `$key` and the `loc`
+        // that defines it sit in either order, in either file), so the
+        // fixture is indexed and then the index is asked.
+        starcore::TextIndex text;
+        text.add_file(parsed.ast(), sink);
+        text.check(sink);
 
         std::set<std::string> reported;
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
@@ -354,11 +361,14 @@ TEST_CASE("each fixture's starcore diagnostics match its checked-in snapshot",
         diag::DiagnosticSink sink;
         starcore::check_placements(parsed.ast(), loaded.set, sink);
         starcore::check_property_reads(parsed.ast(), loaded.set, sink);
+        starcore::TextIndex text;
+        text.add_file(parsed.ast(), sink);
+        text.check(sink);
 
         std::ostringstream out;
         out << "# " << test::corpus_name(path) << '\n'
-            << "# starcore's passes -- placement and property reads -- over the\n"
-            << "# core-owned set, stdlib, and the fixture as a library\n\n";
+            << "# starcore's passes -- placement, property reads and the text layer --\n"
+            << "# over the core-owned set, stdlib, and the fixture as a library\n\n";
         bool first = true;
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
             if (!first) {

@@ -7,7 +7,7 @@ error: E-TYPE-MISMATCH: 'sometimes' is not one of advances_turn_enum's values
 9 |     advances_turn = sometimes
   |                     ^^^^^^^^^
 note: advances_turn_enum is on_success, always, never (spec §6.2)
-  --> libs/starcore/builtin/schema.star:145:5
+  --> libs/starcore/builtin/schema.star:187:5
     |
-145 |     id     = advances_turn_enum
+187 |     id     = advances_turn_enum
     |     ^^

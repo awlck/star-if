@@ -136,6 +136,48 @@ schema = {
 }
 
 
+# --- Text: styles and localisation -------------------------------------------
+
+# Both of these are core-owned by §7.2.4's own test — "does `starcore`'s own
+# code read or write it?" — and libs/starcore/src/text.cpp is that code.
+#
+# Appendix C used to list them under "forms supplied by `stdlib` unless
+# noted", which was true of neither. A `style` declared by a library core
+# could not name would leave §5.4.1's `@style(id)` annotation with an
+# argument nothing can check, and a `loc` table core could not read would
+# leave §9.6's fallback chain — the loaded locale, then the source language,
+# then a visible «key» — with nothing to fall back through. Neither is a
+# convention core could merely hope a library follows, which is precisely the
+# test §7.2.2 exists to make.
+
+schema = {
+    id        = style
+    top_level = yes
+    sealed    = yes
+    doc       = "A semantic text style a theme maps to concrete attributes (§9.3)."
+
+    key = { name = id   type = identifier  required = yes  unique_in = style
+            doc  = "The name a style annotation carries, on a value or inside a template." }
+    key = { name = doc  type = text }
+}
+
+schema = {
+    id        = loc
+    top_level = yes
+    sealed    = yes
+    # Every key but `lang` is a localisation key, so the key set is whatever
+    # the game says rather than anything core can list — the same reason
+    # `version_constraints` below is open. It also means a loc entry has no
+    # declared type, which is why the templates in one are parsed by
+    # libs/starcore/src/text.cpp rather than by the type checker: §9.6 makes
+    # them templates by definition, and there is no `type = text` to say so.
+    open      = yes
+    doc       = "The localisation table for one language (§9.6)."
+
+    key = { name = lang  type = identifier  required = yes
+            doc  = "The language this table is written in." }
+}
+
 # --- The turn sequence and dispatch index ------------------------------------
 
 # Proposal §7.2: an action either consumes a round when it succeeds, always,

@@ -1,0 +1,28 @@
+# tests/corpus/invalid/loc-key-undefined.star
+# starcore's passes -- placement, property reads and the text layer --
+# over the core-owned set, stdlib, and the fixture as a library
+
+error: E-LOC-DUPLICATE: 'room_name' is defined twice in en
+  --> tests/corpus/invalid/loc-key-undefined.star:8:5
+  |
+8 |     room_name   = "Storage Bay, again"
+  |     ^^^^^^^^^
+note: localisation keys are unique within a language, so one of these two is silently unreachable (spec §9.6)
+  --> tests/corpus/invalid/loc-key-undefined.star:7:5
+  |
+7 |     room_name   = "Storage Bay"
+  |     ^^^^^^^^^
+
+error: E-LOC-UNDEFINED: no loc table defines '$room_name_that_does_not_exist'
+  --> tests/corpus/invalid/loc-key-undefined.star:13:12
+   |
+13 |     name = $room_name_that_does_not_exist
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: a $key resolves against the loaded locale, then the project's declared source language, and finally renders visibly as «room_name_that_does_not_exist» so that a missing string shows up in play rather than blank (spec §9.6)
+
+warning: W-LOC-UNUSED: nothing references '$room_name'
+  --> tests/corpus/invalid/loc-key-undefined.star:7:5
+  |
+7 |     room_name   = "Storage Bay"
+  |     ^^^^^^^^^
+note: inline strings are assigned generated keys at compile time (spec §9.6), so a key written out by hand exists in order to be referenced -- an unreferenced one is usually a renamed reference or a string that moved

@@ -74,9 +74,9 @@ CODES = {
     # Templates and localisation (spec §9)
     "E-TEMPLATE-BRACKETS":  "§9.1 unbalanced brackets in a template",
     "E-STYLE-UNDECLARED":   "§9.3 undeclared style name",
-    "E-LOC-DUPLICATE":      "§9.5 duplicate localisation key",
-    "E-LOC-UNDEFINED":      "§9.5 localisation key referenced but not defined",
-    "W-LOC-UNUSED":         "§9.5 localisation key defined but never referenced",
+    "E-LOC-DUPLICATE":      "§9.6 duplicate localisation key",
+    "E-LOC-UNDEFINED":      "§9.6 localisation key referenced but not defined",
+    "W-LOC-UNUSED":         "§9.6 localisation key defined but never referenced",
     # failureMsg placement (spec §10.5)
     "E-FAILMSG-SILENT":     "§10.5 failureMsg in a silent context",
     "E-FAILMSG-UNREACHABLE":"§10.5.1 failureMsg below a NOT/OR/COUNT_AT_LEAST",
@@ -521,7 +521,7 @@ def check_failuremsg(top, path, diags):
 
 
 def check_templates_and_loc(top, toks, path, diags):
-    """Spec §9.3 styles, §9.5 localisation keys, §9.1 template brackets."""
+    """Spec §9.3 styles, §9.6 localisation keys, §9.1 template brackets."""
     styles, loc_defined, loc_lines = set(), set(), {}
 
     for (form, value, _line) in top:

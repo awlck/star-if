@@ -24,6 +24,7 @@ add_library(stardata STATIC
     src/schema/property.cpp
     src/schema/loader.cpp
     src/schema/types.cpp
+    src/text/template.cpp
 )
 add_library(stardata::stardata ALIAS stardata)
 

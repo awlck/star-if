@@ -1,0 +1,6 @@
+# tests/corpus/invalid/loc-unused.star
+# declared W-LOC-UNUSED
+# lexer and parser report (none)
+# W-LOC-UNUSED is starcore's -- asserted in unit/starcore/placement_test.cpp
+
+(no diagnostics)

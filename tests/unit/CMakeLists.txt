@@ -59,6 +59,7 @@ add_executable(stardata_unit_tests
     schema/suggest_test.cpp
     schema/local_prop_test.cpp
     schema/types_test.cpp
+    text/template_test.cpp
     lex/token_test.cpp
     lex/lexer_test.cpp
     lex/lexer_diagnostics_test.cpp
@@ -78,12 +79,14 @@ target_link_libraries(stardata_unit_tests PRIVATE starif_test_support)
 starif_set_warnings(stardata_unit_tests)
 starif_enable_sanitizers(stardata_unit_tests)
 
-# The vocabulary half (spec §8-§12). Placement is all of it today; F8's
-# `failureMsg` placement and F12's stage order join it.
+# The vocabulary half (spec §8-§12): containment (F2c), §8.8's narrowing
+# (F12) and the text layer's styles and localisation (F7). F8's `failureMsg`
+# placement joins them.
 add_executable(starcore_unit_tests
     main.cpp
     starcore/placement_test.cpp
     starcore/narrowing_test.cpp
+    starcore/text_test.cpp
 )
 
 target_link_libraries(starcore_unit_tests PRIVATE starif_test_support starcore::starcore)

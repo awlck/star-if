@@ -798,6 +798,8 @@ The test is narrow and mechanical: **does `starcore`'s own code read or write it
 | `action`, `rule`, `turn_hook` | the turn sequence and dispatch index |
 | `sector` | residency and streaming |
 | `project`, `library` | load order |
+| `style` | §9.3 — the text VM emits style spans, and `@style(id)` (§5.4.1) has an argument nothing could otherwise check |
+| `loc` | §9.6 — the engine resolves every `$key` through it, and owns the fallback chain when one is missing |
 
 | Core-owned classes and traits | Why |
 |---|---|
@@ -1317,7 +1319,13 @@ StyleDir  ::= '@style' '(' Identifier ')' | '@endstyle'
 Conditional ::= '[if' Expr ']' Template ( '[else]' Template )? '[end]'
 ```
 
-Literal text is everything not otherwise matched. `\[`, `\]` and `\@` escape the delimiters.
+Literal text is everything not otherwise matched. `\[`, `\]`, `\$` and `\@` produce those characters literally.
+
+Those escapes are the **string** escapes of §3.5, not a second escape layer belonging to this grammar, and the difference decides where a template may be parsed from. By the time a string literal's value has been decoded, `\[` and `[` are the same byte and the rule above is unenforceable — so an implementation MUST parse a template from the literal's source text. The same reading gives every diagnostic in this section a span in the author's own bytes rather than an offset into a reconstructed string.
+
+`Conditional` is written above as a nested production and MUST NOT be parsed as one. `[end]` closes an explicit tooltip span (§9.4) as well as a conditional, and which of the two a given `[end]` belongs to depends on whether the function that opened it is span-opening — a fact about the builtin table, which a library may extend. A conforming parser therefore produces the fragments in the order written and pairs them where that table is known.
+
+A template MAY be written across adjacent literals (§3.5.1), and those are one template rather than several: a conditional may open in one literal and close in another.
 
 ### 9.2 Expressions
 
@@ -1332,7 +1340,7 @@ Slot      ::= 'actor' | 'noun' | 'second' | 'self' | 'player' | 'speaker'
 
 Slots are bound by the evaluation context: an action's message binds `actor`, `noun` and `second`; an object's own `description` binds `self`; a dialogue node binds `speaker`.
 
-A function named in a template MUST resolve at compile time to either a **template builtin** (evaluated by the stack machine, never entering Lua) or a Starscript function (§12). Unresolvable names MUST be a compile error.
+A function named in a template MUST resolve at compile time to either a **template builtin** (evaluated by the stack machine, never entering Lua) or a Starscript function (§12). Unresolvable names MUST be a compile error. Since the second half of that set is Starscript's, the check is only meaningful once §12 is implemented: an implementation without it MUST NOT report a subset of the condition, because a diagnostic that can flag a misspelled builtin but not a missing script function tells an author the names were checked when they were not.
 
 #### 9.2.1 Juxtaposition is single-argument application
 
@@ -1493,7 +1501,10 @@ loc = {
 
 - A `LocKey` (`$already_holding`) resolves against the loaded locale, falling back to the project's declared source language, then to the key name itself rendered visibly as `«already_holding»` so that a missing string is obvious in play rather than blank.
 - **Inline strings are implicitly assigned generated keys** at compile time. A game can therefore be localised after the fact without the author having restructured anything, and Starbase offers "extract to locale file" as a single command.
-- Keys MUST be unique within a language. A duplicate MUST be an error citing both spans.
+- Keys MUST be unique within a language **and within one file**. A duplicate MUST be an error citing both spans.
+- Across files, a later `loc` entry supersedes an earlier one for the same key and language, which is what load order means everywhere else in the format (§13.2). This is what makes a library's default message a default: `stdlib` declares `opened_default`, and a game that wants its own writes its own rather than being told it has collided with the library it is built on. Two entries in one table are an ambiguity nothing can resolve; two files disagreeing are ordered.
+- A `$key` that no `loc` table defines, in any language, MUST be an error with a suggestion. "In any language" is the fallback chain above read forwards: a key present in the source language and missing from a translation is what that chain exists to survive, and reporting it would make adding a language an error rather than a partial translation.
+- A declared key that nothing references SHOULD be a warning. Inline strings are assigned generated keys, so a key written out by hand exists in order to be referenced; one that is not is usually a renamed reference or a string that moved, and either way a translator is being asked to translate a line no player will see.
 
 ---
 
@@ -2014,8 +2025,11 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | `failureMsg` in an unreachable position, below a `NOT`, `OR` or `COUNT_AT_LEAST` (§10.5.1) | error |
 | A restriction with no reachable `failureMsg` anywhere in its fallback chain (§10.5.3) | warning |
 | Statically provable `try_action` cycle (§11.2) | error |
-| Undeclared style name (§9.3) | error |
-| Duplicate localisation key (§9.6) | error |
+| Unbalanced brackets in a template (§9.1) | error |
+| Undeclared style name (§9.3), with a suggestion | error |
+| Duplicate localisation key within one file and language (§9.6), citing both spans | error |
+| A `$key` no `loc` table defines, in any language (§9.6), with a suggestion | error |
+| A declared localisation key nothing references (§9.6) | warning |
 | `-=` removing an absent entry (§6.3) | warning |
 | Two `class_extension`s setting the same default (§8.2) | info |
 | Project crossing 64 declared traits (§8.3) | info |
@@ -2051,6 +2065,9 @@ The proposal left the following under-determined. This specification settles the
 | A38 | The five combining annotations are mutually exclusive; at most one per value (§5.4.1) | §5.4 required "contradictory combinations" to be rejected and gave `@before @after` as the example without saying what made it contradictory. Each of the five answers one question, so a second is not a refinement but a second answer |
 | A6 | `none` as a distinct value from `inherit` (§5.5) | "Explicitly empty" and "unchanged" are different, and conflating them makes clearing a reference impossible |
 | A7 | `string` type distinct from `text` (§6.2) | Machine-facing values should not be localisable or interpolatable |
+| A40 | A template is parsed from the literal's source text, not from the decoded string (§9.1) | §3.5 makes `\[`, `\]`, `\$` and `\@` string escapes, so decoding happens first and leaves an escaped bracket indistinguishable from a real one. §9.1's escape rule is only implementable one way round |
+| A41 | Localisation keys are unique within a file; a later file supersedes an earlier one (§9.6) | §9.6 said "unique within a language" without naming a scope, and the widest reading forbids a game from overriding a library's default message — which the `_default` suffix on every one of `stdlib`'s presumes is possible. Two entries in one table are ambiguous; two files are ordered (§13.2) |
+| A42 | `style` and `loc` are core-owned forms, not `stdlib`'s (§7.2.4, Appendix C) | §7.2.4's test is whether `starcore`'s own code reads or writes the form, and the text VM does both. A `style` core could not name would leave `@style(id)` with an argument nothing checks; a `loc` core could not read would leave §9.6's fallback chain with nothing to fall back through |
 | A8 | `@style(name)` spans to the next style directive or end (§9.3) | Matches the proposal's example; the alternative (explicit closing) is noisier |
 | A9 | Missing localisation renders as `«key»` rather than blank (§9.6) | A missing string must be visible in play |
 | A10 | Condition evaluation short-circuits in source order (§10.1) | Observable because conditions may call scripts, so it must be specified rather than left to the implementation |
@@ -2089,7 +2106,7 @@ The proposal left the following under-determined. This specification settles the
 
 ## Appendix C — Standard top-level forms
 
-Forms supplied by `stdlib` unless noted. Libraries add more by declaring schemas (§7.2); this list is not closed.
+The forms §7.2.4 lists as core-owned are supplied by `starcore` and sealed; the rest are `stdlib`'s. Libraries add more by declaring schemas (§7.2); this list is not closed.
 
 | Form | Purpose | Specified in |
 |---|---|---|

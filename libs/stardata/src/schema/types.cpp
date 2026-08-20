@@ -12,6 +12,7 @@
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/loader.hpp"
 #include "stardata/schema/suggest.hpp"
+#include "stardata/text/template.hpp"
 
 namespace stardata::schema {
 
@@ -266,6 +267,22 @@ void check_scalar(std::string_view what, const ast::Scalar& scalar, const ast::T
             sink.report(std::move(diagnostic));
         }
         return;
+    }
+
+    // §9.1: a `text` value is not a string but a template, and one thing
+    // about it is decidable without knowing a single builtin -- whether its
+    // brackets balance. Everything else §9 asks of a template needs the
+    // vocabulary, and is starcore/text.hpp's.
+    //
+    // TYPE-DIRECTED ON PURPOSE. `[` and `]` are reserved for "the template
+    // language and parser grammar tokens" (§15), and the second of those is
+    // a string too: stdlib's `match = { "take [something]" }` is a grammar
+    // line, not a template. Parsing every string here would read those as
+    // interpolations. The declared type is what tells the two apart, which
+    // is why this lives in the type checker rather than in a token scan.
+    if (type.name == "text" || type.name == "text_or_script") {
+        const text::Template parsed = text::parse_template(scalar, sink);
+        (void)parsed; // the structure is Phase 1's; the diagnostic is this pass's
     }
 
     // The sub-grammars: structure carried inside a string, which §6.2 says

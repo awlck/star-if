@@ -1,6 +1,6 @@
 # tests/corpus/invalid/undeclared-style.star
 # declared E-STYLE-UNDECLARED
 # lexer and parser report (none)
-# E-STYLE-UNDECLARED is not implemented yet
+# E-STYLE-UNDECLARED is starcore's -- asserted in unit/starcore/placement_test.cpp
 
 (no diagnostics)

@@ -58,9 +58,17 @@ namespace stardata::test {
 // E-PLACEMENT-CONFLICT is a fact about containment.
 
 // `libs/starcore`'s: the vocabulary of spec §8-§12.
+//
+// The four text-layer codes are here rather than with the schema layer's
+// because §9.3's `style` form and §9.6's `loc` form are what give them
+// meaning, and both are core-owned by §7.2.4's test -- starcore/text.cpp is
+// the code that reads them. E-TEMPLATE-BRACKETS is the exception and sits
+// below: which values are templates is a question about declared types
+// (§6.2), which is the schema layer's, and that is where it is reported.
 [[nodiscard]] inline const std::set<std::string>& starcore_codes() {
-    static const std::set<std::string> codes = {"E-PLACEMENT-CONFLICT", "E-PROP-ABSENT",
-                                                "E-PROP-MAYBE-ABSENT"};
+    static const std::set<std::string> codes = {
+        "E-PLACEMENT-CONFLICT", "E-PROP-ABSENT",   "E-PROP-MAYBE-ABSENT", "E-STYLE-UNDECLARED",
+        "E-LOC-DUPLICATE",      "E-LOC-UNDEFINED", "W-LOC-UNUSED"};
     return codes;
 }
 
@@ -73,7 +81,7 @@ namespace stardata::test {
         "E-CORE-RESERVED",         "W-PROPDEF-REDUNDANT", "E-DUP-KEY",
         "E-EXCLUSIVE-GROUP",       "E-EXCLUSIVE-MISSING", "E-TYPE-MISMATCH",
         "E-UNKNOWN-ANNOTATION",    "E-ANNOT-CONFLICT",    "E-ANNOT-MISAPPLIED",
-        "E-ANNOT-ARGUMENT"};
+        "E-ANNOT-ARGUMENT",        "E-TEMPLATE-BRACKETS"};
     return codes;
 }
 
@@ -101,6 +109,41 @@ namespace stardata::test {
         }
     }
     return false;
+}
+
+// The codes a file suppresses for its whole length with
+// `# check: allow W-LOC-UNUSED, ...`, the pragma tests/check_stardata.py
+// documents under SUPPRESSION.
+//
+// Read here so that the two checkers agree about a file rather than only
+// about a diagnostic. tour.star carries one: its §18 declares loc entries
+// purely to demonstrate string syntax and its §17 declares the engine's own
+// fallback message, and neither is a real unused string. A C++ pass that
+// ignored the pragma would report eight warnings the Python one is told to
+// skip, and the corpus would be "clean" under one checker and not the other.
+[[nodiscard]] inline std::set<std::string> allowed_codes(const std::string& contents) {
+    std::set<std::string> codes;
+    std::istringstream lines(contents);
+    std::string line;
+    while (std::getline(lines, line)) {
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        const std::size_t marker = line.find("check: allow ");
+        const std::size_t hash = line.find_first_not_of(" \t");
+        if (hash == std::string::npos || line[hash] != '#' || marker == std::string::npos) {
+            continue;
+        }
+        std::istringstream rest(line.substr(marker + 13));
+        std::string code;
+        while (rest >> code) {
+            if (!code.empty() && code.back() == ',') {
+                code.pop_back();
+            }
+            codes.insert(code);
+        }
+    }
+    return codes;
 }
 
 // The codes a fixture declares with `# EXPECT <CODE>` in its header, using

@@ -1,7 +1,8 @@
 # tests/corpus/invalid/loc-key-undefined.star
-# declared E-LOC-DUPLICATE E-LOC-UNDEFINED
+# declared E-LOC-DUPLICATE E-LOC-UNDEFINED W-LOC-UNUSED
 # lexer and parser report (none)
-# E-LOC-DUPLICATE is not implemented yet
-# E-LOC-UNDEFINED is not implemented yet
+# E-LOC-DUPLICATE is starcore's -- asserted in unit/starcore/placement_test.cpp
+# E-LOC-UNDEFINED is starcore's -- asserted in unit/starcore/placement_test.cpp
+# W-LOC-UNUSED is starcore's -- asserted in unit/starcore/placement_test.cpp
 
 (no diagnostics)

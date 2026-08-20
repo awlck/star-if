@@ -784,15 +784,90 @@ F4 deliberately leaves a key naming no property alone: which keys are
 permitted there is F11's question. When F11 answers it, that site wants a
 suggestion too, and the machinery is already sitting in `schema/suggest.hpp`.
 
-### F7 · Template parsing and validation
+### F7 · Template parsing and validation — **owner: split**
 **Size:** M · **Depends on:** F4
 
 Templates are parsed here; the text VM that *evaluates* them is Phase 1.
 
-- [ ] Template grammar of spec §9.1 — interpolation, style directives, conditionals.
-- [ ] Expressions of §9.2, including juxtaposition (§9.2.1) and capitalisation (§9.2.2).
-- [ ] `E-TEMPLATE-BRACKETS`, `E-STYLE-UNDECLARED`.
-- [ ] Localisation keys: `E-LOC-UNDEFINED`, `E-LOC-DUPLICATE`, `W-LOC-UNUSED`.
+- [x] Template grammar of spec §9.1 — interpolation, style directives, conditionals.
+- [x] Expressions of §9.2, including juxtaposition (§9.2.1) and capitalisation (§9.2.2).
+- [x] `E-TEMPLATE-BRACKETS`, `E-STYLE-UNDECLARED`.
+- [x] Localisation keys: `E-LOC-UNDEFINED`, `E-LOC-DUPLICATE`, `W-LOC-UNUSED`.
+
+**The split, and where it fell.** `libs/stardata` gets `text/template.hpp`:
+§9.1's fragments, §9.2's expressions, and §9.2.2's capitalisation rule. It
+names no slot, no builtin and no form — `[`, `]`, `\`, `@style`, `@endstyle`
+and the reserved `if` / `else` / `end` are all defined by §3 and §5.4.1, which
+are Stardata's, and a parser that knows only those knows nothing about rooms.
+`libs/starcore` gets `text.hpp`: §9.3's `style` form, §9.6's `loc` form, and
+the four diagnostics that need them. §1.2.1 puts §9 in core's column and that
+is where the *vocabulary* went; the grammar around it is mechanism, which is
+the same line F12 drew.
+
+**Parsing reads the source text, not the decoded string, and this is not an
+optimisation.** §3.5 makes `\[`, `\]`, `\$` and `\@` *string* escapes, so the
+lexer decodes them before anything sees the value — at which point an escaped
+bracket and a real one are the same byte and §9.1's escape rule cannot be
+implemented at all. The lexer header had already anticipated this in a note on
+`decode_string_escapes`; the note turned out to be exactly right. Spec A40
+records the decision, and the span of every diagnostic here points at the
+author's own bytes as a consequence rather than as extra work.
+
+**Which strings are templates is a question about declared types**, so
+E-TEMPLATE-BRACKETS is raised by the type checker rather than by a token
+scan. §15 reserves `[` and `]` for "the template language **and parser
+grammar tokens**", and the second of those is a string too: every action in
+stdlib has `match = { "take [something]" }`. A scan over all strings would
+report the reference library as broken. The one place a value is known to be a
+template without asking a schema is inside a `loc` block, which §9.6 makes
+one by definition and which is an open schema with no declared types at all —
+so `starcore` parses those itself.
+
+**`style` and `loc` are core-owned, which Appendix C said they were not.**
+§7.2.4's test is mechanical — "does `starcore`'s own code read or write it?"
+— and `libs/starcore/src/text.cpp` is that code. A `style` declared by a
+library core could not name would leave §5.4.1's `@style(id)` with an argument
+nothing can check; a `loc` table core could not read would leave §9.6's
+fallback chain with nothing to fall back through. Both are now declared and
+sealed in `libs/starcore/builtin/schema.star`, and Appendix C's blanket
+"supplied by `stdlib` unless noted" is corrected — it was already false for
+`schema`, `class`, `enum`, `global`, `project` and five more. Spec A42.
+
+**This found nine real errors in the reference library.** `stdlib` named
+`$taken_default`, `$already_open`, `$take_not_portable` and six more, and
+nothing anywhere declared them. A game that did not happen to define them
+itself would have rendered «taken_default» in play — §9.6's visible fallback
+doing exactly the job it exists to do, on the library every game is built on.
+`stdlib/stdlib/messages.star` is the fix, and it is the same shape of finding
+as F12's `in_combat`: syntax that was present and a rule that was not
+enforced.
+
+**§9.6's uniqueness needed a scope, and the widest one is wrong.** The
+sentence is "keys MUST be unique within a language" with no mention of files,
+and read across a whole project it forbids a game from overriding a library's
+default message — which the `_default` suffix on every one of stdlib's
+presumes is possible. So: unique within one file and language, and a later
+file supersedes an earlier one, which is what load order already means
+everywhere else (§13.2). Spec A41.
+
+**[OPEN] Expressions are parsed and not resolved.** §9.2 requires a function
+name to "resolve at compile time to either a template builtin or a Starscript
+function (§12)", and Phase 0 has no Starscript and no builtin table. A pass
+that flagged a misspelled builtin but could say nothing about a missing script
+function would report the smaller half of the problem and imply the larger
+half had been checked, so a malformed expression is parsed into nothing and
+says nothing. §9.2 now states that explicitly. The builtin table is where
+§9.5's lexicon lands, which is not a Phase 0 task.
+
+**[OPEN] Neither `lexicon` (§9.5.2) nor `calendar` (§11.6) is declared**, so
+tour.star's still report E-UNKNOWN-KEY along with `dialogue`, `quest`,
+`goal_def`, `schedule`, `party` and `bark_table`. F7 declared the two forms it
+owns and left the seven it does not; they belong to the tasks that read them.
+
+**[OPEN] `@style(id)` is validated against the whole project's styles, but
+nothing checks that a *theme* maps them.** §9.3 says a theme is what turns a
+style name into attributes, and a declared style no theme mentions renders as
+plain text with no diagnostic. Themes have no form in this specification yet.
 
 ### F8 · `failureMsg` placement — **owner: `starcore`**
 **Size:** S · **Depends on:** F3
@@ -930,6 +1005,13 @@ each was silent:
 example is `successMsg = "It is rated for [noun.damage] damage."`, and finding
 that read needs the template grammar of §9.1, which is F7's. The classifier is
 ready for it; the caller is not there yet.
+
+  F7 has since landed the grammar, so the blocker is gone and the remaining
+  work is small and specific: `check_property_reads` parses each stage's
+  `text`-typed values and classifies every `Expr::Kind::Path` whose head is one
+  of §10.2's slots, using the narrowing already in effect at that stage. It is
+  left out of F7 because F7's list does not name it and it is F12's rule, not
+  F7's — but it is now a task with no unknowns in it.
 
 **[OPEN] A ruleset cannot declare a slot's static type.** §8.8.1 says `actor` is
 "`person`, or whatever the ruleset narrows it to" and gives no spelling for the

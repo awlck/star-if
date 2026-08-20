@@ -110,8 +110,16 @@ enum class Code : std::uint8_t {
     FailmsgUnreachable,       // E-FAILMSG-UNREACHABLE   §10.5.1 failureMsg below a NOT/OR/COUNT_AT_LEAST
     FailmsgMissing,           // W-FAILMSG-MISSING       §10.5.3 restriction with no reachable failureMsg
     TryActionCycle,           // E-TRYACTION-CYCLE       §11.2   statically provable try_action cycle
+    // The text layer (§9, backlog F7). §14.3's table listed two of these
+    // four and the backlog names all four, which is the same asymmetry §5.4.1
+    // had before F5: a template with an unclosed `[` is exactly as broken as
+    // one naming a style nobody declared, and only one of them was required.
+    // §14.3 now carries a row for each.
+    TemplateBrackets,         // E-TEMPLATE-BRACKETS     §9.1    unbalanced brackets in a template
     StyleUndeclared,          // E-STYLE-UNDECLARED      §9.3    undeclared style name
     LocDuplicate,             // E-LOC-DUPLICATE         §9.6    duplicate localisation key
+    LocUndefined,             // E-LOC-UNDEFINED         §9.6    a $key nothing in the language defines
+    LocUnused,                // W-LOC-UNUSED            §9.6    a localisation key nothing references
     RemoveAbsent,             // W-REMOVE-ABSENT         §6.3    '-=' removing an absent entry
     ClassExtensionConflict,   // I-CLASS-EXT-CONFLICT    §8.2    two class_extensions set the same default
     TraitCountHigh,           // I-TRAIT-COUNT           §8.3    project crosses 64 declared traits

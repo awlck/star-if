@@ -1,0 +1,16 @@
+# tests/corpus/invalid/template-brackets.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-TEMPLATE-BRACKETS: this '[' is never closed
+  --> tests/corpus/invalid/template-brackets.star:15:29
+   |
+15 |     successMsg = "You lever [the noun open."
+   |                             ^
+note: an interpolation runs from '[' to the next ']'; write \[ for a literal bracket (spec §9.1)
+
+error: E-TEMPLATE-BRACKETS: this ']' closes nothing
+  --> tests/corpus/invalid/template-brackets.star:16:33
+   |
+16 |     failureMsg = "It won't budge] no matter how hard you try."
+   |                                 ^
+note: brackets delimit a template's interpolations, so every ']' needs a '[' before it; write \] for a literal one (spec §9.1)

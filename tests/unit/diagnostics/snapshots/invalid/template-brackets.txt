@@ -1,0 +1,6 @@
+# tests/corpus/invalid/template-brackets.star
+# declared E-TEMPLATE-BRACKETS
+# lexer and parser report (none)
+# E-TEMPLATE-BRACKETS is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

@@ -1,0 +1,10 @@
+# tests/corpus/invalid/loc-unused.star
+# starcore's passes -- placement, property reads and the text layer --
+# over the core-owned set, stdlib, and the fixture as a library
+
+warning: W-LOC-UNUSED: nothing references '$door_creeks'
+  --> tests/corpus/invalid/loc-unused.star:10:5
+   |
+10 |     door_creeks     = "The door creeks open."
+   |     ^^^^^^^^^^^
+note: inline strings are assigned generated keys at compile time (spec §9.6), so a key written out by hand exists in order to be referenced -- an unreferenced one is usually a renamed reference or a string that moved

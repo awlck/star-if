@@ -1,6 +1,6 @@
 # tests/corpus/invalid/placement-sugar-conflict.star
-# starcore's passes -- placement and property reads -- over the
-# core-owned set, stdlib, and the fixture as a library
+# starcore's passes -- placement, property reads and the text layer --
+# over the core-owned set, stdlib, and the fixture as a library
 
 error: E-PLACEMENT-CONFLICT: this object is placed twice, once with 'in' and once with 'holder'
   --> tests/corpus/invalid/placement-sugar-conflict.star:8:5

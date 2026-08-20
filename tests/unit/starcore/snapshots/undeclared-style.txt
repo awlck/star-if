@@ -1,0 +1,10 @@
+# tests/corpus/invalid/undeclared-style.star
+# starcore's passes -- placement, property reads and the text layer --
+# over the core-owned set, stdlib, and the fixture as a library
+
+error: E-STYLE-UNDECLARED: nothing declares the style 'never_declared'
+  --> tests/corpus/invalid/undeclared-style.star:8:22
+  |
+8 |     tooltip = @style(never_declared) "[Name(self)]"
+  |                      ^^^^^^^^^^^^^^
+note: styling is semantic: an author names a style and the active theme maps it, so a style has to be declared with `style = { id = ... }` before it can be named (spec §9.3)

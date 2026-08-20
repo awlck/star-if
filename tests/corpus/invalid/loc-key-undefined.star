@@ -1,6 +1,7 @@
 # EXPECT E-LOC-UNDEFINED
 # EXPECT E-LOC-DUPLICATE
-# spec §9.5 — a $key must resolve, and keys are unique within a language.
+# EXPECT W-LOC-UNUSED
+# spec §9.6 — a $key must resolve, and keys are unique within a language.
 loc = {
     lang        = en
     room_name   = "Storage Bay"

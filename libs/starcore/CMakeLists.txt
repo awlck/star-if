@@ -20,6 +20,7 @@
 add_library(starcore STATIC
     src/placement.cpp
     src/narrowing.cpp
+    src/text.cpp
 )
 add_library(starcore::starcore ALIAS starcore)
 

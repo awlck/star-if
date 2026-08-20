@@ -874,8 +874,72 @@ plain text with no diagnostic. Themes have no form in this specification yet.
 
 Spec §10.5.1 — the rule is subtle and entirely mechanical, so it is cheap to enforce and expensive to leave out.
 
-- [ ] `E-FAILMSG-SILENT`, `E-FAILMSG-UNREACHABLE`, `W-FAILMSG-MISSING`.
-- [ ] Reachability computed through conjunction edges only; barriers carry their own message.
+- [x] `E-FAILMSG-SILENT`, `E-FAILMSG-UNREACHABLE`, `W-FAILMSG-MISSING`.
+- [x] Reachability computed through conjunction edges only; barriers carry their own message.
+
+**"Barriers carry their own message" is the whole task, and it is where the
+first draft went wrong.** The barrier takes effect on the way *out* of its
+block, not on the way in: `NOT = { carrying = { ... } failureMsg = ... }` is
+the form §10.5's own example uses and the form every correct action in the
+corpus uses, and a walk that sets the barrier flag on entering the `NOT`
+reports all of them as errors. It reported three in tour.star before the
+corpus test caught it. The same subtlety appears twice — once in the scan
+that finds misplaced messages and once in the reachability test that decides
+whether one is missing — and both had it.
+
+**Which blocks are condition blocks comes from the schema.** A key's declared
+type is `condition_block` (§6.2) or it is not, so `restrictions`,
+`conditions` and `when` are found by asking the registry rather than from a
+list, and a ruleset declaring a form with a condition stage of its own gets
+the reachability check for free. That is strictly more than
+`tests/check_stardata.py` manages: it hard-codes seven key names and says so
+in a comment, being the one place in that script that knows about a library.
+
+**Which of them are *silent* is vocabulary and is named.** §10.5 says
+"`failureMsg` MUST NOT appear in a `conditions` or `when` block" and names
+exactly those two, so `starcore` names exactly those two. A condition stage
+that is neither is left unclassified and gets only reachability — guessing
+"silent" would turn a correct message into an error, which is the more
+expensive way to be wrong. §10.5 now states that rule so the choice is the
+specification's rather than this implementation's.
+
+**Two cases were removed from the missing-message warning**, and both are now
+in §10.5 (decision A43). An *empty* `restrictions` block is §5.4.2's `smart`
+override — "this action has no restrictions" — and has no failure to explain.
+And a restriction whose only message is unreachable has already been reported
+as such; "nothing here explains a refusal" is simply false of it, and the one
+fix answers both.
+
+**§10.3's combinators now live in `starcore/conditions.hpp`.** F12 had them as
+file-local constants in `narrowing.cpp` and F8 needed the same four words;
+two passes each holding their own copy of `"COUNT_AT_LEAST"` is how the two
+eventually come to disagree about it. §10.5.1's "fails as a whole" set and
+§8.8.3's "narrowing does not survive" set are the same three, which is not a
+coincidence worth stating twice either.
+
+**Two corpus fixtures were carrying a latent error.** `failmsg-below-or.star`
+and `failmsg-in-silent-context.star` both read `strength` on `actor`, which
+nothing declares — F12's E-PROP-ABSENT, invisible until F8 put those fixtures
+through the starcore corpus tests for the first time. Both now declare the
+property and narrow the slot, which also makes the OR fixture a small
+demonstration of §8.8.3's forward flow.
+
+**[OPEN] Narrowing established inside one `OR` branch is discarded within
+that branch.** Writing `actor = { of_class = person  strength >= 14 }` inside
+an `OR` reports `strength` as possibly absent, because F12's walk turns
+narrowing off for everything under a barrier. §8.8.3 says a narrowing "does
+not survive an `OR` branch, since only one branch is known to have held",
+which is about a narrowing *escaping* the branch — within one branch's own
+conjunction the narrowing does hold, since that branch's conditions are
+evaluated together. Found while writing F8's fixtures and worked around
+there by narrowing in the stage before; it is F12's rule to fix.
+
+**[OPEN] A ruleset cannot declare a stage's message policy.** The schema
+knows a key is a `condition_block` and nothing more, so there is no spelling
+for "this stage is silent" or "this stage owes the player a message". §7.2's
+key table would be the place, beside `stage_order`. Not needed by anything
+today — `quest`'s `complete_when` and `abandon_when` would be the first
+callers, and no form declares them yet.
 
 ### F10 · Globals, constants and flags
 **Size:** S · **Depends on:** F4

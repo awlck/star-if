@@ -9,6 +9,8 @@
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/suggest.hpp"
 
+#include "starcore/conditions.hpp"
+
 namespace starcore {
 
 namespace {
@@ -41,14 +43,16 @@ constexpr std::string_view kHasTrait = "has_trait";
 constexpr std::string_view kIs = "is";
 constexpr std::string_view kHasProp = "has_prop";
 
-// §10.3's combinators. `OR` and `NOT` are barriers: §8.8.3 says narrowing
-// "does not survive an `OR` branch, since only one branch is known to have
-// held", and that a narrowing "established inside a `NOT` does not escape
-// it". `AND` is the explicit form of the default and is transparent.
-constexpr std::string_view kOr = "OR";
-constexpr std::string_view kNot = "NOT";
-constexpr std::string_view kAnd = "AND";
-constexpr std::string_view kCountAtLeast = "COUNT_AT_LEAST";
+// §10.3's combinators, from starcore/conditions.hpp so that this pass and
+// F8's `failureMsg` pass cannot come to disagree about how `COUNT_AT_LEAST`
+// is spelled. `OR` and `NOT` are barriers here: §8.8.3 says narrowing "does
+// not survive an `OR` branch, since only one branch is known to have held",
+// and that a narrowing "established inside a `NOT` does not escape it".
+// `AND` is the explicit form of the default and is transparent.
+using combinator::kAnd;
+using combinator::kCountAtLeast;
+using combinator::kNot;
+using combinator::kOr;
 
 // A key that is a comparison rather than a binding is a property TEST, which
 // is the read §8.8 is about (§10.2: "a key naming a property of that object

@@ -1,0 +1,12 @@
+# tests/corpus/invalid/failmsg-missing.star
+# starcore's passes -- placement, property reads, failureMsg placement
+# and the text layer -- over the core-owned set, stdlib, and the
+# fixture as a library
+
+warning: W-FAILMSG-MISSING: nothing here explains a refusal, so the player is told only that they can't do that right now
+  --> tests/corpus/invalid/failmsg-missing.star:7:5
+  |
+7 |     restrictions = {
+  |     ^^^^^^^^^^^^
+note: a restriction that fails without a message drops the engine onto its generic fallback, which is the single most common way a parser game feels unfinished (spec §10.5)
+note: one `failureMsg` on the enclosing action or rule covers every restriction in it, so this need not be answered line by line (spec §10.5.3)

@@ -1,0 +1,16 @@
+# tests/corpus/invalid/failmsg-below-or.star
+# starcore's passes -- placement, property reads, failureMsg placement
+# and the text layer -- over the core-owned set, stdlib, and the
+# fixture as a library
+
+error: E-FAILMSG-UNREACHABLE: this message sits below an OR, which fails as a whole, so it can never be shown
+  --> tests/corpus/invalid/failmsg-below-or.star:18:42
+   |
+18 |             actor    = { strength >= 14  failureMsg = "You aren't strong enough." }
+   |                                          ^^^^^^^^^^
+note: an OR fails only when every branch fails, so no single branch is the reason and none of them can explain it (spec §10.5.1)
+  --> tests/corpus/invalid/failmsg-below-or.star:17:9
+   |
+17 |         OR = {
+   |         ^^
+note: move it onto the OR itself, which is the innermost block whose own failure is the reason the restriction failed (spec §10.5.1)

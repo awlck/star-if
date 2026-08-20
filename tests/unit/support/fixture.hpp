@@ -67,8 +67,9 @@ namespace stardata::test {
 // (§6.2), which is the schema layer's, and that is where it is reported.
 [[nodiscard]] inline const std::set<std::string>& starcore_codes() {
     static const std::set<std::string> codes = {
-        "E-PLACEMENT-CONFLICT", "E-PROP-ABSENT",   "E-PROP-MAYBE-ABSENT", "E-STYLE-UNDECLARED",
-        "E-LOC-DUPLICATE",      "E-LOC-UNDEFINED", "W-LOC-UNUSED"};
+        "E-PLACEMENT-CONFLICT",  "E-PROP-ABSENT",    "E-PROP-MAYBE-ABSENT", "E-STYLE-UNDECLARED",
+        "E-LOC-DUPLICATE",       "E-LOC-UNDEFINED",  "W-LOC-UNUSED",        "E-FAILMSG-SILENT",
+        "E-FAILMSG-UNREACHABLE", "W-FAILMSG-MISSING"};
     return codes;
 }
 

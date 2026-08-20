@@ -1,0 +1,12 @@
+# tests/corpus/invalid/failmsg-in-silent-context.star
+# starcore's passes -- placement, property reads, failureMsg placement
+# and the text layer -- over the core-owned set, stdlib, and the
+# fixture as a library
+
+error: E-FAILMSG-SILENT: a 'conditions' block is silent, so this message can never be shown
+  --> tests/corpus/invalid/failmsg-in-silent-context.star:10:30
+   |
+10 |                              failureMsg = "Never printed." } }
+   |                              ^^^^^^^^^^
+note: `conditions` and `when` decide whether an action applies at all, before it has been attempted -- failing one is not a refusal the player is owed an explanation for (spec §10.5)
+note: a message the player should see belongs in `restrictions`, where failing means the attempt was made and turned down

@@ -1,0 +1,16 @@
+# tests/corpus/invalid/failmsg-below-not.star
+# starcore's passes -- placement, property reads, failureMsg placement
+# and the text layer -- over the core-owned set, stdlib, and the
+# fixture as a library
+
+error: E-FAILMSG-UNREACHABLE: this message sits below a NOT, which fails as a whole, so it can never be shown
+  --> tests/corpus/invalid/failmsg-below-not.star:11:26
+   |
+11 |                          failureMsg = "You are already holding it." }
+   |                          ^^^^^^^^^^
+note: a NOT fails when its contents SUCCEED, so the NOT is what failed -- a message inside it describes the state that did hold (spec §10.5.1)
+  --> tests/corpus/invalid/failmsg-below-not.star:8:9
+  |
+8 |         NOT = {
+  |         ^^^
+note: move it onto the NOT itself, which is the innermost block whose own failure is the reason the restriction failed (spec §10.5.1)

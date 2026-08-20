@@ -1,6 +1,6 @@
 # tests/corpus/invalid/failmsg-in-silent-context.star
 # declared E-FAILMSG-SILENT
 # lexer and parser report (none)
-# E-FAILMSG-SILENT is not implemented yet
+# E-FAILMSG-SILENT is starcore's -- asserted in unit/starcore/placement_test.cpp
 
 (no diagnostics)

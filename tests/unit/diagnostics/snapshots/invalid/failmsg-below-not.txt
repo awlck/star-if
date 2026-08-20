@@ -1,6 +1,6 @@
 # tests/corpus/invalid/failmsg-below-not.star
 # declared E-FAILMSG-UNREACHABLE
 # lexer and parser report (none)
-# E-FAILMSG-UNREACHABLE is not implemented yet
+# E-FAILMSG-UNREACHABLE is starcore's -- asserted in unit/starcore/placement_test.cpp
 
 (no diagnostics)

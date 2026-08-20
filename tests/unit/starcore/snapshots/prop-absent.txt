@@ -1,6 +1,7 @@
 # tests/corpus/invalid/prop-absent.star
-# starcore's passes -- placement, property reads and the text layer --
-# over the core-owned set, stdlib, and the fixture as a library
+# starcore's passes -- placement, property reads, failureMsg placement
+# and the text layer -- over the core-owned set, stdlib, and the
+# fixture as a library
 
 error: E-PROP-ABSENT: nothing that could be 'noun' here has a 'shineyness'
   --> tests/corpus/invalid/prop-absent.star:14:18

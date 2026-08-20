@@ -1,6 +1,7 @@
 # tests/corpus/invalid/undeclared-style.star
-# starcore's passes -- placement, property reads and the text layer --
-# over the core-owned set, stdlib, and the fixture as a library
+# starcore's passes -- placement, property reads, failureMsg placement
+# and the text layer -- over the core-owned set, stdlib, and the
+# fixture as a library
 
 error: E-STYLE-UNDECLARED: nothing declares the style 'never_declared'
   --> tests/corpus/invalid/undeclared-style.star:8:22

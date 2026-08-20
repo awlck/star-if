@@ -1594,6 +1594,10 @@ When a **restriction** fails, the action has definitely been attempted and the p
 
 Accordingly: in a restriction context, a condition block **SHOULD** carry a `failureMsg`, and an implementation SHOULD warn about any restriction with no reachable message (§15). The word is SHOULD rather than MUST only because §10.5.3's inheritance chain often supplies one from an enclosing scope.
 
+Two cases are outside that warning, and an implementation SHOULD NOT report either. An **empty** `restrictions` block is §5.4.2's `smart` override — "this action has no restrictions" — and has no failure to explain. And a restriction whose only message is **unreachable** has already been reported as such (§10.5.1); the author wrote the explanation, so telling them it is missing as well describes one mistake as two, and moving the message answers both.
+
+Which condition stages are restriction contexts, and which are silent, is stated in this section rather than declared in the schema. An implementation therefore has nothing to say about a condition stage on a form this document does not describe: it MUST still check reachability there, since §10.5.1 is a fact about combinators rather than about stages, and MUST NOT assume the stage is silent — treating an unrecognised stage as silent would reject a correct message, which is the more expensive way to be wrong.
+
 ```stardata
 NOT = {
     carrying = { holder = actor  obj = noun }
@@ -2068,6 +2072,7 @@ The proposal left the following under-determined. This specification settles the
 | A40 | A template is parsed from the literal's source text, not from the decoded string (§9.1) | §3.5 makes `\[`, `\]`, `\$` and `\@` string escapes, so decoding happens first and leaves an escaped bracket indistinguishable from a real one. §9.1's escape rule is only implementable one way round |
 | A41 | Localisation keys are unique within a file; a later file supersedes an earlier one (§9.6) | §9.6 said "unique within a language" without naming a scope, and the widest reading forbids a game from overriding a library's default message — which the `_default` suffix on every one of `stdlib`'s presumes is possible. Two entries in one table are ambiguous; two files are ordered (§13.2) |
 | A42 | `style` and `loc` are core-owned forms, not `stdlib`'s (§7.2.4, Appendix C) | §7.2.4's test is whether `starcore`'s own code reads or writes the form, and the text VM does both. A `style` core could not name would leave `@style(id)` with an argument nothing checks; a `loc` core could not read would leave §9.6's fallback chain with nothing to fall back through |
+| A43 | An empty `restrictions` block, and a restriction whose only message is unreachable, are both outside the missing-message warning (§10.5) | The first has no failure to explain; the second has an explanation in the wrong place, and reporting it twice describes one mistake as two |
 | A8 | `@style(name)` spans to the next style directive or end (§9.3) | Matches the proposal's example; the alternative (explicit closing) is noisier |
 | A9 | Missing localisation renders as `«key»` rather than blank (§9.6) | A missing string must be visible in play |
 | A10 | Condition evaluation short-circuits in source order (§10.1) | Observable because conditions may call scripts, so it must be specified rather than left to the implementation |

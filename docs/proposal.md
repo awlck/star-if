@@ -154,11 +154,18 @@ This is the same relationship as JSON to a JSON-Schema-for-your-app, except that
 
 **2. The grep test, which is mechanical and therefore worth asserting.** Does `libs/stardata` name a piece of the core *vocabulary* declared in `libs/starcore/builtin/` — a class or trait id, a property name, an enum id, an enum value? `starcore.object`, `holder`, `relation`, `present_in`, `relation_enum`, `carried`: if any of those is a string literal there, the layering has leaked.
 
-**Not every identifier in `builtin/`**, and the exception is the whole difficulty of stating this rule. That directory declares the core-owned *forms* of spec §7.2.4 as well as the object model, so `schema`, `key`, `class`, `of_class` and `sealed` live there too — and those are the schema language, which is exactly what `libs/stardata` exists to implement (spec §1.2.1 puts §2–§7 in its column). A schema layer forbidden from saying `key` could not read a schema. So the id of a form and the names of the keys it declares are exempt, along with the fields of the two bootstrap forms that live in C++ because they are what reads the rest. A name in both sets counts as schema language: `name` is a property of `starcore.object` and also a field of a `key` declaration, and no arrangement of the code would let the schema layer stop saying it.
+**Not every identifier in `builtin/`**, and the exception used to be the whole difficulty of stating this rule. A schema layer forbidden from saying `key` could not read a schema, so the schema language has to be exempt — and the first version of this check carved that exemption out of `libs/starcore/builtin/` itself, by treating the id of a `schema` and the names of the keys it declared as mechanism. That was much weaker than it looked: `restrictions`, `failureMsg`, `when` and `effects` are keys of the core `action` and `rule` forms, so the carve-out exempted the four names this section uses as its own examples of vocabulary. Twenty names guarded, eighty-four exempt.
 
-This is a CI check now, `scripts/check_layering.py`, for the same reason §7.2.2 of the spec insists core assert rather than hope: a boundary nobody verifies is a boundary that erodes. Both sets are derived from the files rather than listed in the script, so the guarded set grows with the object model. It found exactly two leaks when it was written — `holder` and `relation`, in the placement pass this section sent to `starcore` — and twenty-two names that were not leaks at all, which is why the paragraph above exists: a check with false positives nobody can clear is a check that gets disabled.
+**The fix was to put the distinction in the data**, which is what spec §7.2.4's *format forms* are. The schema language now lives in its own directory, `libs/stardata/builtin/format.star`, and the rule becomes a question about where a name is declared rather than about its shape:
 
-**[OPEN]** It is weaker than this section's own first draft, in one nameable place. `restrictions`, `failureMsg`, `when` and `effects` are keys of the core `action` and `rule` forms, so the exemption lets them through — yet they are vocabulary by every argument here, since F8 *is* the task of knowing that a `restrictions` block owes the player a message. Closing that needs a way to say which core forms `stardata` parses **itself** — `schema`, `class`, `enum`, `core_requirement` — as against the ones it merely validates against a schema like any other. That distinction exists in the code today and not in the data, and putting it in the data is the fix.
+- `libs/stardata/builtin/` — the schema language. `class`, `trait`, `enum`, `global`, `of_class`, `prop_def`, `sealed`, `arity`, `type`. `stardata` implements these and so must name them.
+- `libs/starcore/builtin/` — the vocabulary, **all of it**. Form ids and key names as well as class ids, property names and enum values. `stardata` may name none of them.
+
+A name in both sets counts as schema language: `name` is a property of `starcore.object` and also a field of a `key` declaration, and no arrangement of the code would let the schema layer stop saying it. Plus two sets read out of the C++, for what the format defines in code rather than in data — §5.4.1's annotations and §6.2's type names — which is what makes `style` and `duration` usable: each is one spelling for two things, one of them the format's own grammar.
+
+This is a CI check, `scripts/check_layering.py`, for the same reason §7.2.2 of the spec insists core assert rather than hope: a boundary nobody verifies is a boundary that erodes. Every set is derived from the files rather than listed in the script, so the guarded set grows with the object model. It found exactly two leaks when it was written — `holder` and `relation`, in the placement pass this section sent to `starcore`. **Fifty-four names are guarded now**, `restrictions`, `failureMsg`, `when` and `effects` among them, which closes the `[OPEN]` this paragraph used to carry.
+
+A second check joins it, `scripts/check_format_forms.py`, because moving the schema language into data creates a new way to be wrong: a format form is now stated twice, as a declaration and as the reader that parses it. That had already gone wrong once — `class` declared a `traits` key nothing read, for nine tasks — so the two statements are checked against each other. See backlog F13.
 
 #### Where the current Phase 0 tasks land
 
@@ -167,7 +174,7 @@ This is a CI check now, `scripts/check_layering.py`, for the same reason §7.2.2
 | F1 typed AST view | `stardata` | the shape of a tree, not what it means |
 | F2 registry, sealing mechanism | `stardata` | |
 | F2 the core-owned *content* — `starcore.object`, the forms | `starcore` | it **is** the vocabulary |
-| F2a `core_requirement` | `starcore` | asserts starcore's needs; the registry queries it uses are stardata's |
+| F2a `core_requirement` | `stardata` (F13) | the *form* is the format's — it is the gate that runs before core sees anything. Writing one stays reserved to `starcore` (spec §7.2.5.1), which is a separate axis |
 | F2b marker mechanism / marker names | `stardata` / `starcore` | `prop_def` may carry markers; `affects_scope` is a scope concept |
 | **F2c placement sugar** | **`starcore`** | `in`/`on`/`carried` are containment, and containment is IF |
 | F2d `schema_extension`, `@replaces`, no-duplicates | `stardata` | pure registry rules |
@@ -175,9 +182,10 @@ This is a CI check now, `scripts/check_layering.py`, for the same reason §7.2.2
 | F7 template *grammar* / template *builtins* | `stardata` / `starlang` | `[the noun]`'s syntax is generic; what `the` does is not |
 | **F8 `failureMsg` placement** | **`starcore`** | entirely about the condition vocabulary |
 | F9 reference resolution | `stardata` | "this id resolves" is generic |
-| F10 globals mechanism / `flag_set` sugar | `stardata` / `starcore` | |
+| F10 globals mechanism / `flag_set` sugar | `stardata` / `starcore` | as landed it was all `starcore`; F13 moved the declaration half back |
 | F11 object-local `prop_def` | `stardata` | |
 | **F12 property access and narrowing** | **split — see below** | |
+| F13 the boundary formalised | both | format forms named as a category, and the two CI checks that hold them |
 
 #### F12, which is the interesting one
 

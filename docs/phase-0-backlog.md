@@ -941,7 +941,7 @@ key table would be the place, beside `stage_order`. Not needed by anything
 today — `quest`'s `complete_when` and `abandon_when` would be the first
 callers, and no form declares them yet.
 
-### F10 · Globals, constants and flags — **owner: `starcore`**
+### F10 · Globals, constants and flags — **owner: split** (originally `starcore`)
 **Size:** S · **Depends on:** F4
 
 - [x] `global` and `const` declared, typed, and registered (spec §6.4).
@@ -956,6 +956,14 @@ pass has to name is core's: `global` and `const` are core-owned forms (§7.2.4,
 and `add_global` are the condition and effect vocabularies of §10 and §11. The
 schema layer already does the part that is mechanism — one namespace, one
 declaration per id, enforced by `unique_in = global` — and this is the rest.
+
+> **Revised by F13.** Half of that paragraph was wrong, and the `any` type
+> below is what it cost. `global` and `const` are **format forms** (§7.2.4 as
+> rewritten): `libs/stardata` parses them, registers them and checks the
+> declared type and the initial value; `libs/starcore` keeps the *use*
+> analysis — the flag sugar, the two general writes, the read/write walk and
+> all four diagnostics — and asks the registry what is declared. The rest of
+> this entry is left as written, with the corrections marked.
 
 **The built-in schema named a key the specification never uses.** §6.4 writes
 `initial` in every one of its examples; `builtin/schema.star` declared
@@ -973,12 +981,23 @@ means "decided elsewhere, checked where that is known", and
 `libs/starcore/src/globals.cpp` performs the real check. `const`'s `value` had
 the same problem.
 
+> **Revised by F13.** `any` was the wrong answer and is gone (A44 superseded
+> by A48). It scoped an escape hatch to the whole language in order to solve
+> one key: any schema in any library could have opted out of type checking by
+> writing one word. §7.2's `type_of = type` says the same thing about the one
+> key that needs it, and the ordinary value check performs it.
+
 **A global's declared type was never checked at all.** `check_declared_types`
 walks schemas and classes; a global is neither, so
 `global = { id = x  type = frobnicate }` loaded without a word. `check_type`
 is now exposed from `schema/types.hpp` for exactly this — one type expression,
 checked for meaning — rather than `starcore` growing a second copy of §6.2's
 table.
+
+> **Revised by F13.** The gap is closed the other way round: `SchemaSet` holds
+> the globals, so `check_declared_types` reaches them like everything else and
+> `check_type` went back to internal linkage. It was exposed only for the pass
+> that no longer reads declarations.
 
 **Five real cases in tour.star.** `times_caught`, `last_accused`,
 `coolant_vented`, `hydration` and `intoxication` were each written by an
@@ -1158,6 +1177,96 @@ narrowing. Core cannot name `person` — it is stdlib's, and §7.2.4 says stdlib
 replaceable — so `actor`, `self` and `speaker` are typed at the root, and every
 read on them needs narrowing at the point of use. `location` fares better only
 because §8.8.1's answer for it, a room, has a core-owned class.
+
+### F13 · The stardata/starcore boundary, formalised — **owner: both**
+**Size:** M · **Depends on:** F10 · **Before F9**, which walks the class graph
+and should be written against the settled shape.
+
+Not a feature. A review of the split after F10 turned up three things with one
+root cause, and this closes all three before more core is written.
+
+- [x] §7.2.4's ownership test splits into two questions (spec §1.2.1, §7.2.4).
+- [x] **Format forms** named as a category, with a mechanical membership rule
+      and a CI check that enforces it.
+- [x] `libs/stardata/builtin/format.star` — the format forms, declared as data.
+- [x] One inheritance walk; `root = yes` replaces the root's name as a parameter.
+- [x] `global` and `const` move in; `any` removed; `type_of` added (§7.2).
+- [x] `of_trait` on `class_extension` (§8.2).
+- [x] `scripts/check_format_forms.py`, and `check_layering.py` rewritten around
+      the two builtin directories.
+
+**The root cause was one question doing two jobs.** §7.2.4 asked "does
+`starcore`'s own code read or write it?" and used the answer to decide both
+*who parses the declaration* — at load — and *who reads the data* — at run
+time. `global` is where that breaks: the format layer parses one and the
+engine reads it. Forcing a single answer put the reader in `libs/stardata` and
+the declaration of the same form in `libs/starcore`, which is the arrangement
+that let the two drift.
+
+**And they had drifted, expensively.** `class` declared a `traits` key that
+`read_class` did not read, from F2 until F12 — so every property arriving
+through a trait resolved to nothing, and the F4 instantiation check, the F11
+object-local rule and F12's classifier were each quietly missing every trait
+property in the program. Nothing tested that the schema and the reader agreed,
+because there was nothing that *could*: they were in different libraries with
+no relation between them beyond the name.
+
+**Two walks, disagreeing.** `property.cpp`'s `lineage` honoured traits and the
+implicit root; `types.cpp` had a second walk that followed `of_class` and
+nothing else. Demonstrated with a probe before the fix — `trait glowing
+{ lumens = int }`, `class lamp traits = { glowing }`, `lamp = { lumens =
+"very" }` reported nothing at all — and it is a test now, three of them.
+
+**`root = yes` is the small change that made one walk possible.** The root's
+name was a parameter threaded through `classify_property`, `descends_from` and
+`reachable_properties`, and the second walk simply did not take it. Declaring
+which class is the root keeps the *name* core's, in data, while making the
+*concept* the format's, so no signature has to carry it. At most one class in
+a program may declare it, and the registry says which.
+
+**`any` was an escape hatch wearing a type's clothes.** F10 added it for one
+key — a global's `initial`, typed by the `type` beside it — and in doing so
+gave every schema in every library a way to opt out of type checking by
+writing one word. §7.2's `type_of` is the same idea scoped to the key that
+needs it: it names the sibling whose *value* is this key's type, and
+`validate_block` resolves it where it already checks every other value. Two
+more callers are waiting in §11.1.
+
+**`of_trait` rather than a `trait_extension` form.** The two forms would have
+differed in one identifier. What was actually missing was a way to say *which
+namespace*, because §8.3 keeps classes and traits apart and an id may be both
+— so the old `find_class_or_trait` extended whichever the load order reached
+first. Naming `of_class` at a trait is now its own diagnostic, with the other
+key as a fix-it.
+
+**`check_layering.py` was much weaker than it looked.** It carved its
+"mechanism" exemption out of `libs/starcore/builtin/` by treating a `schema`
+id and its key names as schema language — which exempted `restrictions`,
+`failureMsg`, `when` and `effects`, the four names proposal §2.1.1 uses as its
+own examples of vocabulary. Twenty names guarded, eighty-four exempt. The sets
+now come from the two builtin directories, so which directory a name is
+declared in decides the answer: **fifty-four guarded**, and proposal §2.1.1's
+`[OPEN]` about those four is closed.
+
+**The drift guard is `scripts/check_format_forms.py`.** It reads the dispatch
+out of `fold_declaration` and the key literals out of each reader's body, so
+adding a branch or a key is covered without editing it, and a reader it cannot
+map to a form is a hard error rather than a skip. Verified by breaking it three
+ways. The asymmetry is deliberate: a key a reader reads MUST be declared, and a
+declared key no reader names is fine — `validate_block` runs on `global` before
+`read_global` does, so `initial` is checked with no C++ naming it.
+
+**[OPEN] `resolve` (§8.3) and `version_constraints` (§13.3) are declared and
+parsed by nobody.** Both are format forms by the rule — they are parts of a
+declaration the format layer reads — but neither has a reader yet, so their
+keys are validated generically and their *meaning* is unimplemented. §8.3's
+trait conflict resolution is the one that matters; it belongs with whichever
+task closes trait conflict detection.
+
+**[OPEN] `key` is not in Appendix C.** It is a nested form, and the table is
+top-level forms — but the bootstrap pair is now the one place where a format
+form's declaration and its reader must match exactly, and that is worth saying
+somewhere a reader of the specification will find it.
 
 ### F9 · Reference resolution — **phase boundary, keep small**
 **Size:** M · **Depends on:** F4

@@ -71,6 +71,12 @@ using diag::Diagnostic;
     return statement.report_span();
 }
 
+// Which key holds a `global`'s or a `const`'s starting value: §6.4 writes
+// `initial` for one and `value` for the other.
+[[nodiscard]] std::string_view initial_value_key(bool is_const) noexcept {
+    return is_const ? "value" : "initial";
+}
+
 void report_missing(const ast::Statement& statement, std::string_view form, std::string_view key,
                     diag::DiagnosticSink& sink) {
     Diagnostic diagnostic(Code::SchemaInvalid, head_span(statement),
@@ -111,12 +117,26 @@ void report_missing(const ast::Statement& statement, std::string_view form, std:
             decl.type = *lowered;
         }
     }
-    if (decl.type.name.empty()) {
+    decl.type_of = text_of(*block, "type_of");
+    if (!decl.type_of.empty() && !decl.type.name.empty()) {
+        Diagnostic diagnostic(Code::SchemaInvalid, decl.span,
+                              "the key '" + decl.name +
+                                  "' declares both a 'type' and a 'type_of', and those are two "
+                                  "answers to one question");
+        diagnostic.with_note("`type_of` names a sibling key whose value is this key's type, for a "
+                             "slot whose type is decided by other data -- a `global`'s `initial` "
+                             "against its `type` (spec §7.2, §6.4). A key with a fixed type says "
+                             "`type`");
+        sink.report(std::move(diagnostic));
+        decl.type_of.clear();
+    }
+    if (decl.type.name.empty() && decl.type_of.empty()) {
         Diagnostic diagnostic(Code::SchemaInvalid, decl.span,
                               "the key '" + decl.name +
                                   "' has no type, so nothing can be "
                                   "checked about what an author writes there");
-        diagnostic.with_note("every key declaration carries a type expression (spec §7.2, §6.2)");
+        diagnostic.with_note("every key declaration carries a type expression, or a `type_of` "
+                             "naming the sibling key that supplies one (spec §7.2, §6.2)");
         sink.report(std::move(diagnostic));
         return std::nullopt;
     }
@@ -654,6 +674,49 @@ std::optional<EnumDecl> read_enum(const ast::Statement& statement, std::string_v
     return decl;
 }
 
+std::optional<GlobalDecl> read_global(const ast::Statement& statement, bool is_const,
+                                      std::string_view owner, diag::DiagnosticSink& sink) {
+    const std::string_view form = is_const ? "const" : "global";
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        Diagnostic diagnostic(Code::SchemaInvalid, head_span(statement),
+                              "a " + std::string(form) +
+                                  " is a block of declarations, not a bare value");
+        diagnostic.with_note("it is written `" + std::string(form) + " = { id = ...  type = ...  " +
+                             std::string(initial_value_key(is_const)) + " = ... }` (spec §6.4)");
+        sink.report(std::move(diagnostic));
+        return std::nullopt;
+    }
+
+    GlobalDecl decl;
+    decl.is_const = is_const;
+    decl.owner = std::string(owner);
+    decl.span = head_span(statement);
+    decl.id = text_of(*block, "id");
+    if (decl.id.empty()) {
+        report_missing(statement, form, "id", sink);
+        return std::nullopt;
+    }
+    // The id's VALUE, not the `id` key: the name is what a reader is looking
+    // for, and `id` would be the same two characters on every declaration.
+    if (const std::optional<ast::Statement> id_statement = block->find("id")) {
+        const std::optional<ast::Value> written = id_statement->value();
+        decl.span = written ? written->span() : id_statement->report_span();
+    }
+
+    const std::optional<ast::Value> declared_type = block->value_of("type");
+    const std::optional<ast::TypeRef> type =
+        declared_type ? declared_type->as_type() : std::nullopt;
+    if (!type) {
+        report_missing(statement, form, "type", sink);
+        return std::nullopt;
+    }
+    decl.type = *type;
+    decl.type_span = declared_type->span();
+    return decl;
+}
+
 std::optional<CoreRequirement> read_core_requirement(const ast::Statement& statement,
                                                      diag::DiagnosticSink& sink) {
     const std::optional<ast::Value> value = statement.value();
@@ -708,7 +771,7 @@ const Schema& schema_of_schemas() {
         result.id = "schema";
         result.top_level = true;
         result.sealed = true;
-        result.owner = "starcore";
+        result.owner = "stardata";
         result.doc = "The description of a form. Hard-coded because it is what reads the file "
                      "every other schema is written in.";
         result.keys.push_back(bootstrap_key("id", "identifier", /*required=*/true));
@@ -727,11 +790,17 @@ const Schema& key_schema() {
     static const Schema schema = [] {
         Schema result;
         result.id = "key";
-        result.owner = "starcore";
+        result.owner = "stardata";
         result.sealed = true;
         result.doc = "One key of a form, per the table in spec §7.2.";
         result.keys.push_back(bootstrap_key("name", "identifier", /*required=*/true));
-        result.keys.push_back(bootstrap_key("type", "type_expr", /*required=*/true));
+        // Neither `type` nor `type_of` is required here, though one of them
+        // is required of every key. The rule is "exactly one", which is two
+        // rules -- not both, not neither -- and `read_key` states both in the
+        // author's terms. Marking `type` required as well would report a key
+        // that correctly wrote `type_of` for having forgotten `type`.
+        result.keys.push_back(bootstrap_key("type", "type_expr"));
+        result.keys.push_back(bootstrap_key("type_of", "identifier"));
         result.keys.push_back(bootstrap_key("required", "bool"));
         result.keys.push_back(bootstrap_key("arity", "arity_enum"));
         result.keys.push_back(bootstrap_key("default", "scalar"));

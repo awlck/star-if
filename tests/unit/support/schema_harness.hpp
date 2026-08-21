@@ -75,11 +75,18 @@ public:
     // One string loaded as if it were a library file. This is how the
     // sealing assertions of backlog F2a are exercised: a library trying to
     // do something only core may do.
-    void load_text(std::string text, std::string owner = "a library",
-                   std::string name = "library.star", bool is_core = false) {
+    //
+    // Returns the id, so that a caller wanting the tree as well as the
+    // registry can re-view the same source rather than adding a second copy
+    // of the text to a second manager. Two copies means two sets of spans
+    // that render only against the manager they came from, which is a
+    // confusing way for a test to fail.
+    diag::SourceId load_text(std::string text, std::string owner = "a library",
+                             std::string name = "library.star", bool is_core = false) {
         const diag::SourceId id = sources.add_file(std::move(name), std::move(text));
         schema::load_source(id, schema::LoadOptions{std::move(owner), is_core, {}}, sources, cache,
                             set, sink);
+        return id;
     }
 
     [[nodiscard]] bool reported(diag::Code code) const {

@@ -50,7 +50,8 @@ using diag::Diagnostic;
 // layer, so the layer has to read it itself.
 [[nodiscard]] bool is_structural_form(std::string_view key) noexcept {
     return key == "schema" || key == "class" || key == "trait" || key == "class_extension" ||
-           key == "schema_extension" || key == "core_requirement" || key == "enum";
+           key == "schema_extension" || key == "core_requirement" || key == "enum" ||
+           key == "global" || key == "const";
 }
 
 } // namespace
@@ -94,6 +95,11 @@ const Schema* SchemaSet::find(std::string_view id) const noexcept {
 const EnumDecl* SchemaSet::find_enum(std::string_view id) const noexcept {
     const auto it = enum_index_.find(std::string(id));
     return it == enum_index_.end() ? nullptr : &enums_[it->second];
+}
+
+const GlobalDecl* SchemaSet::find_global(std::string_view id) const noexcept {
+    const auto it = global_index_.find(std::string(id));
+    return it == global_index_.end() ? nullptr : &globals_[it->second];
 }
 
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
@@ -308,6 +314,24 @@ bool SchemaSet::declare_enum(EnumDecl decl, const std::optional<Replaces>& repla
     }
     enum_index_.emplace(decl.id, enums_.size());
     enums_.push_back(std::move(decl));
+    return true;
+}
+
+bool SchemaSet::declare_global(GlobalDecl decl, const std::optional<Replaces>& replaces,
+                               diag::DiagnosticSink& sink) {
+    // §6.4: "Ids live in a single namespace", so a `const` and a `global`
+    // collide -- which is what `offer`'s space being "global" for both says.
+    const Outcome outcome = offer(
+        Declaration{"global", decl.id, decl.owner, /*sealed=*/false, decl.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
+        return false;
+    }
+    if (const auto it = global_index_.find(decl.id); it != global_index_.end()) {
+        globals_[it->second] = std::move(decl);
+        return true;
+    }
+    global_index_.emplace(decl.id, globals_.size());
+    globals_.push_back(std::move(decl));
     return true;
 }
 
@@ -622,7 +646,26 @@ void validate_block(const ast::Block& block, const Schema& schema, const SchemaS
             if (declared == nullptr || !value) {
                 continue;
             }
-            check_value("'" + *name + "'", *value, declared->type, *set, sink);
+            // §7.2's dependent type: the type is not in the declaration, it
+            // is in a sibling key's value. `global = { type = int  initial =
+            // 0 }` is the case -- one form whose `initial` is an `int` here
+            // and a `map<direction, ref<room>>` two lines down.
+            //
+            // A missing or unreadable sibling is not reported here. Either
+            // the sibling is required, and the required-key check below is
+            // about to say so in the author's own terms, or it is absent by
+            // choice and there is nothing to check against.
+            ast::TypeRef expected = declared->type;
+            if (!declared->type_of.empty()) {
+                const std::optional<ast::Value> supplier = block.value_of(declared->type_of);
+                const std::optional<ast::TypeRef> lowered =
+                    supplier ? supplier->as_type() : std::nullopt;
+                if (!lowered) {
+                    continue;
+                }
+                expected = *lowered;
+            }
+            check_value("'" + *name + "'", *value, expected, *set, sink);
         }
     }
 
@@ -680,6 +723,23 @@ void fold_declaration(const ast::Statement& statement, const std::string& key,
                 read_class_extension(statement, markers, sink)) {
             set.apply_extension(*decl, sink);
         }
+        return;
+    }
+    if (key == "global" || key == "const") {
+        const bool is_const = key == "const";
+        std::optional<GlobalDecl> decl = read_global(statement, is_const, options.owner, sink);
+        if (!decl) {
+            return;
+        }
+        // The starting value is NOT checked here. `check_top_level` ran
+        // moments ago on this same statement and `validate_block` checked
+        // `initial` against `type` for us, because the schema in
+        // `format.star` types it `type_of = type` -- §7.2's dependent type.
+        //
+        // Which is the point of having one: the rule "the starting value has
+        // the declared type" is now written where an author can read it,
+        // rather than living in a reader nobody can see.
+        set.declare_global(*std::move(decl), replaces, sink);
         return;
     }
     if (key == "schema_extension") {

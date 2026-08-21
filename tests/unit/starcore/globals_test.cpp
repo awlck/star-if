@@ -18,6 +18,7 @@
 #include "stardata/diag/codes.hpp"
 #include "stardata/diag/render.hpp"
 #include "stardata/diag/sink.hpp"
+#include "stardata/schema/types.hpp"
 
 #include "starcore/globals.hpp"
 #include "support/corpus.hpp"
@@ -29,45 +30,56 @@ using namespace stardata;
 
 namespace {
 
-// A file loaded against the real core-owned set and then walked, which is
-// how the pass runs: the registry decides whether the declaration itself is
-// well formed, and this decides what the uses mean.
+// A file loaded against the real set and then walked, which is how the pass
+// runs. TWO SINKS, because the work is split across two libraries: the format
+// layer reads the `global` and `const` declarations and reports anything
+// wrong with one (§7.2.4 makes them format forms), and this pass reports what
+// the *uses* mean. A test should not have to know which half spoke, so
+// `count` and `first` look in both, load order first.
 class Checked {
 public:
     explicit Checked(const std::string& text, const std::string& name = "game.star") {
         loaded.load_builtin();
         loaded.load_stdlib();
         REQUIRE(loaded.sink.error_count() == 0);
-        loaded.load_text(text, "a ruleset", name);
+        const diag::SourceId id = loaded.load_text(text, "a ruleset", name);
+        // The whole-program type pass, which is where a global's declared
+        // type is checked for naming a type at all. It runs once, after
+        // loading, because a type may be declared in a later file (§13.2).
+        schema::check_declared_types(loaded.set, loaded.sink);
 
-        const diag::SourceId id = sources.add_file(name, text);
-        green = cst::parse(sources, id, cache, sink);
+        green = cst::parse(loaded.sources, id, loaded.cache, sink);
         const ast::File file = ast::File::from(cst::SyntaxNode::root(green), id);
-        index.add_file(file, loaded.set, sink);
-        index.check(sink);
+        index.add_file(file);
+        index.check(loaded.set, sink);
     }
 
     [[nodiscard]] std::size_t count(diag::Code code) const {
         std::size_t found = 0;
-        for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
-            found += diagnostic.code() == code ? 1 : 0;
+        for (const diag::DiagnosticSink* which : {&loaded.sink, &sink}) {
+            for (const diag::Diagnostic& diagnostic : which->diagnostics()) {
+                found += diagnostic.code() == code ? 1 : 0;
+            }
         }
         return found;
     }
 
     [[nodiscard]] const diag::Diagnostic* first(diag::Code code) const {
-        for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
-            if (diagnostic.code() == code) {
-                return &diagnostic;
+        for (const diag::DiagnosticSink* which : {&loaded.sink, &sink}) {
+            for (const diag::Diagnostic& diagnostic : which->diagnostics()) {
+                if (diagnostic.code() == code) {
+                    return &diagnostic;
+                }
             }
         }
         return nullptr;
     }
 
     test::LoadedSet loaded;
-    diag::SourceManager sources;
+    // One manager for both halves, so a span from either renders. Declared
+    // after `loaded` because it binds to a member of it.
+    diag::SourceManager& sources = loaded.sources;
     diag::DiagnosticSink sink;
-    cst::GreenCache cache;
     cst::GreenNodePtr green;
     starcore::GlobalIndex index;
 };
@@ -77,18 +89,23 @@ public:
 // --- §6.4, declared and typed -------------------------------------------
 
 TEST_CASE("a global is registered with its declared type", "[starcore][globals]") {
+    // The registry is the format layer's, not this pass's: `global` and
+    // `const` are format forms (§7.2.4), so what a program declares is
+    // answered by `SchemaSet`. The test stays here because what it is really
+    // asserting is that the two halves see the same globals -- this pass
+    // resolves every name below against exactly these entries.
     const Checked checked(
         "global = { id = alert_level  type = int  initial = 0 }\n"
         "const  = { id = max_temp     type = int  value   = 1200 }\n"
         "rule = { of_action = look  when = { }\n"
         "         conditions = { global = { alert_level >= 1 } }\n"
         "         effects    = { add_global = { id = max_temp  amount = 0 } } }\n");
-    REQUIRE(checked.index.declarations().size() == 2);
-    CHECK(checked.index.declarations()[0].id == "alert_level");
-    CHECK_FALSE(checked.index.declarations()[0].is_const);
-    CHECK(checked.index.declarations()[0].type.to_string() == "int");
+    REQUIRE(checked.loaded.set.globals().size() == 2);
+    CHECK(checked.loaded.set.globals()[0].id == "alert_level");
+    CHECK_FALSE(checked.loaded.set.globals()[0].is_const);
+    CHECK(checked.loaded.set.globals()[0].type.to_string() == "int");
 
-    const starcore::GlobalIndex::Declaration* found = checked.index.find("max_temp");
+    const schema::GlobalDecl* found = checked.loaded.set.find_global("max_temp");
     REQUIRE(found != nullptr);
     CHECK(found->is_const);
 }
@@ -106,8 +123,9 @@ TEST_CASE("a global's declared type has to name a type", "[starcore][globals]") 
 TEST_CASE("an initial value is checked against the type declared beside it",
           "[starcore][globals]") {
     // A dependent type: the `initial` key's type is the value of the `type`
-    // key next to it, which no `type =` on a key declaration can express.
-    // Both keys are declared `any` and checked here instead.
+    // key next to it, which no fixed `type =` on a key declaration can
+    // express. §7.2's `type_of = type` says exactly that, and the format
+    // layer's generic value check does the rest.
     const Checked checked("global = { id = alert_level  type = int  initial = \"high\" }\n"
                           "rule = { of_action = look  when = { }\n"
                           "         conditions = { global = { alert_level >= 1 } } }\n");
@@ -116,7 +134,8 @@ TEST_CASE("an initial value is checked against the type declared beside it",
 
 TEST_CASE("a collection-valued initial is legal", "[starcore][globals]") {
     // §6.4's own examples: `initial = { }` for a set, and a record block for
-    // a map. `scalar` rejected both, which is what `any` was added for.
+    // a map. A `type = scalar` on the key would reject both, which is the
+    // whole reason the type has to come from the sibling.
     const Checked checked("global = { id = seen  type = set<identifier>  initial = { } }\n"
                           "global = { id = moods type = map<identifier, identifier>\n"
                           "           initial = { vex = wary } }\n"
@@ -256,9 +275,7 @@ TEST_CASE("a global declared in one file and read in another is read", "[starcor
     loaded.load_stdlib();
     REQUIRE(loaded.sink.error_count() == 0);
 
-    diag::SourceManager sources;
     diag::DiagnosticSink sink;
-    cst::GreenCache cache;
     starcore::GlobalIndex index;
 
     // The reader first, so the declaration genuinely arrives afterwards.
@@ -267,11 +284,11 @@ TEST_CASE("a global declared in one file and read in another is read", "[starcor
     const std::string declares = "global = { id = captain_found  type = bool  initial = no }\n";
     for (const auto& [name, text] :
          {std::pair<std::string, std::string>{"uses.star", uses}, {"declares.star", declares}}) {
-        const diag::SourceId id = sources.add_file(name, text);
-        const cst::GreenNodePtr green = cst::parse(sources, id, cache, sink);
-        index.add_file(ast::File::from(cst::SyntaxNode::root(green), id), loaded.set, sink);
+        const diag::SourceId id = loaded.load_text(text, "a ruleset", name);
+        const cst::GreenNodePtr green = cst::parse(loaded.sources, id, loaded.cache, sink);
+        index.add_file(ast::File::from(cst::SyntaxNode::root(green), id));
     }
-    index.check(sink);
+    index.check(loaded.set, sink);
 
     CHECK(sink.diagnostics().empty());
 }
@@ -292,14 +309,25 @@ TEST_CASE("stdlib and the valid corpus keep the global rules", "[starcore][globa
 
     // The library's own files are checked against the set they are: nothing
     // else declares what they use.
+    //
+    // One file at a time, which is the right shape for the error questions --
+    // "does this file name a global nobody declares" is answerable about one
+    // file -- and the wrong shape for W-GLOBAL-UNUSED, which is a question
+    // about a whole program. The declarations come from the registry now, so
+    // a per-file index would call every global in the set unread except the
+    // ones this file happens to mention. Skipped rather than accumulated,
+    // because rendering a diagnostic needs the manager its span came from.
     for (const std::filesystem::path& path : builtin.files) {
         INFO("file: " << path.string());
         test::Parsed parsed(test::read_bytes(path), path.generic_string());
         diag::DiagnosticSink sink;
         starcore::GlobalIndex index;
-        index.add_file(parsed.ast(), builtin.set, sink);
-        index.check(sink);
+        index.add_file(parsed.ast());
+        index.check(builtin.set, sink);
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
+            if (diagnostic.code() == diag::Code::GlobalUnused) {
+                continue;
+            }
             std::ostringstream rendered;
             diag::render_human(rendered, diagnostic, parsed.sources(), /*use_color=*/false);
             INFO(rendered.str());
@@ -324,8 +352,8 @@ TEST_CASE("stdlib and the valid corpus keep the global rules", "[starcore][globa
         test::Parsed parsed(contents, test::corpus_name(path));
         diag::DiagnosticSink sink;
         starcore::GlobalIndex index;
-        index.add_file(parsed.ast(), loaded.set, sink);
-        index.check(sink);
+        index.add_file(parsed.ast());
+        index.check(loaded.set, sink);
 
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
             std::ostringstream rendered;

@@ -126,10 +126,15 @@ schema = {
 #  these MEAN at run time; the format layer owns reading the declaration, and
 #  the two are different jobs.
 #
-#  `initial` and `value` carry no `type` of their own because their type is the
-#  value of the `type` key beside them — a dependent type no key declaration
-#  can express. `read_global` checks them against it directly, which is what
-#  removed the `any` escape hatch a previous draft introduced.
+#  `initial` and `value` carry `type_of = type` rather than a type of their
+#  own: §7.2's dependent type, whose meaning is "checked against the value of
+#  the sibling key named here". A global's starting value is an `int` for one
+#  global and a `map<direction, ref<room>>` for the next, so no fixed `type =`
+#  on those lines could be right for both.
+#
+#  The escape hatch a previous draft introduced instead was a type called
+#  `any`, which said "somebody else checks this" — and said it to every schema
+#  in every library, not just to this one key.
 
 schema = {
     id        = global
@@ -139,12 +144,7 @@ schema = {
 
     key = { name = id       type = identifier  required = yes  unique_in = global }
     key = { name = type     type = type_expr   required = yes }
-    # §6.4 writes this key `initial` in every one of its examples, and this
-    # schema called it `default` until F10 checked. Typed `any` because its
-    # real type is the value of the `type` key beside it — a dependent type
-    # no `type =` can express — and libs/starcore/src/globals.cpp checks it
-    # against that, which is the pass that knows.
-    key = { name = initial  type = any }
+    key = { name = initial  type_of = type }
     key = { name = doc      type = text }
 }
 
@@ -156,9 +156,7 @@ schema = {
 
     key = { name = id     type = identifier  required = yes  unique_in = global }
     key = { name = type   type = type_expr   required = yes }
-    # `any` for the same reason as `global`'s `initial`: §6.4 gives a const
-    # "the same types as properties, including collections".
-    key = { name = value  type = any         required = yes }
+    key = { name = value  type_of = type     required = yes }
     key = { name = doc    type = text }
 }
 

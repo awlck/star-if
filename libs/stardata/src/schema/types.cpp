@@ -37,14 +37,13 @@ using diag::Diagnostic;
     // §7.2's key table types `type` as "type expression (§6.2)" and `default`
     // as "scalar", and those are the two names that says.
     //
-    // `any` is the third, and it is the one §6.2 now carries a row for. It
-    // means "this value's type is decided by other data, and is checked
-    // where that data is known" -- a `global`'s `initial` against the
-    // global's own `type` (§6.4), which is a dependent type no `type =` on a
-    // key declaration can express. It is not a hole in the checking: it moves
-    // the check to the pass that can perform it, and every use of it is one
-    // this document names.
-    if (name == "type_expr" || name == "scalar" || name == "any") {
+    // There was briefly a third, `any`, meaning "checked somewhere else". It
+    // existed for one reason -- a `global`'s `initial` is typed by the `type`
+    // key beside it, and `global` was declared in a schema that had to type
+    // the key somehow. Reading the form in this library (§7.2.4) removed the
+    // key, and with it the only honest use of an escape that any third-party
+    // schema could have used to opt out of checking entirely.
+    if (name == "type_expr" || name == "scalar") {
         return 0;
     }
     if (name == "ref" || name == "enum" || name == "flags" || name == "list" || name == "set" ||
@@ -92,9 +91,6 @@ using diag::Diagnostic;
     }
     if (name == "scalar") {
         return "a single value";
-    }
-    if (name == "any") {
-        return "a value of whatever type the declaration says";
     }
     if (name == "flags" || name == "set") {
         return "a list of identifiers in braces";
@@ -229,7 +225,7 @@ void report_mismatch(std::string_view what, diag::Span at, const std::string& fo
     if (name == "type_expr") {
         return identifier; // a bare type name; `list<int>` is a TypeExpr node
     }
-    if (name == "scalar" || name == "any") {
+    if (name == "scalar") {
         return true;
     }
     return false;
@@ -364,14 +360,6 @@ void check_value(std::string_view what, const ast::Value& value, const ast::Type
     // and backlog F7's; what is certain is that its result is not something
     // this pass can type.
     if (value.as_call()) {
-        return;
-    }
-
-    // `any` accepts any shape, scalar or block, because the type that
-    // decides is somewhere else -- a `global`'s declared `type` for its
-    // `initial` (§6.4). The pass that knows where calls `check_value` again
-    // with the real type, so this is a deferral rather than an exemption.
-    if (name == "any") {
         return;
     }
 
@@ -682,7 +670,6 @@ namespace {
                                            "text_or_script",
                                            "type_expr",
                                            "scalar",
-                                           "any",
                                            "ref",
                                            "enum",
                                            "flags",
@@ -696,11 +683,17 @@ namespace {
     return names;
 }
 
-} // namespace
-
-// One type expression, checked for meaning rather than for use. Recurses
-// through the arguments, so `map<direction, ref<no_such_class>>` is reported
-// at the inner name that is wrong.
+// One type expression, checked for meaning rather than for use: the name is
+// one of §6.2's or a declared enum, it takes the right number of arguments,
+// and `enum<E>`, `flags<E>`, `ref<C>` and `block<S>` name something that
+// exists. Recurses through the arguments, so `map<direction,
+// ref<no_such_class>>` is reported at the inner name that is wrong.
+//
+// `at` is where to report, and `context` names the thing being typed -- "the
+// global 'alert_level'". Internal again: it was exposed for a pass in
+// `libs/starcore` that read `global` and `const` declarations, and §7.2.4
+// now makes those format forms, so `check_declared_types` below reaches them
+// like everything else.
 void check_type(const ast::TypeRef& type, diag::Span at, std::string_view context,
                 const SchemaSet& set, diag::DiagnosticSink& sink) {
     const ast::TypeRef resolved = resolve_type(type, set);
@@ -800,9 +793,34 @@ void check_type(const ast::TypeRef& type, diag::Span at, std::string_view contex
     }
 }
 
+} // namespace
+
 void check_declared_types(const SchemaSet& set, diag::DiagnosticSink& sink) {
     for (const Schema& schema : set.schemas()) {
         for (const KeyDecl& key : schema.keys) {
+            // §7.2's dependent type. There is no type expression to check --
+            // the type arrives at validation time as another key's value --
+            // so what is checked instead is that the sibling named is a key
+            // this form actually has, which is the mistake a `type_of` can
+            // make on its own.
+            if (!key.type_of.empty()) {
+                if (schema.find_key(key.type_of) == nullptr) {
+                    Diagnostic diagnostic(Code::SchemaInvalid, key.span,
+                                          "'" + key.name + "' takes its type from '" + key.type_of +
+                                              "', and '" + schema.id + "' has no such key");
+                    diagnostic.with_note("`type_of` names a sibling key of the same form, whose "
+                                         "value is the type this key is checked against (spec "
+                                         "§7.2)");
+                    std::vector<std::string_view> declared;
+                    declared.reserve(schema.keys.size());
+                    for (const KeyDecl& other : schema.keys) {
+                        declared.emplace_back(other.name);
+                    }
+                    suggest(diagnostic, key.span, key.type_of, declared);
+                    sink.report(std::move(diagnostic));
+                }
+                continue;
+            }
             check_type(key.type, key.span, "'" + key.name + "' on '" + schema.id + "'", set, sink);
         }
     }
@@ -811,6 +829,14 @@ void check_declared_types(const SchemaSet& set, diag::DiagnosticSink& sink) {
             check_type(property.type, property.span, "'" + property.name + "' on '" + decl.id + "'",
                        set, sink);
         }
+    }
+    // §6.4's globals, which were the gap: `check_declared_types` walked
+    // schemas and classes, a global is neither, and so
+    // `global = { id = x  type = frobnicate }` loaded without a word.
+    for (const GlobalDecl& decl : set.globals()) {
+        check_type(decl.type, decl.type_span,
+                   "the " + std::string(decl.is_const ? "const" : "global") + " '" + decl.id + "'",
+                   set, sink);
     }
 }
 

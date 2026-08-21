@@ -311,20 +311,27 @@ TEST_CASE("each invalid fixture reports the starcore codes it declares", "[starc
         // each class declares, so a fixture's own classes and actions have
         // to be in it. Placement needed only the relation enum and so never
         // did.
-        loaded.load_text(contents, "a library", test::corpus_name(path));
-        test::Parsed parsed(contents, test::corpus_name(path));
+        const diag::SourceId id = loaded.load_text(contents, "a library", test::corpus_name(path));
+        // Viewed out of the manager that loaded it rather than parsed into a
+        // second one. `GlobalIndex::check` answers out of the registry now,
+        // so the span on a diagnostic about a declaration belongs to the
+        // loader's source manager -- and a span rendered against a manager it
+        // did not come from is garbage at best.
+        diag::DiagnosticSink parse_sink;
+        const cst::GreenNodePtr green = cst::parse(loaded.sources, id, loaded.cache, parse_sink);
+        const ast::File ast = ast::File::from(cst::SyntaxNode::root(green), id);
         diag::DiagnosticSink sink;
-        starcore::check_placements(parsed.ast(), loaded.set, sink);
-        starcore::check_property_reads(parsed.ast(), loaded.set, sink);
-        starcore::check_failure_messages(parsed.ast(), loaded.set, sink);
+        starcore::check_placements(ast, loaded.set, sink);
+        starcore::check_property_reads(ast, loaded.set, sink);
+        starcore::check_failure_messages(ast, loaded.set, sink);
         starcore::GlobalIndex globals;
-        globals.add_file(parsed.ast(), loaded.set, sink);
-        globals.check(sink);
+        globals.add_file(ast);
+        globals.check(loaded.set, sink);
         // The text layer is two-phase (§13.2 lets a `$key` and the `loc`
         // that defines it sit in either order, in either file), so the
         // fixture is indexed and then the index is asked.
         starcore::TextIndex text;
-        text.add_file(parsed.ast(), sink);
+        text.add_file(ast, sink);
         text.check(sink);
 
         std::set<std::string> reported;
@@ -362,17 +369,24 @@ TEST_CASE("each fixture's starcore diagnostics match its checked-in snapshot",
         // each class declares, so a fixture's own classes and actions have
         // to be in it. Placement needed only the relation enum and so never
         // did.
-        loaded.load_text(contents, "a library", test::corpus_name(path));
-        test::Parsed parsed(contents, test::corpus_name(path));
+        const diag::SourceId id = loaded.load_text(contents, "a library", test::corpus_name(path));
+        // Viewed out of the manager that loaded it rather than parsed into a
+        // second one. `GlobalIndex::check` answers out of the registry now,
+        // so the span on a diagnostic about a declaration belongs to the
+        // loader's source manager -- and a span rendered against a manager it
+        // did not come from is garbage at best.
+        diag::DiagnosticSink parse_sink;
+        const cst::GreenNodePtr green = cst::parse(loaded.sources, id, loaded.cache, parse_sink);
+        const ast::File ast = ast::File::from(cst::SyntaxNode::root(green), id);
         diag::DiagnosticSink sink;
-        starcore::check_placements(parsed.ast(), loaded.set, sink);
-        starcore::check_property_reads(parsed.ast(), loaded.set, sink);
-        starcore::check_failure_messages(parsed.ast(), loaded.set, sink);
+        starcore::check_placements(ast, loaded.set, sink);
+        starcore::check_property_reads(ast, loaded.set, sink);
+        starcore::check_failure_messages(ast, loaded.set, sink);
         starcore::GlobalIndex globals;
-        globals.add_file(parsed.ast(), loaded.set, sink);
-        globals.check(sink);
+        globals.add_file(ast);
+        globals.check(loaded.set, sink);
         starcore::TextIndex text;
-        text.add_file(parsed.ast(), sink);
+        text.add_file(ast, sink);
         text.check(sink);
 
         std::ostringstream out;
@@ -386,7 +400,7 @@ TEST_CASE("each fixture's starcore diagnostics match its checked-in snapshot",
                 out << '\n';
             }
             first = false;
-            diag::render_human(out, diagnostic, parsed.sources(), /*use_color=*/false);
+            diag::render_human(out, diagnostic, loaded.sources, /*use_color=*/false);
         }
         if (first) {
             out << "(no diagnostics)\n";

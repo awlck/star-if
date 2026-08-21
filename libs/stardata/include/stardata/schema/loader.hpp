@@ -101,6 +101,11 @@ public:
     bool declare_enum(EnumDecl decl, const std::optional<Replaces>& replaces,
                       diag::DiagnosticSink& sink);
 
+    // §6.4's `global` and `const`. One namespace for both, which is why they
+    // share `offer`'s `global` space and one lookup.
+    bool declare_global(GlobalDecl decl, const std::optional<Replaces>& replaces,
+                        diag::DiagnosticSink& sink);
+
     // A property one object declared for itself (§8.7, backlog F11).
     //
     // Tracked because §8.8.2's classification needs it: a slot typed `thing`
@@ -120,6 +125,10 @@ public:
 
     [[nodiscard]] const Schema* find(std::string_view id) const noexcept;
     [[nodiscard]] const EnumDecl* find_enum(std::string_view id) const noexcept;
+
+    // §6.4's single namespace: a `global` and a `const` cannot share an id, so
+    // one lookup answers for both and the caller reads `is_const` if it cares.
+    [[nodiscard]] const GlobalDecl* find_global(std::string_view id) const noexcept;
     [[nodiscard]] const Declaration* find_declaration(std::string_view space,
                                                       std::string_view id) const noexcept;
 
@@ -147,6 +156,7 @@ public:
     [[nodiscard]] const std::vector<Schema>& schemas() const noexcept { return schemas_; }
     [[nodiscard]] const std::vector<ClassDecl>& classes() const noexcept { return classes_; }
     [[nodiscard]] const std::vector<EnumDecl>& enums() const noexcept { return enums_; }
+    [[nodiscard]] const std::vector<GlobalDecl>& globals() const noexcept { return globals_; }
     [[nodiscard]] const std::vector<Declaration>& declarations() const noexcept {
         return declarations_;
     }
@@ -173,6 +183,7 @@ private:
     std::vector<Schema> schemas_;
     std::vector<ClassDecl> classes_;
     std::vector<EnumDecl> enums_;
+    std::vector<GlobalDecl> globals_;
     std::vector<Declaration> declarations_;
     std::vector<CoreRequirement> requirements_;
     std::vector<LibraryManifest> libraries_;
@@ -186,6 +197,7 @@ private:
     std::unordered_map<std::string, std::size_t> class_index_;
     std::unordered_map<std::string, std::size_t> trait_index_;
     std::unordered_map<std::string, std::size_t> enum_index_;
+    std::unordered_map<std::string, std::size_t> global_index_;
 
     // Keyed by namespace and id both, since §7.6's uniqueness rule is stated
     // per `unique_in` namespace: `const` and `global` share one, `class` and

@@ -554,22 +554,37 @@ std::optional<ExtensionDecl> read_class_extension(const ast::Statement& statemen
 
     ExtensionDecl decl;
     decl.span = head_span(statement);
-    decl.of_class = text_of(*block, "of_class");
-    decl.of_class_span = decl.span;
-    if (const std::optional<ast::Statement> target = block->find("of_class")) {
-        decl.of_class_span = target->report_span();
+
+    // §8.2's target, named by one of two keys. `of_trait` is checked first so
+    // that a block naming both -- already an E-EXCLUSIVE-GROUP from the
+    // schema's own declaration -- still reads as *something* rather than
+    // being dropped: reporting a made-up second error about the class not
+    // existing would bury the real one.
+    const bool has_class = block->find("of_class").has_value();
+    const bool has_trait = block->find("of_trait").has_value();
+    decl.targets_trait = has_trait;
+    decl.target = text_of(*block, has_trait ? "of_trait" : "of_class");
+    decl.target_span = decl.span;
+    if (const std::optional<ast::Statement> named = block->find(decl.target_key())) {
+        decl.target_span = named->report_span();
     }
-    if (decl.of_class.empty()) {
-        report_missing(statement, "class_extension", "of_class", sink);
+    if (decl.target.empty()) {
+        if (has_class || has_trait) {
+            report_missing(statement, "class_extension", decl.target_key(), sink);
+        }
+        // Naming neither is the exclusive group's to report, and it has
+        // (§7.2.1: zero is an error where any member is required). Saying it
+        // again here in different words would be two errors for one mistake.
         return std::nullopt;
     }
 
-    // §8.2: an extension MUST NOT change `of_class`. The key naming the class
-    // being extended is itself `of_class`, so the change is spelled with a
-    // second one -- which is why this is a count and not a presence check.
-    const std::vector<ast::Statement> targets = block->find_all("of_class");
+    // §8.2: an extension MUST NOT change what it extends. The key naming the
+    // target is itself `of_class` or `of_trait`, so the change is spelled
+    // with a second one -- which is why this is a count and not a presence
+    // check.
+    const std::vector<ast::Statement> targets = block->find_all(decl.target_key());
     if (targets.size() > 1) {
-        decl.declares_of_class_change = true;
+        decl.declares_reparent = true;
         decl.reparent_span = targets[1].report_span();
     }
 

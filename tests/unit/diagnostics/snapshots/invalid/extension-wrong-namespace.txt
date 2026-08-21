@@ -1,0 +1,6 @@
+# tests/corpus/invalid/extension-wrong-namespace.star
+# declared E-SCHEMA-INVALID
+# lexer and parser report (none)
+# E-SCHEMA-INVALID is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

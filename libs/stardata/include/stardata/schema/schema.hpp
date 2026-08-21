@@ -219,15 +219,32 @@ struct GlobalDecl {
     [[nodiscard]] bool is_bool() const noexcept { return type.name == "bool"; }
 };
 
-// A `class_extension` (§8.2): adds properties and defaults to a class
-// declared elsewhere, possibly in a library the author cannot edit.
+// A `class_extension` (§8.2): adds properties and defaults to a class or a
+// trait declared elsewhere, possibly in a library the author cannot edit.
+//
+// ONE FORM FOR BOTH, with the target named by `of_class` or by `of_trait` --
+// §7.2.1's exclusive group, so writing both or neither is an error the schema
+// states rather than a rule the reader knows. The alternative considered was a
+// second form, `trait_extension`, mirroring this one key for key; two forms
+// that differ in one identifier are two places to fix every later change.
+//
+// Naming which one is not pedantry. `class` and `trait` are separate
+// namespaces (§8.3), so an id can be both, and a single `of =` would extend
+// whichever the lookup happened to try first -- silently, and differently
+// depending on load order.
 struct ExtensionDecl {
-    std::string of_class;
+    std::string target;
+    bool targets_trait = false;
     std::vector<PropDecl> properties;
     diag::Span span;
-    diag::Span of_class_span;
-    bool declares_of_class_change = false; // §8.2 forbids it; F2a reports it
+    diag::Span target_span;
+    bool declares_reparent = false; // §8.2 forbids it; F2a reports it
     diag::Span reparent_span;
+
+    // The key that named the target, for a diagnostic that has to quote it.
+    [[nodiscard]] std::string_view target_key() const noexcept {
+        return targets_trait ? "of_trait" : "of_class";
+    }
 };
 
 // A `schema_extension` (§7.5): adds keys to an existing form, including a

@@ -72,10 +72,17 @@ schema = {
     top_level = yes
     sealed    = yes
     open      = yes  # as with `class`, any other key changes a default
-    doc       = "Adds properties and changes defaults on a class declared elsewhere (§8.2)."
+    doc       = "Adds properties and changes defaults on a class or trait declared elsewhere (§8.2)."
 
-    key = { name = of_class  type = identifier       required = yes
+    # One form for both, with the target named by exactly one of these two.
+    # §8.3 keeps classes and traits in separate namespaces, so an id can be
+    # both — which is why the key says which namespace to look in, rather than
+    # a single `of` searching one and then the other in whatever order the
+    # files happened to load.
+    key = { name = of_class  type = identifier  required = yes  exclusive_group = subject
             doc  = "The class being extended. It must already exist." }
+    key = { name = of_trait  type = identifier  required = yes  exclusive_group = subject
+            doc  = "The trait being extended. It must already exist." }
     key = { name = prop_def  type = block<prop_def>  arity = many  combine = merge }
     key = { name = traits    type = list<identifier> }
     key = { name = doc       type = text }

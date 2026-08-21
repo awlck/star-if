@@ -386,14 +386,39 @@ bool SchemaSet::apply_schema_extension(const SchemaExtensionDecl& extension,
 
 bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::DiagnosticSink& sink) {
     // Either namespace: §8.2 draws no distinction, and a trait's property set
-    // is extended the same way a class's is.
-    const ClassDecl* existing = find_class_or_trait(extension.of_class);
+    // is extended the same way a class's is. WHICH namespace is the
+    // declaration's to say, though -- `of_class` looks only among classes and
+    // `of_trait` only among traits (§8.3 keeps them separate, so an id can be
+    // both). A single lookup that tried one and fell back to the other would
+    // extend whichever it found first, which is not a decision an author made.
+    const std::string_view named = extension.target_key();
+    const ClassDecl* existing =
+        extension.targets_trait ? find_trait(extension.target) : find_class(extension.target);
     if (existing == nullptr) {
-        Diagnostic diagnostic(Code::SchemaInvalid, extension.of_class_span,
-                              "I can't extend '" + extension.of_class +
+        Diagnostic diagnostic(Code::SchemaInvalid, extension.target_span,
+                              "I can't extend '" + extension.target +
                                   "', because nothing declares it");
-        diagnostic.with_note("a class_extension names a class declared elsewhere -- in a library, "
-                             "or earlier in the load order (spec §8.2, §13.2)");
+        diagnostic.with_note("a class_extension names a " +
+                             std::string(extension.targets_trait ? "trait" : "class") +
+                             " declared elsewhere -- in a library, or earlier in the load order "
+                             "(spec §8.2, §13.2)");
+        // The other namespace, which is the mistake worth naming: an author
+        // who wrote `of_class` at a trait has not misspelled anything.
+        const ClassDecl* other =
+            extension.targets_trait ? find_class(extension.target) : find_trait(extension.target);
+        if (other != nullptr) {
+            diagnostic.with_note(
+                "'" + extension.target + "' is declared, but as a " +
+                    std::string(extension.targets_trait ? "class" : "trait") + ", and '" +
+                    std::string(named) + "' looks only among " +
+                    std::string(extension.targets_trait ? "traits" : "classes") + "; '" +
+                    std::string(extension.targets_trait ? "of_class" : "of_trait") +
+                    "' is the key for the other namespace (spec §8.3)",
+                other->span);
+            const std::string other_key = extension.targets_trait ? "of_class" : "of_trait";
+            diagnostic.with_fix_it(extension.target_span, other_key,
+                                   "name it with `" + other_key + "`");
+        }
         sink.report(std::move(diagnostic));
         return false;
     }
@@ -401,9 +426,9 @@ bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::Diagnostic
     bool accepted = true;
 
     // §7.2.2 and §8.2: an extension may add, never re-point.
-    if (extension.declares_of_class_change) {
+    if (extension.declares_reparent) {
         Diagnostic diagnostic(Code::CoreReparent, extension.reparent_span,
-                              "a class_extension can't change what '" + extension.of_class +
+                              "a class_extension can't change what '" + extension.target +
                                   "' inherits from");
         diagnostic.with_note("extension adds to a class; changing its parent would silently "
                              "rewrite every object of that class, including ones written by "
@@ -427,7 +452,7 @@ bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::Diagnostic
         // already exists: the engine reads this slot at a known type.
         Diagnostic diagnostic(Code::PropDefTypeMismatch, property.span,
                               "'" + property.name + "' is already a " + declared->type.to_string() +
-                                  " on " + extension.of_class + ", and this would make it a " +
+                                  " on " + extension.target + ", and this would make it a " +
                                   property.type.to_string());
         diagnostic.with_note("declared here, by " + classes_[index].owner, declared->span);
         if (classes_[index].sealed) {

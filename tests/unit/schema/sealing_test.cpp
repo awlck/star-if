@@ -177,6 +177,78 @@ TEST_CASE("extending a class nothing declares is refused", "[schema][sealing]") 
     CHECK(mentions(loaded, diag::Code::SchemaInvalid, "starcore.hovercraft"));
 }
 
+// --- §8.2, extending a trait --------------------------------------------
+
+TEST_CASE("a class_extension extends a trait through of_trait", "[schema][sealing]") {
+    // §8.2 says an extension adds to something declared elsewhere and draws
+    // no distinction between a class and a trait. What it needs is a way to
+    // say WHICH, because §8.3 gives the two separate namespaces.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("trait = { id = glowing  prop_def = { lumens = int } }\n"
+                     "class = { id = lamp  of_class = starcore.object  traits = { glowing } }\n"
+                     "class_extension = {\n"
+                     "    of_trait = glowing\n"
+                     "    prop_def = { colour = text }\n"
+                     "}\n");
+
+    for (const diag::Diagnostic& diagnostic : loaded.sink.diagnostics()) {
+        INFO("unexpected " << diag::code_string(diagnostic.code()) << ": " << diagnostic.message());
+        CHECK(false);
+    }
+
+    const schema::ClassDecl* glowing = loaded.set.find_trait("glowing");
+    REQUIRE(glowing != nullptr);
+    REQUIRE(glowing->find_property("colour") != nullptr);
+    CHECK(glowing->find_property("colour")->type.to_string() == "text");
+    CHECK(glowing->find_property("lumens") != nullptr); // and nothing was lost
+
+    // And the added property reaches an instance, which is the point of
+    // extending the trait rather than each class that mixes it in.
+    loaded.load_text("lamp = { id = desk_lamp  colour = 3 }\n", "a game", "game.star");
+    CHECK(loaded.reported(diag::Code::TypeMismatch));
+}
+
+TEST_CASE("of_class at a trait says which namespace it looked in", "[schema][sealing]") {
+    // The mistake the two keys exist to catch. An author who writes
+    // `of_class` at a trait has not misspelled anything, so an unadorned
+    // "nothing declares it" would send them looking for a typo that is not
+    // there.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("trait = { id = glowing  prop_def = { lumens = int } }\n"
+                     "class_extension = { of_class = glowing  prop_def = { colour = text } }\n");
+
+    CHECK(loaded.reported(diag::Code::SchemaInvalid));
+    CHECK(mentions(loaded, diag::Code::SchemaInvalid, "as a trait"));
+    CHECK(mentions(loaded, diag::Code::SchemaInvalid, "of_trait"));
+
+    // Refused, not applied to the trait anyway.
+    CHECK(loaded.set.find_trait("glowing")->find_property("colour") == nullptr);
+}
+
+TEST_CASE("an extension names one target or the other, never both", "[schema][sealing]") {
+    // §7.2.1's exclusive group, and the reason the rule is declared in
+    // `format.star` rather than written into `read_class_extension`: the
+    // schema says the two keys are alternative answers to one question, and
+    // the generic check reports it.
+    test::LoadedSet both;
+    both.load_builtin();
+    both.load_text("trait = { id = glowing }\n"
+                   "class = { id = lamp  of_class = starcore.object }\n"
+                   "class_extension = { of_class = lamp  of_trait = glowing }\n");
+    CHECK(both.reported(diag::Code::ExclusiveGroup));
+
+    test::LoadedSet neither;
+    neither.load_builtin();
+    neither.load_text("class_extension = { prop_def = { colour = text } }\n");
+    CHECK(neither.reported(diag::Code::ExclusiveMissing));
+    // And exactly one complaint: the reader stays quiet where the group has
+    // spoken, rather than adding a second error about a missing `of_class`.
+    CHECK_FALSE(neither.reported(diag::Code::KeyMissing));
+    CHECK_FALSE(neither.reported(diag::Code::SchemaInvalid));
+}
+
 TEST_CASE("an absent core requirement is reported by name", "[schema][sealing]") {
     // The third bullet of §7.2.2, and the one that is easiest to leave out:
     // "the absence of anything core requires -- reported at load, naming the

@@ -1,7 +1,7 @@
 # tests/corpus/invalid/loc-unused.star
-# starcore's passes -- placement, property reads, failureMsg placement
-# and the text layer -- over the core-owned set, stdlib, and the
-# fixture as a library
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
 
 warning: W-LOC-UNUSED: nothing references '$door_creeks'
   --> tests/corpus/invalid/loc-unused.star:10:5

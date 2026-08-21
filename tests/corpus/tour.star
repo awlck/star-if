@@ -1002,6 +1002,15 @@ rule = {
     successMsg = @after "It burns pleasantly on the way down."
 }
 
+# ...and both of those counters are read somewhere, which is what keeps them
+# out of §6.4's never-read warning.
+rule = {
+    of_action  = go
+    when       = { }
+    conditions = { global = { intoxication >= 3  hydration >= 500 } }
+    successMsg = @after "You weave slightly on the way, but you get there."
+}
+
 action = {
     id       = talk_to
     match    = { "talk to [someone]"  "greet [someone]" }
@@ -1111,6 +1120,18 @@ rule = {
         list_add   = { collection = seen_endings  value = caught_ending }
         set_flag   = coolant_unlocked
     }
+}
+
+# The other half of §6.4, and the half that is easy to forget: a global that
+# is written and never tested is world state nothing depends on, and the
+# compiler warns. The `global = { … }` namespace block tests one the way an
+# object block tests a property.
+rule = {
+    of_action  = look
+    when       = { }
+    conditions = { global = { times_caught  >= 3
+                              last_accused  == quartermaster_vex } }
+    effects    = { set_flag = captain_confronted }
 }
 
 # --- 11.3d Testing a computed value ---------------------- (spec §10.6) ---
@@ -1519,6 +1540,16 @@ dialogue = {
                  set_flag = coolant_vented
                  trigger  = { event = alarm_raised  in_sector = station_alpha } } }
              goto = END }
+}
+
+# `flag_set` is the read half of the `set_flag` above (spec §6.4.1). Both are
+# sugar over the one declared `bool` global, which is what makes a typo in
+# either of them a compile error rather than a condition that never fires.
+rule = {
+    of_action  = examine
+    when       = { noun = { is = reactor_console } }
+    conditions = { flag_set = coolant_vented }
+    successMsg = @after "The coolant gauges have all dropped to zero."
 }
 
 

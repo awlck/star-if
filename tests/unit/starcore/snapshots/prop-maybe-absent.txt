@@ -1,7 +1,7 @@
 # tests/corpus/invalid/prop-maybe-absent.star
-# starcore's passes -- placement, property reads, failureMsg placement
-# and the text layer -- over the core-owned set, stdlib, and the
-# fixture as a library
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
 
 error: E-PROP-MAYBE-ABSENT: 'noun' is a 'starcore.object' here, and only some of those have 'open'
   --> tests/corpus/invalid/prop-maybe-absent.star:17:18

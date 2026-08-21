@@ -1,0 +1,20 @@
+# tests/corpus/invalid/global-undeclared.star
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
+
+error: E-GLOBAL-UNDECLARED: nothing declares a global called 'alert_levl'
+  --> tests/corpus/invalid/global-undeclared.star:12:39
+   |
+12 |     effects   = { add_global = { id = alert_levl  amount = 1 } }
+   |                                       ^^^^^^^^^^
+note: a global or const must be declared before it is named; there is no implicit creation (spec §6.4)
+fix-it: did you mean 'alert_level'?
+  replace tests/corpus/invalid/global-undeclared.star:12:39 with `alert_level`
+
+warning: W-GLOBAL-UNUSED: nothing reads the global 'alert_level'
+  --> tests/corpus/invalid/global-undeclared.star:7:17
+  |
+7 | global = { id = alert_level  type = int  initial = 0 }
+  |                 ^^^^^^^^^^^
+note: a global that is written and never tested is world state nothing depends on -- usually a condition that was renamed, or one that was never written (spec §6.4)

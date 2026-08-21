@@ -1,7 +1,7 @@
 # tests/corpus/invalid/failmsg-in-silent-context.star
-# starcore's passes -- placement, property reads, failureMsg placement
-# and the text layer -- over the core-owned set, stdlib, and the
-# fixture as a library
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
 
 error: E-FAILMSG-SILENT: a 'conditions' block is silent, so this message can never be shown
   --> tests/corpus/invalid/failmsg-in-silent-context.star:10:30

@@ -1,0 +1,7 @@
+# tests/corpus/invalid/global-undeclared.star
+# declared E-GLOBAL-UNDECLARED W-GLOBAL-UNUSED
+# lexer and parser report (none)
+# E-GLOBAL-UNDECLARED is starcore's -- asserted in unit/starcore/placement_test.cpp
+# W-GLOBAL-UNUSED is starcore's -- asserted in unit/starcore/placement_test.cpp
+
+(no diagnostics)

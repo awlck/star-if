@@ -80,14 +80,15 @@ starif_set_warnings(stardata_unit_tests)
 starif_enable_sanitizers(stardata_unit_tests)
 
 # The vocabulary half (spec §8-§12): containment (F2c), §8.8's narrowing
-# (F12), the text layer's styles and localisation (F7), and §10.5's
-# `failureMsg` placement (F8).
+# (F12), the text layer's styles and localisation (F7), §10.5's `failureMsg`
+# placement (F8) and §6.4's globals, constants and flags (F10).
 add_executable(starcore_unit_tests
     main.cpp
     starcore/placement_test.cpp
     starcore/narrowing_test.cpp
     starcore/text_test.cpp
     starcore/messages_test.cpp
+    starcore/globals_test.cpp
 )
 
 target_link_libraries(starcore_unit_tests PRIVATE starif_test_support starcore::starcore)

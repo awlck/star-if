@@ -1,7 +1,7 @@
 # tests/corpus/invalid/failmsg-missing.star
-# starcore's passes -- placement, property reads, failureMsg placement
-# and the text layer -- over the core-owned set, stdlib, and the
-# fixture as a library
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
 
 warning: W-FAILMSG-MISSING: nothing here explains a refusal, so the player is told only that they can't do that right now
   --> tests/corpus/invalid/failmsg-missing.star:7:5

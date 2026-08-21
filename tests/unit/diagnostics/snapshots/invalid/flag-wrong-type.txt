@@ -1,6 +1,7 @@
 # tests/corpus/invalid/flag-wrong-type.star
-# declared E-FLAG-NOT-BOOL
+# declared E-FLAG-NOT-BOOL W-GLOBAL-UNUSED
 # lexer and parser report (none)
-# E-FLAG-NOT-BOOL is not implemented yet
+# E-FLAG-NOT-BOOL is starcore's -- asserted in unit/starcore/placement_test.cpp
+# W-GLOBAL-UNUSED is starcore's -- asserted in unit/starcore/placement_test.cpp
 
 (no diagnostics)

@@ -81,6 +81,13 @@ CODES = {
     "E-FAILMSG-SILENT":     "§10.5 failureMsg in a silent context",
     "E-FAILMSG-UNREACHABLE":"§10.5.1 failureMsg below a NOT/OR/COUNT_AT_LEAST",
     "W-FAILMSG-MISSING":    "§10.5.3 restriction with no reachable failure message",
+    # Globals, constants and flags (spec §6.4). Emitted since the first
+    # version of this script and missing from this table until F10 added
+    # E-GLOBAL-UNDECLARED beside them and noticed.
+    "E-FLAG-UNDECLARED":    "§6.4.1 set_flag/clear_flag/flag_set names no declared global",
+    "E-FLAG-NOT-BOOL":      "§6.4.1 ...names a global whose type is not bool",
+    "E-GLOBAL-UNDECLARED":  "§6.4 a reference to an undeclared global or const",
+    "W-GLOBAL-UNUSED":      "§6.4 a declared global or const nothing reads",
     # Operator context (heuristic, see check_operator_context)
     "W-CMP-OUTSIDE-COND":   "§3.6 comparison operator outside a condition context",
     "W-EQ-INSIDE-COND":     "§3.6 bare '=' in a condition context; did you mean '=='?",
@@ -601,8 +608,42 @@ def check_globals_and_flags(top, toks, path, diags):
     # from an unrelated identifier of the same name — but it errs toward
     # silence, which is right for a warning, and it catches the forms a
     # structural walk would miss (`collection = seen_endings`, conditions,
-    # template references). The schema layer will do this properly.
-    used = {t.text for t in toks if t.kind == "id" and t.text in declared}
+    # template references).
+    #
+    # The WRITE sites are excluded, because those are exact: `set_flag = X`
+    # and `set_global = { id = X … }` name a global unambiguously, and a
+    # global that is only ever written is precisely what §14.3's row means by
+    # "never read". Without this the scan counted a write as a read and the
+    # warning could only fire for a global mentioned nowhere at all. The
+    # structural walk below re-adds the ones it decides are reads.
+    # Positions, not names: a global written at one place and read at another
+    # is read, so the exclusions below are token indices rather than ids.
+    #
+    # Three kinds of occurrence are not reads: the declaration's own
+    # `id = X`, and the two write forms `set_flag = X` and
+    # `set_global = { id = X … }`. Each is found by the same small window
+    # scan, which is as much structure as a token list affords — the C++ pass
+    # in libs/starcore/src/globals.cpp does it properly, off the AST.
+    not_a_read = set()
+
+    def id_after(start):
+        for j in range(start + 1, min(start + 8, len(toks))):
+            if toks[j].kind == "id" and toks[j].text == "id" and j + 2 < len(toks):
+                return j + 2
+        return None
+
+    for i, tok in enumerate(toks):
+        if tok.kind != "id":
+            continue
+        if tok.text in ("global", "const", "set_global", "add_global"):
+            at = id_after(i)
+            if at is not None:
+                not_a_read.add(at)
+        elif tok.text in ("set_flag", "clear_flag"):
+            if i + 2 < len(toks) and toks[i + 1].kind == "op" and toks[i + 2].kind == "id":
+                not_a_read.add(i + 2)
+    used = {t.text for i, t in enumerate(toks)
+            if t.kind == "id" and t.text in declared and i not in not_a_read}
 
     def visit(value):
         if value[0] != "block":
@@ -610,7 +651,8 @@ def check_globals_and_flags(top, toks, path, diags):
         for (k, _op, val, line) in value[1].stmts:
             if k in ("set_flag", "clear_flag", "flag_set") and val[0] == "scalar":
                 name = val[1].text
-                used.add(name)
+                if k == "flag_set":
+                    used.add(name)   # a test is a read; setting one is not
                 if name not in declared:
                     diags.append(Diag("E-FLAG-UNDECLARED", path, line, name))
                 elif declared[name] != "bool":
@@ -619,9 +661,11 @@ def check_globals_and_flags(top, toks, path, diags):
             elif k in ("set_global", "add_global") and val[0] == "block":
                 for (kk, _o, vv, ll) in val[1].stmts:
                     if kk == "id" and vv[0] == "scalar":
-                        used.add(vv[1].text)
+                        # Not E-FLAG-UNDECLARED: §14.3 gives the flag sugar
+                        # and a plain global reference separate rows, and
+                        # `set_global` is the second of those.
                         if vv[1].text not in declared:
-                            diags.append(Diag("E-FLAG-UNDECLARED", path, ll,
+                            diags.append(Diag("E-GLOBAL-UNDECLARED", path, ll,
                                               vv[1].text))
                 visit(val)
             else:

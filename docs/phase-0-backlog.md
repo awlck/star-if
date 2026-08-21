@@ -941,12 +941,87 @@ key table would be the place, beside `stage_order`. Not needed by anything
 today — `quest`'s `complete_when` and `abandon_when` would be the first
 callers, and no form declares them yet.
 
-### F10 · Globals, constants and flags
+### F10 · Globals, constants and flags — **owner: `starcore`**
 **Size:** S · **Depends on:** F4
 
-- [ ] `global` and `const` declared, typed, and registered (spec §6.4).
-- [ ] `set_flag` / `clear_flag` / `flag_set` resolve to a declared `bool` global; `E-FLAG-UNDECLARED` and `E-FLAG-NOT-BOOL` otherwise (§6.4.1).
-- [ ] `W-GLOBAL-UNUSED` for a declared global never read.
+- [x] `global` and `const` declared, typed, and registered (spec §6.4).
+- [x] `set_flag` / `clear_flag` / `flag_set` resolve to a declared `bool` global; `E-FLAG-UNDECLARED` and `E-FLAG-NOT-BOOL` otherwise (§6.4.1).
+- [x] `W-GLOBAL-UNUSED` for a declared global never read.
+- [x] `E-GLOBAL-UNDECLARED` for the explicit forms, which the bullets did not
+      name — see below.
+
+**`starcore`, although §6.4 sits in Stardata's half of §1.2.1.** Everything the
+pass has to name is core's: `global` and `const` are core-owned forms (§7.2.4,
+"save-state layout") and `set_flag`, `clear_flag`, `flag_set`, `set_global`
+and `add_global` are the condition and effect vocabularies of §10 and §11. The
+schema layer already does the part that is mechanism — one namespace, one
+declaration per id, enforced by `unique_in = global` — and this is the rest.
+
+**The built-in schema named a key the specification never uses.** §6.4 writes
+`initial` in every one of its examples; `builtin/schema.star` declared
+`default`. So every `global` in tour.star and in both flag fixtures was
+reporting E-UNKNOWN-KEY, and had been since F2 — fifteen errors that nothing
+looked at, because nothing loaded the corpus through the schema layer and
+asserted it was clean.
+
+**And it could not have typed the key correctly anyway.** §6.4 gives a global
+"the same types as properties (§6.2), including collections", and its own
+examples write `initial = { }` and a map literal. The `initial` key's type is
+the value of the `type` key beside it — a dependent type no `type =` on a key
+declaration can express. `any` is the answer (spec §6.2, decision A44): it
+means "decided elsewhere, checked where that is known", and
+`libs/starcore/src/globals.cpp` performs the real check. `const`'s `value` had
+the same problem.
+
+**A global's declared type was never checked at all.** `check_declared_types`
+walks schemas and classes; a global is neither, so
+`global = { id = x  type = frobnicate }` loaded without a word. `check_type`
+is now exposed from `schema/types.hpp` for exactly this — one type expression,
+checked for meaning — rather than `starcore` growing a second copy of §6.2's
+table.
+
+**Five real cases in tour.star.** `times_caught`, `last_accused`,
+`coolant_vented`, `hydration` and `intoxication` were each written by an
+effect and tested by nothing. The corpus now reads all five, which is what a
+reference corpus should show: §6.4's point is that a global has both halves.
+
+**Read detection is exact where it can be and generous where it cannot.** The
+write sites — `set_flag`, `clear_flag`, `set_global`, `add_global` — name a
+global unambiguously, so "set and never tested" is caught rather than assumed
+away. Everything else that merely *matches* a declared id counts as a read,
+because §6.6.3 makes "a bare identifier in an argument position always a
+global" and telling those from an unrelated identifier needs §6.6's datum
+resolution (F9). Erring toward "read" is the right direction for a warning:
+a missed one costs nothing, a false one is noise on correct data. The same
+asymmetry decides where an *error* may be raised — only at a site the pass is
+certain about, never from the inference.
+
+**`tests/check_stardata.py` was counting a write as a read**, so its
+W-GLOBAL-UNUSED could only fire for a global mentioned exactly once, and it
+reported `set_global` naming an undeclared id as E-FLAG-UNDECLARED although
+§14.3 gives the two separate rows. Both fixed, so the two checkers agree on
+the corpus — which is H2's premise. Its `CODES` table was also missing all
+four of these codes, which it has emitted since its first version.
+
+**[OPEN] §6.4 and §10.6.1 disagree about the `global = { … }` namespace
+block.** §10.6.1 says collapsing the value-reading cases onto `value_of`
+"removes two of" the three access syntaxes it lists, one of which is the
+namespace block — but §6.4 uses it in its own example and §6.4.1 defines
+`flag_set` in terms of it, and the corpus writes it throughout. This pass
+supports it, because deleting a syntax the specification uses twice is not an
+implementation's call. Worth settling before Phase 1 writes the evaluator.
+
+**[OPEN] Writing to a `const` is not rejected.** §6.4 makes a `const`
+immutable, and `set_global = { id = max_reactor_temp … }` is accepted today —
+the id resolves, so E-GLOBAL-UNDECLARED does not apply, and §14.3 has no row
+for it. It wants a code of its own.
+
+**[OPEN] `quest_flag` is a fourth flag-reading spelling.** tour.star's
+`complete_when = { quest_flag = captain_confronted }` reads a `bool` global
+and is not one of §6.4.1's three. It is counted as a read only by the
+generous fallback, so a misspelling there is silent. `quest` has no declared
+form yet; whichever task declares it should decide whether `quest_flag` is
+sugar of the same kind and hold it to the same rule.
 
 ### F11 · Object-local `prop_def`
 **Size:** S · **Depends on:** F3

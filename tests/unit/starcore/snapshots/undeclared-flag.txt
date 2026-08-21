@@ -1,0 +1,20 @@
+# tests/corpus/invalid/undeclared-flag.star
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
+
+error: E-FLAG-UNDECLARED: nothing declares a global called 'captain_finded'
+  --> tests/corpus/invalid/undeclared-flag.star:18:31
+   |
+18 |     conditions = { flag_set = captain_finded }
+   |                               ^^^^^^^^^^^^^^
+note: a flag is sugar over a declared `bool` global, not a separate store -- which is what makes `set_flag = captain_found` against `flag_set = captain_finded` a compile error instead of a condition that never fires (spec §6.4.1)
+fix-it: did you mean 'captain_found'?
+  replace tests/corpus/invalid/undeclared-flag.star:18:31 with `captain_found`
+
+warning: W-GLOBAL-UNUSED: nothing reads the global 'captain_found'
+  --> tests/corpus/invalid/undeclared-flag.star:7:17
+  |
+7 | global = { id = captain_found  type = bool  initial = no }
+  |                 ^^^^^^^^^^^^^
+note: a global that is written and never tested is world state nothing depends on -- usually a condition that was renamed, or one that was never written (spec §6.4)

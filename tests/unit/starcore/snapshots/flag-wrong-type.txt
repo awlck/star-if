@@ -1,0 +1,22 @@
+# tests/corpus/invalid/flag-wrong-type.star
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
+
+error: E-FLAG-NOT-BOOL: 'alert_level' is declared int, and the flag sugar only reads and writes `bool`
+  --> tests/corpus/invalid/flag-wrong-type.star:10:30
+   |
+10 |     effects   = { set_flag = alert_level }
+   |                              ^^^^^^^^^^^
+note: the flag forms are exactly `set_global = { id = alert_level  value = yes }` and `global = { alert_level == yes }`, so a global of another type has no flag spelling (spec §6.4.1)
+  --> tests/corpus/invalid/flag-wrong-type.star:5:17
+  |
+5 | global = { id = alert_level  type = int  initial = 0 }
+  |                 ^^^^^^^^^^^
+
+warning: W-GLOBAL-UNUSED: nothing reads the global 'alert_level'
+  --> tests/corpus/invalid/flag-wrong-type.star:5:17
+  |
+5 | global = { id = alert_level  type = int  initial = 0 }
+  |                 ^^^^^^^^^^^
+note: a global that is written and never tested is world state nothing depends on -- usually a condition that was renamed, or one that was never written (spec §6.4)

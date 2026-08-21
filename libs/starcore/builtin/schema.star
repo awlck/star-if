@@ -119,7 +119,12 @@ schema = {
 
     key = { name = id       type = identifier  required = yes  unique_in = global }
     key = { name = type     type = type_expr   required = yes }
-    key = { name = default  type = scalar }
+    # §6.4 writes this key `initial` in every one of its examples, and this
+    # schema called it `default` until F10 checked. Typed `any` because its
+    # real type is the value of the `type` key beside it — a dependent type
+    # no `type =` can express — and libs/starcore/src/globals.cpp checks it
+    # against that, which is the pass that knows.
+    key = { name = initial  type = any }
     key = { name = doc      type = text }
 }
 
@@ -131,7 +136,9 @@ schema = {
 
     key = { name = id     type = identifier  required = yes  unique_in = global }
     key = { name = type   type = type_expr   required = yes }
-    key = { name = value  type = scalar      required = yes }
+    # `any` for the same reason as `global`'s `initial`: §6.4 gives a const
+    # "the same types as properties, including collections".
+    key = { name = value  type = any         required = yes }
     key = { name = doc    type = text }
 }
 

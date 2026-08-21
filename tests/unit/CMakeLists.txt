@@ -31,6 +31,7 @@ target_include_directories(starif_test_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR
 target_compile_definitions(starif_test_support PUBLIC
     STARIF_CORPUS_DIR="${CMAKE_SOURCE_DIR}/tests/corpus"
     STARIF_UNIT_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    STARIF_FORMAT_DIR="${CMAKE_SOURCE_DIR}/libs/stardata/builtin"
     STARIF_BUILTIN_DIR="${CMAKE_SOURCE_DIR}/libs/starcore/builtin"
     STARIF_STDLIB_DIR="${CMAKE_SOURCE_DIR}/stdlib"
     STARIF_SOURCE_DIR="${CMAKE_SOURCE_DIR}"

@@ -36,15 +36,30 @@ TEST_CASE("the built-in schema set loads with no diagnostic at all", "[schema][b
     CHECK(loaded.files.size() >= 3);
 }
 
-TEST_CASE("every core-owned form of spec 7.2.4 is declared and sealed", "[schema][builtin]") {
+TEST_CASE("every form of spec 7.2.4 is declared, sealed, and owned by the right layer",
+          "[schema][builtin]") {
     test::LoadedSet loaded;
     loaded.load_builtin();
 
-    // The table in 7.2.4, first half. requirements.star asserts the same
-    // list; this asserts it a second time, in C++, so that deleting a
-    // requirement cannot quietly delete the check along with it.
-    for (const char* form : {"class", "class_extension", "trait", "enum", "global", "const",
-                             "action", "rule", "turn_hook", "sector", "project", "library"}) {
+    // §7.2.4's table asks two questions, and the owner is the answer to the
+    // first: who *parses the declaration*. A format form is one the format
+    // layer reads with a reader of its own, which is exactly the set that
+    // would otherwise be stated twice -- once as a declaration here and once
+    // as a `read_*` in schema.cpp -- with nothing checking that the two
+    // agreed. They had already drifted when this was written.
+    for (const char* form : {"class", "class_extension", "trait", "enum", "schema_extension",
+                             "global", "const", "library", "core_requirement"}) {
+        INFO("format form: " << form);
+        const schema::Schema* declared = loaded.set.find(form);
+        REQUIRE(declared != nullptr);
+        CHECK(declared->sealed);
+        CHECK(declared->owner == "stardata");
+    }
+
+    // The second question: who reads the data. These the engine reads at run
+    // time, and the format layer validates against their schemas like any
+    // other form.
+    for (const char* form : {"action", "rule", "turn_hook", "sector", "project", "style", "loc"}) {
         INFO("core-owned form: " << form);
         const schema::Schema* declared = loaded.set.find(form);
         REQUIRE(declared != nullptr);
@@ -52,9 +67,30 @@ TEST_CASE("every core-owned form of spec 7.2.4 is declared and sealed", "[schema
         CHECK(declared->owner == "starcore");
     }
 
-    // And the hard-coded one, which is not in any file.
+    // And the hard-coded one, which is in no file because it is what reads
+    // them.
     CHECK(schema::schema_of_schemas().id == "schema");
     CHECK(schema::schema_of_schemas().sealed);
+}
+
+TEST_CASE("exactly one class is the root", "[schema][builtin]") {
+    // §8.1.1. The marker is what replaced the `implicit_parent` parameter
+    // threaded into the class walk, so this is the fact that walk now depends
+    // on. That `libs/starcore` names the same class is asserted from the
+    // other side, in unit/starcore/narrowing_test.cpp, since only that binary
+    // links both libraries.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+
+    const schema::ClassDecl* root = loaded.set.root_class();
+    REQUIRE(root != nullptr);
+    CHECK(root->id == "starcore.object");
+
+    std::size_t roots = 0;
+    for (const schema::ClassDecl& decl : loaded.set.classes()) {
+        roots += decl.is_root ? 1 : 0;
+    }
+    CHECK(roots == 1);
 }
 
 TEST_CASE("the root class carries exactly the slots of spec 8.1.1", "[schema][builtin]") {

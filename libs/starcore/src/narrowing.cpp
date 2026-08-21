@@ -34,8 +34,8 @@ using stardata::schema::SchemaSet;
 // remains here is core naming its own class, which is the arrangement the
 // layering check exists to protect rather than the one it exists to catch.
 //
-// The two must agree, and a test in unit/schema/builtin_test.cpp asserts they
-// do by comparing `SchemaSet::root_class()` against `token_type`'s answer.
+// The two must agree, and unit/starcore/narrowing_test.cpp asserts they do by
+// comparing `SchemaSet::root_class()` against `token_type`'s answer.
 constexpr std::string_view kRootClass = "starcore.object";
 
 // §8.8.1: "`location` | the acting actor's current room -- `room`". The

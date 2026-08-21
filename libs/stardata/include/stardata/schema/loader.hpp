@@ -136,6 +136,14 @@ public:
     // draws no distinction there.
     [[nodiscard]] const ClassDecl* find_class_or_trait(std::string_view id) const noexcept;
 
+    // §8.1.1's root: the class a declaration with no `of_class` descends
+    // from, or null when nothing claims it.
+    //
+    // Read out of the data rather than named in code. A caller loading only
+    // schemas of its own gets null and a hierarchy that stops where each tree
+    // stops, which is the right answer for a set with no object model in it.
+    [[nodiscard]] const ClassDecl* root_class() const noexcept;
+
     [[nodiscard]] const std::vector<Schema>& schemas() const noexcept { return schemas_; }
     [[nodiscard]] const std::vector<ClassDecl>& classes() const noexcept { return classes_; }
     [[nodiscard]] const std::vector<EnumDecl>& enums() const noexcept { return enums_; }

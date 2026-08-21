@@ -474,6 +474,29 @@ std::optional<ClassDecl> read_class(const ast::Statement& statement, std::string
         decl.of_class_span = parent->report_span();
     }
 
+    // §8.1.1's root marker. A trait is not in the hierarchy at all (§8.3), so
+    // it cannot be its root either; that pairs with the `of_class` rule below
+    // and is reported the same way.
+    decl.is_root = flag_of(*block, "root");
+    if (decl.is_trait && decl.is_root) {
+        Diagnostic diagnostic(Code::SchemaInvalid, decl.span,
+                              "the trait '" + decl.id +
+                                  "' is marked `root`, but a trait has no place in the class "
+                                  "hierarchy and so cannot be its root");
+        diagnostic.with_note("traits are mixed in, not inherited from (spec §8.3); the root is "
+                             "the class every other class descends from (spec §8.1.1)");
+        sink.report(std::move(diagnostic));
+        decl.is_root = false;
+    }
+    if (decl.is_root && !decl.of_class.empty()) {
+        Diagnostic diagnostic(Code::SchemaInvalid, decl.of_class_span,
+                              "'" + decl.id + "' is marked `root` and also declares an 'of_class'");
+        diagnostic.with_note("the root is where the hierarchy stops -- a class with a parent is "
+                             "not it (spec §8.1.1)");
+        sink.report(std::move(diagnostic));
+        decl.is_root = false;
+    }
+
     // §8.3: a trait MUST NOT declare `of_class` and MUST NOT participate in
     // the class hierarchy. Reported here rather than left to the class graph,
     // because a trait with a parent is a misunderstanding worth catching at

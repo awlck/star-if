@@ -111,6 +111,18 @@ const ClassDecl* SchemaSet::find_class_or_trait(std::string_view id) const noexc
     return decl != nullptr ? decl : find_trait(id);
 }
 
+const ClassDecl* SchemaSet::root_class() const noexcept {
+    // A scan rather than a cached pointer: `classes_` grows as files load and
+    // a pointer into it is one `push_back` away from dangling. The vector is
+    // small and this is called once per lineage walk.
+    for (const ClassDecl& decl : classes_) {
+        if (decl.is_root) {
+            return &decl;
+        }
+    }
+    return nullptr;
+}
+
 void SchemaSet::add_requirement(CoreRequirement requirement) {
     requirements_.push_back(std::move(requirement));
 }
@@ -252,6 +264,27 @@ bool SchemaSet::declare_class(ClassDecl decl, const std::optional<Replaces>& rep
         offer(Declaration{space, decl.id, decl.owner, decl.sealed, decl.span}, replaces, sink);
     if (outcome == Outcome::Rejected) {
         return false;
+    }
+
+    // §8.1.1: exactly one root. Two would mean a class with no `of_class`
+    // descends from whichever happened to load first, which is a hierarchy
+    // whose shape depends on file order -- and §14.1 forbids that.
+    //
+    // The check is here rather than in `read_class` because it is a property
+    // of the *set*: the second declaration is only wrong in the presence of
+    // the first. Same reason sealing lives here.
+    if (decl.is_root) {
+        if (const ClassDecl* other = root_class(); other != nullptr && other->id != decl.id) {
+            Diagnostic diagnostic(Code::SchemaInvalid, decl.span,
+                                  "'" + decl.id + "' is marked `root`, and so is '" + other->id +
+                                      "'");
+            diagnostic.with_note("the root is what a class with no 'of_class' descends from, so "
+                                 "a second one would make the hierarchy's shape depend on load "
+                                 "order (spec §8.1.1, §14.1)",
+                                 other->span);
+            sink.report(std::move(diagnostic));
+            decl.is_root = false;
+        }
     }
     if (const std::optional<std::size_t> at = class_index(decl.id, decl.is_trait)) {
         classes_[*at] = std::move(decl);

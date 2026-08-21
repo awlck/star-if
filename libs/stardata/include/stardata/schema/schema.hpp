@@ -133,9 +133,23 @@ struct PropDecl {
 // core trait, and splitting them would mean writing each check twice.
 struct ClassDecl {
     std::string id;
-    std::string of_class; // empty for a trait, and for `starcore.object`
+    std::string of_class; // empty for a trait, and for the root
     bool is_trait = false;
     bool sealed = false;
+
+    // §8.1.1's root: the class a declaration with no `of_class` descends from.
+    // At most one class in a program may declare it.
+    //
+    // DECLARED RATHER THAN NAMED, which is the whole point. "A single
+    // inheritance hierarchy has a root" is generic; *which* class is the root
+    // is the object model's, and the object model is `libs/starcore`'s. This
+    // flag is how the second fact reaches the first without either library
+    // naming the other's -- the same move `stage_order` makes for §8.8.3's
+    // pipeline. It replaced an `implicit_parent` parameter threaded through
+    // three functions, whose default silently reported every property on a
+    // broad slot as absent.
+    bool is_root = false;
+
     std::string owner;
     std::vector<PropDecl> properties;
 

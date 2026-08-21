@@ -11,6 +11,7 @@
 
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/loader.hpp"
+#include "stardata/schema/property.hpp"
 #include "stardata/schema/suggest.hpp"
 #include "stardata/text/template.hpp"
 
@@ -483,27 +484,27 @@ void check_value(std::string_view what, const ast::Value& value, const ast::Type
 
 namespace {
 
-// The property a class declares under `name`, following §8.4's resolution
-// order as far as it exists today: the class itself, then its parent.
+// §8.4 steps 2 and 3: the traits mixed into the class, then the class, then
+// each ancestor with its own traits.
 //
-// TRAITS ARE NOT IN THIS WALK, because they are not yet in the model --
-// `class` declares a `traits` key and `read_class` does not read it. That is
-// a gap rather than a decision, and it means a property that arrives only
-// through a trait is not type-checked on an instantiation yet.
+// One walk, `schema/property.hpp`'s, shared with §8.8's classifier. This
+// function used to be a second one, and it ignored traits and stopped at a
+// parentless class -- so `lumens = "very"` on a class mixing in a trait that
+// declares `lumens = int` was accepted without a word. Two walks over one
+// graph disagree eventually; there is now one.
 [[nodiscard]] const PropDecl* find_declared_property(const ClassDecl& decl, std::string_view name,
                                                      const SchemaSet& set) {
-    const ClassDecl* at = &decl;
-    // A depth cap rather than a visited set: a cycle in `of_class` is a
-    // malformed hierarchy, which is the class graph's to report and not
-    // this function's to diagnose on the way past.
-    for (int depth = 0; at != nullptr && depth < 64; ++depth) {
+    for (const ClassDecl* at : lineage(decl, set)) {
         if (const PropDecl* property = at->find_property(name)) {
             return property;
         }
-        if (at->of_class.empty()) {
-            return nullptr;
+        for (const std::string& id : at->traits) {
+            if (const ClassDecl* trait = set.find_trait(id)) {
+                if (const PropDecl* property = trait->find_property(name)) {
+                    return property;
+                }
+            }
         }
-        at = set.find_class(at->of_class);
     }
     return nullptr;
 }

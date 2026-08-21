@@ -40,7 +40,9 @@ schema = {
     key = { name = id        type = identifier       required = yes  unique_in = class
             doc  = "The name this class is instantiated by, and referred to by." }
     key = { name = of_class  type = identifier
-            doc  = "The parent class. Absent means starcore.object, the root (§8.1.1)." }
+            doc  = "The parent class. Absent means the declared root (§8.1.1)." }
+    key = { name = root      type = bool
+            doc  = "This class is the root a parentless declaration descends from (§8.1.1). At most one class in a program may declare it." }
     # §5.4.2's table declares `prop_def` as `combine = merge`: a second
     # block adds to the inherited property set rather than replacing it,
     # which is the only reading under which `class_extension` can add a

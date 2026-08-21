@@ -22,6 +22,7 @@ enum = {
 
 class = {
     id     = starcore.object
+    root   = yes
     sealed = yes
     doc    = "The root class. Every world object is one, as every Java type is an Object."
 

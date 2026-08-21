@@ -110,7 +110,7 @@ TEST_CASE("the three static answers of spec 8.8.2", "[starcore][narrowing]") {
     REQUIRE(fancy != nullptr);
 
     const auto answer = [&](std::string_view property, const schema::ClassDecl& type) {
-        return schema::classify_property(property, type, world.set(), "starcore.object").answer;
+        return schema::classify_property(property, type, world.set()).answer;
     };
 
     // Present: the class itself, an ancestor, or a trait of either.
@@ -134,7 +134,7 @@ TEST_CASE("an object-local property makes a read possible, not absent", "[starco
     const Analysed world("gadget = { id = odd_one  prop_def = { rune_count = int } }\n");
     const schema::ClassDecl* gadget = world.set().find_class("gadget");
     REQUIRE(gadget != nullptr);
-    CHECK(schema::classify_property("rune_count", *gadget, world.set(), "starcore.object").answer ==
+    CHECK(schema::classify_property("rune_count", *gadget, world.set()).answer ==
           schema::PropertyAnswer::Maybe);
 }
 

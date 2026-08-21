@@ -82,40 +82,27 @@ void check_value(std::string_view what, const ast::Value& value, const ast::Type
 void check_instantiation(const ast::Block& block, const ClassDecl& decl, const SchemaSet& set,
                          diag::DiagnosticSink& sink);
 
-// §8.4's property resolution order, as far as Phase 0's model reaches
-// (backlog F11).
-//
-// The order is the specification's, and the first step is the one F11 adds:
+// §8.4's property resolution order (backlog F11):
 //
 //   1. the object's own `prop_def` declarations (§8.7)
-//   2. traits mixed into the object directly            <-- not yet modelled
+//   2. traits mixed into the object directly            <-- see below
 //   3. the class, then its ancestors, each with its traits
 //
-// STEP 2 AND THE TRAIT HALF OF STEP 3 ARE MISSING, and saying so here is
-// better than a caller assuming otherwise: `read_class` does not read the
-// `traits` key into `ClassDecl` at all, so a property arriving through a
-// trait resolves to nothing. That gap is F12's to close, because F12 is the
-// task that cannot work without it -- §8.8.2 classifies a read by whether
-// "`T` or an ancestor **or trait** of `T`" declares the property.
+// Steps 1 and 3 in full. Step 2 is still outside the model, because an
+// instantiation's own `traits = { ... }` key is not read into anything yet --
+// a narrower gap than the one that used to be here, which was the trait half
+// of step 3 as well.
+//
+// The class walk is `schema/property.hpp`'s `lineage`, shared with §8.8's
+// classifier rather than reimplemented. The two were separate until the
+// boundary refactor, and disagreed: this one ignored traits, so a value
+// written for a trait-derived property was never type-checked.
 //
 // `local` is what `read_local_prop_defs` returned for the instantiation, and
 // may be empty; most objects declare no properties of their own.
 [[nodiscard]] const PropDecl* resolve_property(std::string_view name,
                                                const std::vector<PropDecl>& local,
                                                const ClassDecl& decl, const SchemaSet& set);
-
-// One type expression, checked for meaning: the name is one of §6.2's or a
-// declared enum, it takes the right number of arguments, and `enum<E>`,
-// `flags<E>`, `ref<C>` and `block<S>` name something that exists.
-//
-// `at` is where to report, and `context` names the thing being typed -- "the
-// global 'alert_level'". Exposed because a type expression can be declared
-// somewhere this library does not walk: §6.4's `global` and `const` are
-// core-owned forms (§7.2.4), so the pass that reads them is
-// `libs/starcore`'s, and without this it would either leave their types
-// unchecked or grow a second copy of §6.2's table.
-void check_type(const ast::TypeRef& type, diag::Span at, std::string_view context,
-                const SchemaSet& set, diag::DiagnosticSink& sink);
 
 // Checks that every type expression in the set resolves: each name is one of
 // §6.2's, or a declared enum; each takes the right number of arguments; and

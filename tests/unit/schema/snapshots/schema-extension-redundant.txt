@@ -7,9 +7,9 @@ warning: W-PROPDEF-REDUNDANT: 'always_resident' is already declared on 'sector',
 8 |     key = { name = always_resident  type = bool }
   |             ^^^^
 note: declared here, by starcore
-  --> libs/starcore/builtin/schema.star:277:13
+  --> libs/starcore/builtin/schema.star:163:13
     |
-277 |     key = { name = always_resident  type = bool
+163 |     key = { name = always_resident  type = bool
     |             ^^^^
 note: harmless, but the line does nothing -- an extension adds keys (spec §7.5)
 fix-it: remove the redundant key declaration

@@ -22,37 +22,31 @@ namespace starcore {
 // nothing reports it. Requiring the declaration turns the typo into a
 // compile error, which is decision A17.
 //
-// WHY THIS IS `starcore` AND NOT THE SCHEMA LAYER. §6.4 sits in Stardata's
-// half of §1.2.1, but everything this pass has to name is core's: `global`
-// and `const` are core-owned forms (§7.2.4, "save-state layout"), and
-// `set_flag`, `clear_flag`, `flag_set`, `set_global` and `add_global` are the
-// condition and effect vocabularies of §10 and §11. The schema layer already
-// does the part that is mechanism -- one namespace, one declaration per id,
-// enforced by `unique_in = global` -- and this is the rest.
+// WHAT IS CORE'S HERE AND WHAT IS NOT. The `global` and `const` *forms* are
+// format forms (§7.2.4): `libs/stardata` parses them, registers each
+// declaration in the `SchemaSet` and checks the declared type and the initial
+// value. This pass never reads a declaration -- it asks the registry.
+//
+// What it does own is every way a global is *named*: `set_flag`,
+// `clear_flag`, `flag_set` (§6.4.1) and `set_global`, `add_global` (§11.1)
+// are the condition and effect vocabularies of §10 and §11, and a library
+// that knew those words would be a schema layer with opinions about
+// interactive fiction. So the format layer answers "what is declared" and
+// this answers "who names it, and did they mean it".
 //
 // TWO PHASES, because §13.2 lets a global be declared in one file and read in
 // another, in either order. The shape `TextIndex` has, for the same reason.
 
 class GlobalIndex {
 public:
-    struct Declaration {
-        std::string id;
-        stardata::ast::TypeRef type;
-        bool is_const = false;
-        stardata::diag::Span span;
+    // Reads one file: every use of a global in it. The declarations
+    // themselves are skipped -- the format layer has them, and walking one
+    // would count its own `id = X` as a mention of itself, which would make
+    // every declared global look read.
+    void add_file(const stardata::ast::File& file);
 
-        [[nodiscard]] bool is_bool() const noexcept { return type.name == "bool"; }
-    };
-
-    // Reads one file: the globals and constants it declares, and every use of
-    // one. Checks each declared type against §6.2 (through the schema layer's
-    // `check_type`) and each initial value against the type declared beside
-    // it -- which is the check no `type =` on a key declaration can express,
-    // and the reason those keys are typed `any`.
-    void add_file(const stardata::ast::File& file, const stardata::schema::SchemaSet& set,
-                  stardata::diag::DiagnosticSink& sink);
-
-    // Reports what only the whole picture can decide.
+    // Reports what only the whole picture can decide, against the globals the
+    // registry holds.
     //
     //   E-FLAG-UNDECLARED    `set_flag` / `clear_flag` / `flag_set` naming no
     //                        declared global (§6.4.1), with a suggestion.
@@ -60,12 +54,7 @@ public:
     //   E-GLOBAL-UNDECLARED  `set_global` / `add_global` / a `global = { … }`
     //                        condition naming no declared global (§6.4).
     //   W-GLOBAL-UNUSED      a declared global or const nothing reads.
-    void check(stardata::diag::DiagnosticSink& sink) const;
-
-    [[nodiscard]] const std::vector<Declaration>& declarations() const noexcept {
-        return declarations_;
-    }
-    [[nodiscard]] const Declaration* find(std::string_view id) const noexcept;
+    void check(const stardata::schema::SchemaSet& set, stardata::diag::DiagnosticSink& sink) const;
 
 private:
     // One reference to a global, resolved in `check` rather than where it was
@@ -104,13 +93,9 @@ private:
         [[nodiscard]] bool certain() const noexcept { return kind != Kind::Mentioned; }
     };
 
-    void read_declaration(const stardata::ast::Block& block, bool is_const,
-                          const stardata::schema::SchemaSet& set,
-                          stardata::diag::DiagnosticSink& sink);
     void walk(const stardata::ast::Block& block);
     void note(std::string id, stardata::diag::Span span, Kind kind);
 
-    std::vector<Declaration> declarations_;
     std::vector<Use> uses_;
 };
 

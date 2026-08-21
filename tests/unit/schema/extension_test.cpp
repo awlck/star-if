@@ -260,9 +260,15 @@ TEST_CASE("@replaces with nothing to replace is refused", "[schema][replaces]") 
 TEST_CASE("@replaces on a sealed declaration is refused", "[schema][replaces]") {
     // "Extend freely, never supersede" -- §7.2.2's rule stated the other way
     // round. This is the case sealing exists for.
+    //
+    // `class` is a format form, so the owner to name is `stardata` -- which
+    // is not a library id, exactly as `starcore` is not, so no `@replaces`
+    // can honestly claim either. Naming it here is what gets the attempt past
+    // the wrong-source check and onto the sealing rule, which is the rule
+    // under test.
     test::LoadedSet loaded;
     loaded.load_builtin();
-    loaded.load_text("schema = @replaces(starcore) {\n"
+    loaded.load_text("schema = @replaces(stardata) {\n"
                      "    id        = class\n"
                      "    top_level = yes\n"
                      "    key = { name = id  type = identifier  required = yes }\n"
@@ -271,10 +277,10 @@ TEST_CASE("@replaces on a sealed declaration is refused", "[schema][replaces]") 
     CHECK(loaded.reported(diag::Code::SchemaSealed));
     CHECK(mentions(loaded, diag::Code::SchemaSealed, "extend freely, never supersede"));
 
-    // The core form is intact, with all its keys.
+    // The format form is intact, with all its keys.
     const schema::Schema* form = loaded.set.find("class");
     REQUIRE(form != nullptr);
-    CHECK(form->owner == "starcore");
+    CHECK(form->owner == "stardata");
     CHECK(form->find_key("prop_def") != nullptr);
 }
 

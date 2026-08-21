@@ -50,7 +50,8 @@ using diag::Diagnostic;
 // layer, so the layer has to read it itself.
 [[nodiscard]] bool is_structural_form(std::string_view key) noexcept {
     return key == "schema" || key == "class" || key == "trait" || key == "class_extension" ||
-           key == "schema_extension" || key == "core_requirement" || key == "enum";
+           key == "schema_extension" || key == "core_requirement" || key == "enum" ||
+           key == "global" || key == "const";
 }
 
 } // namespace
@@ -96,6 +97,11 @@ const EnumDecl* SchemaSet::find_enum(std::string_view id) const noexcept {
     return it == enum_index_.end() ? nullptr : &enums_[it->second];
 }
 
+const GlobalDecl* SchemaSet::find_global(std::string_view id) const noexcept {
+    const auto it = global_index_.find(std::string(id));
+    return it == global_index_.end() ? nullptr : &globals_[it->second];
+}
+
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
     const std::optional<std::size_t> index = class_index(id, /*is_trait=*/false);
     return index ? &classes_[*index] : nullptr;
@@ -109,6 +115,18 @@ const ClassDecl* SchemaSet::find_trait(std::string_view id) const noexcept {
 const ClassDecl* SchemaSet::find_class_or_trait(std::string_view id) const noexcept {
     const ClassDecl* decl = find_class(id);
     return decl != nullptr ? decl : find_trait(id);
+}
+
+const ClassDecl* SchemaSet::root_class() const noexcept {
+    // A scan rather than a cached pointer: `classes_` grows as files load and
+    // a pointer into it is one `push_back` away from dangling. The vector is
+    // small and this is called once per lineage walk.
+    for (const ClassDecl& decl : classes_) {
+        if (decl.is_root) {
+            return &decl;
+        }
+    }
+    return nullptr;
 }
 
 void SchemaSet::add_requirement(CoreRequirement requirement) {
@@ -253,6 +271,27 @@ bool SchemaSet::declare_class(ClassDecl decl, const std::optional<Replaces>& rep
     if (outcome == Outcome::Rejected) {
         return false;
     }
+
+    // §8.1.1: exactly one root. Two would mean a class with no `of_class`
+    // descends from whichever happened to load first, which is a hierarchy
+    // whose shape depends on file order -- and §14.1 forbids that.
+    //
+    // The check is here rather than in `read_class` because it is a property
+    // of the *set*: the second declaration is only wrong in the presence of
+    // the first. Same reason sealing lives here.
+    if (decl.is_root) {
+        if (const ClassDecl* other = root_class(); other != nullptr && other->id != decl.id) {
+            Diagnostic diagnostic(Code::SchemaInvalid, decl.span,
+                                  "'" + decl.id + "' is marked `root`, and so is '" + other->id +
+                                      "'");
+            diagnostic.with_note("the root is what a class with no 'of_class' descends from, so "
+                                 "a second one would make the hierarchy's shape depend on load "
+                                 "order (spec §8.1.1, §14.1)",
+                                 other->span);
+            sink.report(std::move(diagnostic));
+            decl.is_root = false;
+        }
+    }
     if (const std::optional<std::size_t> at = class_index(decl.id, decl.is_trait)) {
         classes_[*at] = std::move(decl);
         return true;
@@ -275,6 +314,24 @@ bool SchemaSet::declare_enum(EnumDecl decl, const std::optional<Replaces>& repla
     }
     enum_index_.emplace(decl.id, enums_.size());
     enums_.push_back(std::move(decl));
+    return true;
+}
+
+bool SchemaSet::declare_global(GlobalDecl decl, const std::optional<Replaces>& replaces,
+                               diag::DiagnosticSink& sink) {
+    // §6.4: "Ids live in a single namespace", so a `const` and a `global`
+    // collide -- which is what `offer`'s space being "global" for both says.
+    const Outcome outcome = offer(
+        Declaration{"global", decl.id, decl.owner, /*sealed=*/false, decl.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
+        return false;
+    }
+    if (const auto it = global_index_.find(decl.id); it != global_index_.end()) {
+        globals_[it->second] = std::move(decl);
+        return true;
+    }
+    global_index_.emplace(decl.id, globals_.size());
+    globals_.push_back(std::move(decl));
     return true;
 }
 
@@ -329,14 +386,39 @@ bool SchemaSet::apply_schema_extension(const SchemaExtensionDecl& extension,
 
 bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::DiagnosticSink& sink) {
     // Either namespace: §8.2 draws no distinction, and a trait's property set
-    // is extended the same way a class's is.
-    const ClassDecl* existing = find_class_or_trait(extension.of_class);
+    // is extended the same way a class's is. WHICH namespace is the
+    // declaration's to say, though -- `of_class` looks only among classes and
+    // `of_trait` only among traits (§8.3 keeps them separate, so an id can be
+    // both). A single lookup that tried one and fell back to the other would
+    // extend whichever it found first, which is not a decision an author made.
+    const std::string_view named = extension.target_key();
+    const ClassDecl* existing =
+        extension.targets_trait ? find_trait(extension.target) : find_class(extension.target);
     if (existing == nullptr) {
-        Diagnostic diagnostic(Code::SchemaInvalid, extension.of_class_span,
-                              "I can't extend '" + extension.of_class +
+        Diagnostic diagnostic(Code::SchemaInvalid, extension.target_span,
+                              "I can't extend '" + extension.target +
                                   "', because nothing declares it");
-        diagnostic.with_note("a class_extension names a class declared elsewhere -- in a library, "
-                             "or earlier in the load order (spec §8.2, §13.2)");
+        diagnostic.with_note("a class_extension names a " +
+                             std::string(extension.targets_trait ? "trait" : "class") +
+                             " declared elsewhere -- in a library, or earlier in the load order "
+                             "(spec §8.2, §13.2)");
+        // The other namespace, which is the mistake worth naming: an author
+        // who wrote `of_class` at a trait has not misspelled anything.
+        const ClassDecl* other =
+            extension.targets_trait ? find_class(extension.target) : find_trait(extension.target);
+        if (other != nullptr) {
+            diagnostic.with_note(
+                "'" + extension.target + "' is declared, but as a " +
+                    std::string(extension.targets_trait ? "class" : "trait") + ", and '" +
+                    std::string(named) + "' looks only among " +
+                    std::string(extension.targets_trait ? "traits" : "classes") + "; '" +
+                    std::string(extension.targets_trait ? "of_class" : "of_trait") +
+                    "' is the key for the other namespace (spec §8.3)",
+                other->span);
+            const std::string other_key = extension.targets_trait ? "of_class" : "of_trait";
+            diagnostic.with_fix_it(extension.target_span, other_key,
+                                   "name it with `" + other_key + "`");
+        }
         sink.report(std::move(diagnostic));
         return false;
     }
@@ -344,9 +426,9 @@ bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::Diagnostic
     bool accepted = true;
 
     // §7.2.2 and §8.2: an extension may add, never re-point.
-    if (extension.declares_of_class_change) {
+    if (extension.declares_reparent) {
         Diagnostic diagnostic(Code::CoreReparent, extension.reparent_span,
-                              "a class_extension can't change what '" + extension.of_class +
+                              "a class_extension can't change what '" + extension.target +
                                   "' inherits from");
         diagnostic.with_note("extension adds to a class; changing its parent would silently "
                              "rewrite every object of that class, including ones written by "
@@ -370,7 +452,7 @@ bool SchemaSet::apply_extension(const ExtensionDecl& extension, diag::Diagnostic
         // already exists: the engine reads this slot at a known type.
         Diagnostic diagnostic(Code::PropDefTypeMismatch, property.span,
                               "'" + property.name + "' is already a " + declared->type.to_string() +
-                                  " on " + extension.of_class + ", and this would make it a " +
+                                  " on " + extension.target + ", and this would make it a " +
                                   property.type.to_string());
         diagnostic.with_note("declared here, by " + classes_[index].owner, declared->span);
         if (classes_[index].sealed) {
@@ -589,7 +671,26 @@ void validate_block(const ast::Block& block, const Schema& schema, const SchemaS
             if (declared == nullptr || !value) {
                 continue;
             }
-            check_value("'" + *name + "'", *value, declared->type, *set, sink);
+            // §7.2's dependent type: the type is not in the declaration, it
+            // is in a sibling key's value. `global = { type = int  initial =
+            // 0 }` is the case -- one form whose `initial` is an `int` here
+            // and a `map<direction, ref<room>>` two lines down.
+            //
+            // A missing or unreadable sibling is not reported here. Either
+            // the sibling is required, and the required-key check below is
+            // about to say so in the author's own terms, or it is absent by
+            // choice and there is nothing to check against.
+            ast::TypeRef expected = declared->type;
+            if (!declared->type_of.empty()) {
+                const std::optional<ast::Value> supplier = block.value_of(declared->type_of);
+                const std::optional<ast::TypeRef> lowered =
+                    supplier ? supplier->as_type() : std::nullopt;
+                if (!lowered) {
+                    continue;
+                }
+                expected = *lowered;
+            }
+            check_value("'" + *name + "'", *value, expected, *set, sink);
         }
     }
 
@@ -647,6 +748,23 @@ void fold_declaration(const ast::Statement& statement, const std::string& key,
                 read_class_extension(statement, markers, sink)) {
             set.apply_extension(*decl, sink);
         }
+        return;
+    }
+    if (key == "global" || key == "const") {
+        const bool is_const = key == "const";
+        std::optional<GlobalDecl> decl = read_global(statement, is_const, options.owner, sink);
+        if (!decl) {
+            return;
+        }
+        // The starting value is NOT checked here. `check_top_level` ran
+        // moments ago on this same statement and `validate_block` checked
+        // `initial` against `type` for us, because the schema in
+        // `format.star` types it `type_of = type` -- §7.2's dependent type.
+        //
+        // Which is the point of having one: the rule "the starting value has
+        // the declared type" is now written where an author can read it,
+        // rather than living in a reader nobody can see.
+        set.declare_global(*std::move(decl), replaces, sink);
         return;
     }
     if (key == "schema_extension") {

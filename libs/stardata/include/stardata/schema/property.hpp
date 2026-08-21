@@ -67,31 +67,13 @@ struct PropertyLookup {
 // over classes alone would call it Absent and reject correct code -- so the
 // registry tracks the property names object instantiations declare, and F11
 // is what put them there.
-// `implicit_parent` is the class a declaration with no `of_class` descends
-// from, and it is the one thing here the caller has to supply.
-//
-// WHY IT IS A PARAMETER AND NOT A CONSTANT. §8.1.1 -- "every world object is
-// a `starcore.object` ... absent means `starcore.object`, the root" -- is a
-// rule of the *object model*, and §1.2.1 puts §2-§7 in Stardata's column and
-// §8 in core's. So the name of the root is core's to know, and naming it here
-// would be the leak `check_layering.py` exists to catch. Empty means "a class
-// with no `of_class` is its own root", which is what a caller with no object
-// model should assume.
-//
-// This is deliberately NOT the mistake F2c corrected in the placement pass.
-// There, a `vector<string>` of relation keywords made a semantic pass look
-// generic while having exactly one possible caller; the parameter was hiding
-// the pass. Here the pass is genuinely generic -- it walks a graph -- and the
-// parameter carries one fact that belongs to a document this library does not
-// implement.
 [[nodiscard]] PropertyLookup classify_property(std::string_view name, const ClassDecl& type,
-                                               const SchemaSet& set,
-                                               std::string_view implicit_parent = {});
+                                               const SchemaSet& set);
 
 // Whether `candidate` is `ancestor`, or descends from it, following
 // `of_class`. Traits are not a hierarchy (§8.3) and never satisfy this.
 [[nodiscard]] bool descends_from(const ClassDecl& candidate, std::string_view ancestor,
-                                 const SchemaSet& set, std::string_view implicit_parent = {});
+                                 const SchemaSet& set);
 
 // Every property name reachable on `type` -- its own, its ancestors', and
 // the traits of each. In resolution order (§8.4), so the first of a repeated
@@ -100,8 +82,20 @@ struct PropertyLookup {
 // Exposed because a "did you mean" over the properties a slot really has is
 // the useful suggestion for an Absent read (backlog F6), and the caller that
 // wants it is in the other library.
-[[nodiscard]] std::vector<std::string_view>
-reachable_properties(const ClassDecl& type, const SchemaSet& set,
-                     std::string_view implicit_parent = {});
+[[nodiscard]] std::vector<std::string_view> reachable_properties(const ClassDecl& type,
+                                                                 const SchemaSet& set);
+
+// `type`, then each ancestor, in §8.4's resolution order, following `of_class`
+// and then §8.1.1's declared root.
+//
+// THE ONLY INHERITANCE WALK IN THIS LIBRARY, which it had to be told to be.
+// `schema/types.cpp` grew a second one for F4's instantiation type check,
+// eighteen months of tasks before this one existed, and the two disagreed:
+// that walk ignored traits and stopped at a parentless class, so a value
+// written for a property arriving through a trait -- `lumens = "very"` on a
+// class mixing in a trait that declares `lumens = int` -- was accepted in
+// silence. Two walks over one graph will always eventually answer differently;
+// the fix was to delete one, not to teach both.
+[[nodiscard]] std::vector<const ClassDecl*> lineage(const ClassDecl& type, const SchemaSet& set);
 
 } // namespace stardata::schema

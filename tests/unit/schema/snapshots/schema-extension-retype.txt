@@ -7,8 +7,8 @@ error: E-PROPDEF-TYPE-MISMATCH: 'id' is already a identifier on 'action', and th
 7 |     key = { name = id  type = int }
   |             ^^^^
 note: declared here, by starcore
-  --> libs/starcore/builtin/schema.star:213:13
-    |
-213 |     key = { name = id            type = identifier          required = yes  unique_in = action }
-    |             ^^^^
+  --> libs/starcore/builtin/schema.star:99:13
+   |
+99 |     key = { name = id            type = identifier          required = yes  unique_in = action }
+   |             ^^^^
 note: an extension adds keys; changing one is a redefinition wearing an extension's clothes, and on a sealed form it is exactly what sealing exists to prevent (spec §7.5, §7.2.2)

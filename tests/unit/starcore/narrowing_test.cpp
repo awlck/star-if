@@ -110,7 +110,7 @@ TEST_CASE("the three static answers of spec 8.8.2", "[starcore][narrowing]") {
     REQUIRE(fancy != nullptr);
 
     const auto answer = [&](std::string_view property, const schema::ClassDecl& type) {
-        return schema::classify_property(property, type, world.set(), "starcore.object").answer;
+        return schema::classify_property(property, type, world.set()).answer;
     };
 
     // Present: the class itself, an ancestor, or a trait of either.
@@ -134,11 +134,27 @@ TEST_CASE("an object-local property makes a read possible, not absent", "[starco
     const Analysed world("gadget = { id = odd_one  prop_def = { rune_count = int } }\n");
     const schema::ClassDecl* gadget = world.set().find_class("gadget");
     REQUIRE(gadget != nullptr);
-    CHECK(schema::classify_property("rune_count", *gadget, world.set(), "starcore.object").answer ==
+    CHECK(schema::classify_property("rune_count", *gadget, world.set()).answer ==
           schema::PropertyAnswer::Maybe);
 }
 
 // --- grammar tokens (spec 8.8.1) ---------------------------------------
+
+TEST_CASE("core names the same root class the registry finds", "[starcore][narrowing]") {
+    // §8.1.1 from both ends, and the only place both ends are visible.
+    // `libs/stardata` finds the root by the `root = yes` marker and never
+    // names it; `libs/starcore` names it in `token_type`, because §8.1.1 is
+    // core's section and `starcore.object` is core's class. Nothing
+    // structural makes the two agree -- if `object.star` moved the marker,
+    // the class walk would follow it and `token_type` would not -- so this
+    // does.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+
+    const schema::ClassDecl* root = loaded.set.root_class();
+    REQUIRE(root != nullptr);
+    CHECK(root->id == starcore::token_type("something"));
+}
 
 TEST_CASE("a grammar token gives the slot its static type", "[starcore][narrowing]") {
     // §8.8.1's table. `[class:X]` is the one token that narrows; everything

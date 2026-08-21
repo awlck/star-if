@@ -10,7 +10,6 @@
 #include "stardata/diag/codes.hpp"
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/suggest.hpp"
-#include "stardata/schema/types.hpp"
 
 namespace starcore {
 namespace {
@@ -24,13 +23,12 @@ using stardata::diag::Diagnostic;
 using stardata::diag::DiagnosticSink;
 using stardata::schema::SchemaSet;
 
-// §7.2.4's save-state forms, and the keys inside them.
+// §7.2.4's save-state forms. Named here only to be *skipped*: what is inside
+// one is the format layer's to read, and `global` is additionally §6.4's
+// condition namespace when it appears nested.
 constexpr std::string_view kGlobalForm = "global";
 constexpr std::string_view kConstForm = "const";
 constexpr std::string_view kId = "id";
-constexpr std::string_view kType = "type";
-constexpr std::string_view kInitial = "initial";
-constexpr std::string_view kValue = "value";
 
 // §6.4.1's sugar, and §11.1's two general writes.
 constexpr std::string_view kSetFlag = "set_flag";
@@ -56,17 +54,7 @@ constexpr std::string_view kAddGlobal = "add_global";
 
 } // namespace
 
-const GlobalIndex::Declaration* GlobalIndex::find(std::string_view id) const noexcept {
-    for (const Declaration& declared : declarations_) {
-        if (declared.id == id) {
-            return &declared;
-        }
-    }
-    return nullptr;
-}
-
-void GlobalIndex::add_file(const stardata::ast::File& file, const SchemaSet& set,
-                           DiagnosticSink& sink) {
+void GlobalIndex::add_file(const stardata::ast::File& file) {
     for (const Statement& statement : file.statements()) {
         const std::optional<std::string> key = statement.key_name();
         const std::optional<Value> value = statement.value();
@@ -75,50 +63,10 @@ void GlobalIndex::add_file(const stardata::ast::File& file, const SchemaSet& set
             continue;
         }
         if (*key == kGlobalForm || *key == kConstForm) {
-            read_declaration(*block, *key == kConstForm, set, sink);
-            continue;
+            continue; // a declaration: the format layer's, and not a use of itself
         }
         walk(*block);
     }
-}
-
-void GlobalIndex::read_declaration(const Block& block, bool is_const, const SchemaSet& set,
-                                   DiagnosticSink& sink) {
-    const std::optional<Statement> id = block.find(kId);
-    const std::optional<std::string> name = id ? identifier_of(*id) : std::nullopt;
-    const std::optional<Value> declared_type = block.value_of(kType);
-    if (!name || !declared_type) {
-        return; // E-KEY-MISSING or E-TYPE-MISMATCH already said so
-    }
-    const std::optional<stardata::ast::TypeRef> type = declared_type->as_type();
-    if (!type) {
-        return;
-    }
-
-    // The gap this closes: a global's declared type was validated as being
-    // *spelled* like a type expression and never checked to name one, because
-    // `check_declared_types` walks schemas and classes and globals are
-    // neither. `global = { id = x  type = frobnicate }` loaded clean.
-    stardata::schema::check_type(
-        *type, declared_type->span(),
-        "the " + std::string(is_const ? "const" : "global") + " '" + *name + "'", set, sink);
-
-    // And the initial value against that type, which is the check the `any`
-    // on those two keys defers to here (§6.4: "Both are typed, using the same
-    // types as properties (§6.2), including collections").
-    const std::string_view initial_key = is_const ? kValue : kInitial;
-    if (const std::optional<Value> initial = block.value_of(initial_key)) {
-        stardata::schema::check_value("the " + std::string(initial_key) + " value of '" + *name +
-                                          "'",
-                                      *initial, *type, set, sink);
-    }
-
-    // The span is the id's VALUE, not the `id` key: the name is what a
-    // reader is looking for, and underlining `id` would be the same three
-    // characters on every global in the file.
-    const std::optional<Value> written = id->value();
-    declarations_.push_back(
-        Declaration{*name, *type, is_const, written ? written->span() : id->report_span()});
 }
 
 void GlobalIndex::note(std::string id, stardata::diag::Span span, Kind kind) {
@@ -208,16 +156,16 @@ void GlobalIndex::walk(const Block& block) {
     }
 }
 
-void GlobalIndex::check(DiagnosticSink& sink) const {
+void GlobalIndex::check(const SchemaSet& set, DiagnosticSink& sink) const {
     std::vector<std::string_view> candidates;
-    candidates.reserve(declarations_.size());
-    for (const Declaration& declared : declarations_) {
+    candidates.reserve(set.globals().size());
+    for (const stardata::schema::GlobalDecl& declared : set.globals()) {
         candidates.emplace_back(declared.id);
     }
 
     std::set<std::string> read;
     for (const Use& use : uses_) {
-        const Declaration* declared = find(use.id);
+        const stardata::schema::GlobalDecl* declared = set.find_global(use.id);
 
         if (declared != nullptr && use.reads()) {
             read.insert(use.id);
@@ -259,7 +207,7 @@ void GlobalIndex::check(DiagnosticSink& sink) const {
         }
     }
 
-    for (const Declaration& declared : declarations_) {
+    for (const stardata::schema::GlobalDecl& declared : set.globals()) {
         if (read.contains(declared.id)) {
             continue;
         }

@@ -2,12 +2,12 @@
 # loaded as a library, on top of the core-owned set and stdlib
 
 error: E-SCHEMA-SEALED: 'class' is sealed, so it can be added to but never replaced
-  --> tests/corpus/invalid/replaces-sealed.star:5:10
-  |
-5 | schema = @replaces(starcore) {
-  |          ^^^^^^^^^^^^^^^^^^^
-note: sealed means exactly this: extend freely, never supersede. Replacing it would change the shape of data starcore reads directly (spec §7.2.2, §7.6)
-  --> libs/starcore/builtin/schema.star:31:5
+  --> tests/corpus/invalid/replaces-sealed.star:10:10
    |
-31 |     id        = class
+10 | schema = @replaces(stardata) {
+   |          ^^^^^^^^^^^^^^^^^^^
+note: sealed means exactly this: extend freely, never supersede. Replacing it would change the shape of data stardata reads directly (spec §7.2.2, §7.6)
+  --> libs/stardata/builtin/format.star:40:5
+   |
+40 |     id        = class
    |     ^^

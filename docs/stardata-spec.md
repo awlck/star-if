@@ -35,18 +35,34 @@ A **conforming file** is one that a Level 2 implementation accepts without error
 
 ### 1.2.1 What this document specifies, and what merely uses it
 
-This document describes two things, and a reader should know which they are looking at. The conformance levels above almost draw the line already:
+This document describes two things, and a reader should know which they are looking at. The distinction is **mechanism versus vocabulary** (proposal §2.1.1):
 
 | | **Stardata, the format** | **The STAR core vocabulary** |
 |---|---|---|
-| Sections | §2–§7, §13, §14 | §8–§12 |
 | Levels | 1 and 2 | 3 |
 | Implemented by | `libs/stardata` | `libs/starcore` |
-| Content | lexical structure, grammar, block semantics, types, the schema *mechanism*, load order, round-trip | the object model, containment, templates, and the condition and effect vocabularies |
+| Content | lexical structure, grammar, block semantics, types, the schema *mechanism*, the declaration layer, load order, round-trip | the object model, containment, templates, and the condition and effect vocabularies |
 
-The distinction is **mechanism versus vocabulary** (proposal §2.1.1). Everything in the left column would be equally true of a format used for a spreadsheet or a spacecraft telemetry log; everything in the right column exists because this is an interactive fiction system.
+Everything in the left column would be equally true of a format used for a spreadsheet or a spacecraft telemetry log; everything in the right column exists because this is an interactive fiction system.
 
-A Level 2 implementation can validate any Stardata file against any schema, and knows nothing about rooms. A Level 3 implementation knows what `holder` means, that a `restrictions` block owes the player a message, and in what order an action's stages run.
+A Level 2 implementation can validate any Stardata file against any schema, declare classes and traits, instantiate objects and type-check every property — and knows nothing about rooms. A Level 3 implementation knows what `holder` means, that a `restrictions` block owes the player a message, and in what order an action's stages run.
+
+**The line does not follow the section numbering, and this table used to claim it did.** Two questions decide where something belongs, and they have different answers for the same section:
+
+- **Who parses the declaration?** A *format form* (§7.2.4) is one `libs/stardata` reads with a hard-coded reader of its own. `class`, `trait`, `class_extension`, `enum`, `global` and `const` are all format forms, so §8.1–§8.3 and §6.4 are the format's even though they sit among the vocabulary sections.
+- **Who reads the data?** The engine. `libs/starcore` decides what a class *means* — that an object has a location, that a global appears in a save delta — without parsing any of it.
+
+So the crossings are these, and naming them is more useful than a table that implies there are none:
+
+| Section | Parsed by | Read by |
+|---|---|---|
+| §6.4 `global`, `const` | `libs/stardata` (format forms) | the engine: save state, deltas, undo |
+| §8.1–§8.3 `class`, `trait`, `class_extension` | `libs/stardata` (format forms) | the engine: the object model |
+| §8.4–§8.8 property resolution, narrowing | `libs/stardata` | both |
+| §8.5 placement sugar, §9–§12 | `libs/stardata` validates against a schema | `libs/starcore` |
+| §7.2.5.1 `core_requirement` | `libs/stardata` (a format form) | `libs/stardata`, before core sees anything |
+
+The last row is the one that shows *reserved to core* and *declared by core* are separate axes: only core may write a `core_requirement` (§7.2.5.1), and the form is the format layer's, because the format layer is what refuses everybody else.
 
 The two halves live in one document because splitting a specification whose cross-references are this dense costs more than it currently returns. They will separate when `docs/runtime-spec.md` is written, since that document needs the right-hand column anyway.
 
@@ -449,7 +465,6 @@ Six lexical scalar kinds exist: `Identifier`, `Integer`, `Decimal`, `String`, `L
 | `condition_block` | record block | establishes a condition context (§10) |
 | `effect_block` | record block | establishes an effect context (§11) |
 | `text_or_script` | `String`, `LocKey`, `Identifier` | a message, or the name of a function producing one |
-| `any` | any value, scalar or block | for a slot whose type is decided by other data and checked where that data is known — a `global`'s `initial` against the `type` beside it (§6.4). Not an escape from checking: every use of it is one this document names, and each names the pass that performs the check |
 
 ### 6.3 Collection operators
 
@@ -502,7 +517,8 @@ const = { id = max_reactor_temp  type = int  value = 1200 }
 - Both are typed, using the same types as properties (§6.2), including collections.
 - Both MUST be declared. There is no implicit creation.
 - Ids live in a single namespace. Libraries SHOULD prefix theirs (`starscape.combat_round`), which the dotted identifier form of §3.3 supports.
-- The `initial` value of a `global`, and the `value` of a `const`, MUST be checked against the `type` declared beside it. That type is another key's value, which no schema can express, so both keys are declared `any` (§6.2) and the check happens where the two are read together.
+- `global` and `const` are **format forms** (§7.2.4): the format layer parses and type-checks them, and the engine reads what they hold. That split is the whole of it — nothing about parsing `id`, `type` and `initial` is interactive fiction, and everything about a global appearing in a save delta is.
+- The `initial` value of a `global`, and the `value` of a `const`, MUST be checked against the `type` declared beside it. That type is another key's value, so both keys are declared with §7.2's dependent type — `type_of = type` — and the ordinary value check does the rest.
 - A declared `global` or `const` that nothing **reads** SHOULD be a warning. A write is not a read: a flag that is set and never tested is world state nothing depends on, and is usually a condition that was renamed or one that was never written.
 
 Read in conditions with `global`, write in effects with `set_global` and `add_global`:
@@ -719,6 +735,7 @@ Fields of a `key` declaration:
 |---|---|---|
 | `name` | identifier | the key |
 | `type` | type expression (§6.2) | declared type |
+| `type_of` | identifier | *a dependent type.* Names a sibling key of the same form whose **value** is this key's type. Exactly one of `type` and `type_of` is written; declaring both is an error |
 | `required` | bool | default `no` |
 | `arity` | `one` \| `many` | default `one` (§5.3) |
 | `default` | scalar | value if absent |
@@ -729,6 +746,21 @@ Fields of a `key` declaration:
 | `deprecated` | text | if present, using this key produces a warning carrying this message |
 | `exclusive_group` | identifier | this key belongs to a mutually exclusive group; see §7.2.1 |
 | `stage_order` | list of identifiers | *on the schema, not a key.* The ordered stages of this form, through which type narrowing flows (§8.8.3). Declaring it keeps the narrowing analysis free of any knowledge of what the stages are. A form declaring none has no stages, and narrowing within it does not flow between keys |
+
+**`type_of`, the dependent type.** Most keys have a type the schema knows in advance. A few do not, because their type is decided by *other data in the same block*:
+
+```stardata
+key = { name = type     type = type_expr }
+key = { name = initial  type_of = type }
+```
+
+That is §6.4's `global`. A global's starting value is an `int` for one global and a `map<direction, ref<room>>` for the next, so no fixed `type =` on the `initial` line could be right for both. `type_of = type` says "check this against whatever the `type` key beside it holds", and the ordinary value check does the rest.
+
+The alternative — a type meaning "somebody else checks this" — was tried and removed. It answered the question for one key by declining to answer it for every key in every schema in the program, which is an escape hatch, not a type.
+
+The sibling named MUST be a key of the same form; naming one that is not is an error at the schema. If the sibling is absent from a particular block, this key is not checked — its own `required` (or the exclusive group it belongs to) is what reports that, in the author's terms.
+
+Two further users of it are specified: §11.1's `set = { target  prop  value }`, where `value` is typed by the property `prop` names, and `set_global = { id  value }`, where it is typed by the global.
 
 #### 7.2.1 Exclusive groups
 
@@ -789,20 +821,45 @@ trait = {
 
 This is the general form of the rule above: core depends on **declared, checkable markers**, and hard-codes a name only where the concept itself is core (§7.2.4). Defined markers include `affects_scope`, `always_resident` (§5.3 of the proposal), and `save_exclude`.
 
-#### 7.2.4 What is core-owned
+#### 7.2.4 Format forms and core-owned forms
 
-The test is narrow and mechanical: **does `starcore`'s own code read or write it?** If yes, it is core-owned and asserted. If no, it is library policy.
+An earlier version of this section asked one question — *does `starcore`'s own code read or write it?* — and used the answer for two different purposes. That conflated **who parses the declaration**, which happens at load, with **who reads the data**, which happens at run time. `global` is the case that breaks it: the format layer parses one and the engine reads it, and forcing a single answer put the reader in one library and the declaration in the other, where the two quietly drifted apart.
+
+There are therefore three kinds of form, and two questions.
+
+**Format forms** are parsed by the format layer itself. The membership rule is mechanical and testable:
+
+> A form is a **format form** if and only if the format layer parses it with a reader of its own, rather than validating it generically against its schema.
+
+That is exactly the set whose shape would otherwise be stated twice — once as a `schema` declaration and once as C++ — so it is exactly the set that needs a check that the two agree. `scripts/check_format_forms.py` is that check.
+
+| Format forms | Why the format layer parses it |
+|---|---|
+| `schema`, `key` | the bootstrap: these are what read every other declaration, so they cannot be declared in one |
+| `schema_extension` | §7.5 — it changes what a form is, before anything is validated against it |
+| `class`, `trait`, `class_extension` | §8.1–§8.3 — the type graph that property resolution and instantiation checking walk |
+| `enum` | §6.2 — `enum<E>` is a type, and types are the format's |
+| `global`, `const` | §6.4 — declared, typed and checked at load; what one *means* is the engine's |
+| `prop_def`, `prop_marker` | the parts of a class declaration |
+| `resolve` (§8.3), `version_constraints` (§13.3) | nested shapes of a declaration the format layer reads. Neither has a reader yet: both are declared, and validated generically until one exists |
+| `core_requirement` | §7.2.5 — the gate that runs before core is handed anything; **writing one is reserved to `starcore`** (§7.2.5.1) |
+| `library` | §13.3 — packaging and load order, checked against the registry |
+
+These are declared, as data, in `libs/stardata/builtin/format.star`, for §7.1's reason: validation, editor generation and documentation come from one source. The reader stays hard-coded, and a test asserts the two say the same thing.
+
+**Core-owned forms** are validated generically like any other, and are core's because core's own code reads the data:
 
 | Core-owned forms | Why |
 |---|---|
-| `schema`, `schema_extension`, `class`, `class_extension`, `trait`, `enum` | the schema layer itself |
-| `core_requirement` | what core asserts about the data it is handed (§7.2.5); **reserved to `starcore`** |
-| `global`, `const` | save-state layout |
 | `action`, `rule`, `turn_hook` | the turn sequence and dispatch index |
 | `sector` | residency and streaming |
-| `project`, `library` | load order |
+| `project` | the game's own manifest: `start_room`, `player`, `entry_sector` |
 | `style` | §9.3 — the text VM emits style spans, and `@style(id)` (§5.4.1) has an argument nothing could otherwise check |
 | `loc` | §9.6 — the engine resolves every `$key` through it, and owns the fallback chain when one is missing |
+
+**Everything else** is library policy.
+
+*Reserved to core* (§7.2.5.1) is a third axis, independent of both. `core_requirement` proves it: only `starcore` may write one, and the form is the format layer's — because the format layer is what refuses everybody else, at load, before core sees the file at all.
 
 | Core-owned classes and traits | Why |
 |---|---|
@@ -969,6 +1026,21 @@ Declaring these in one built-in place is what lets `starcore` implement predicat
 
 A library MAY add properties to `starcore.object` with `class_extension`; it MUST NOT retype or remove these.
 
+**Being the root is declared, not assumed.** A class declaration MAY carry `root = yes`:
+
+```stardata
+class = {
+    id     = starcore.object
+    root   = yes
+    sealed = yes
+    prop_def = { ... }
+}
+```
+
+A class with no `of_class` descends from whichever class declares it. **At most one class in a program may declare `root`**, and declaring a second is an error naming both; a `trait` may not declare it, and neither may a class that also declares an `of_class`.
+
+The name `starcore.object` is therefore core's, in data, while the *concept* of a root is the format's. That is what lets the format layer resolve a property through the whole chain — including the last link — without naming any class. Before this it took the root's name as a parameter threaded through three signatures, and two of the walks in the format layer disagreed about whether to follow it.
+
 ### 8.2 Class extension
 
 ```stardata
@@ -979,7 +1051,20 @@ class_extension = {
 }
 ```
 
-`class_extension` modifies an existing class in place: it adds properties and changes defaults for a class declared elsewhere, including in a library the author cannot edit. It MUST NOT change `of_class`.
+`class_extension` modifies an existing class in place: it adds properties and changes defaults for a class declared elsewhere, including in a library the author cannot edit. It MUST NOT change what it extends — writing a second `of_class` or `of_trait` is an error.
+
+**A trait is extended the same way**, through `of_trait`:
+
+```stardata
+class_extension = {
+    of_trait = openable
+    prop_def = { open_sound = resource }
+}
+```
+
+`of_class` and `of_trait` are an exclusive group (§7.2.1): exactly one of them is written. Naming both, or neither, is an error.
+
+The two keys exist rather than one because §8.3 gives classes and traits separate namespaces, so a single id may legally name both. A lookup that tried one and fell back to the other would extend whichever the load order happened to reach first — silently, and differently between runs. Naming `of_class` where the id is a trait is therefore an error, and the diagnostic MUST say which namespace was searched rather than merely reporting that nothing declares the name.
 
 Extensions apply in load order (§13.2). Two extensions setting the same default is legal; the later wins, and an implementation SHOULD report it at `--verbose` since it is occasionally a surprise.
 
@@ -2015,6 +2100,12 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | `schema_extension` redeclaring an existing key with a different declaration (§7.5) | error |
 | `schema_extension` redeclaring an existing key identically (§7.5) | warning |
 | `schema_extension` naming a schema that does not exist (§7.5) | error |
+| `class_extension` naming neither `of_class` nor `of_trait`, or both (§8.2, §7.2.1) | error, naming the group's members |
+| `class_extension` naming a class or trait that does not exist (§8.2) | error; where the id is declared in the *other* namespace, the diagnostic MUST say so and offer the other key |
+| A second class declaring `root = yes` (§8.1.1) | error, citing both spans |
+| `root = yes` on a `trait`, or on a class that also declares `of_class` (§8.1.1) | error |
+| A `key` declaring both a `type` and a `type_of`, or neither (§7.2) | error |
+| `type_of` naming a key the form does not have (§7.2) | error, with a suggestion |
 | An unmet `core_requirement` (§7.2.5) | error, naming the requirement and quoting its `doc` |
 | A `core_requirement` declared by anything but `starcore` (§7.2.5.1) | error, naming the section |
 | An unknown marker in a `prop_def` block (§7.2.3) | error, listing the markers |
@@ -2084,7 +2175,11 @@ The proposal left the following under-determined. This specification settles the
 | A13 | `[` and `]` reserved against ever becoming block syntax (§15) | Guards the v0.2 decision to drop the ordered/unordered distinction |
 | A14 | Juxtaposition as single-argument application (§9.2.1) | Message text is what authors write most; `[the noun]` reads better than `[the(noun)]`. Stated as one general rule so there is no special-cased article syntax |
 | A15 | Capitalisation by initial letter, resolved generically (§9.2.2) | Avoids a capitalised twin for every builtin, and extends to author-defined functions for free |
-| A44 | `any` as a declared type, for a value whose type is another key's value (§6.2, §6.4) | §6.4's own examples give a global a `set` and a `map` as its initial value, which `scalar` rejects and no other type admits. The alternative was leaving `global` unable to express the examples in the section that defines it |
+| A44 | ~~`any` as a declared type, for a value whose type is another key's value~~ — **superseded by A48** | It answered the question for one key by declining to answer it for every key in every schema in the program. Any third-party schema could have opted out of type checking by writing one word, and nothing would have reported it. A dependent type (§7.2's `type_of`) says the same thing about the one key that needs it |
+| A45 | §7.2.4's ownership test splits into two questions: who parses the declaration, and who reads the data (§1.2.1, §7.2.4) | The single test forced one answer for both, and `global` needs two — parsed by the format layer, read by the engine. The consequence was a reader in one library and a declaration of the same form in the other, which drifted: `class` declared a `traits` key nothing read for nine tasks. **Format forms** are now a named category with a mechanical membership rule, and a CI check that the two statements agree |
+| A46 | The root class is declared with `root = yes`, not assumed by name (§8.1.1) | The format layer resolved properties through a chain whose last link was a class name passed in as a parameter — and two of its own walks disagreed about whether to follow it. Declaring the root keeps the *name* core's while making the *concept* the format's, which is what let the two walks become one |
+| A47 | `class_extension` extends a trait through `of_trait`, rather than a separate `trait_extension` form (§8.2) | One identifier is all that would have differed between the two forms. An exclusive group (§7.2.1) states the "exactly one" rule in the schema, where an author can read it. A single `of =` was rejected because §8.3 gives classes and traits separate namespaces, so one id may name both and the lookup order would decide silently |
+| A48 | `type_of` — a key's type may be the value of a sibling key (§7.2, §6.4) | §6.4's own examples give a global a `set` and a `map` as its initial value, which `scalar` rejects and no fixed type admits. Naming the sibling scopes the escape to the one key that needs it, and keeps the rule in the schema where documentation and editors can see it. §11.1's `set` and `set_global` are the next two callers |
 | A17 | Flags are sugar over declared `bool` globals, not a separate store (§6.4.1) | As undeclared strings they are a silent-typo generator, which is exactly what the schema layer exists to prevent |
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |
@@ -2115,38 +2210,44 @@ The proposal left the following under-determined. This specification settles the
 
 ## Appendix C — Standard top-level forms
 
-The forms §7.2.4 lists as core-owned are supplied by `starcore` and sealed; the rest are `stdlib`'s. Libraries add more by declaring schemas (§7.2); this list is not closed.
+Ownership is three-way, per §7.2.4, and the **Owner** column below says which:
 
-| Form | Purpose | Specified in |
-|---|---|---|
-| `project` | Project manifest; exactly one per project | §13.1 |
-| `library` | Library metadata, dependencies, editor features | §13.3 |
-| `schema` | Declares a form or nested block shape | §7.2 |
-| `schema_extension` | Adds keys to an existing form, including a sealed one | §7.5 |
-| `core_requirement` | Asserts something `starcore` depends on | §7.2.5 |
-| `enum` | Declares an enumerated value set | §6.2 |
-| `style` | Declares a semantic text style | §9.3 |
-| `global` | A mutable, saved, typed variable not owned by any object | §6.4 |
-| `const` | An immutable, unsaved named value | §6.4 |
-| `calendar` | Units and epoch for displaying and compiling times | §11.6 |
-| `loc` | Localisation table for one language | §9.6 |
-| `class` | Declares a class | §8.1 |
-| `class_extension` | Adds properties or changes defaults on an existing class | §8.2 |
-| `backdrop` | An object present in several rooms at once | §8.6 |
-| `door` | A two-sided object joining two rooms | §8.6.1 |
-| `trait` | Declares an orthogonal capability bundle | §8.3 |
-| *class name* | Instantiates an object of that class | §7.4 |
-| `sector` | Declares a loading, simulation and pinning unit | §11.4 |
-| `action` | Declares a player- or NPC-performable action | §10, §11 |
-| `rule` | Modifies an action, or reacts to an event | below |
-| `turn_hook` | Registers a ruleset hook at a named turn phase | below |
-| `quest` | Declares a quest, its stages and completion predicates | §10, §11 |
-| `dialogue` | Declares a conversation graph | below |
-| `goal_def` | Declares a multi-round NPC plan | below |
-| `schedule` | Declares an NPC's time-of-day routine | §11.6 |
-| `bark_table` | Weighted one-line NPC utterances | below |
-| `lexicon` | Word forms overriding the language pack's inferences | §9.5.2 |
-| `party` | Declares a party, its members and control model | §11.7 |
+- **`format`** — a *format form*: parsed by `libs/stardata` with a reader of its own, declared in `libs/stardata/builtin/format.star`, sealed. What the data *means* may still be the engine's.
+- **`starcore`** — core-owned: validated generically like any other form, and core's because core's own code reads the data. Declared in `libs/starcore/builtin/`, sealed.
+- **`stdlib`** — ordinary Stardata with no privileged status, replaceable wholesale by a different library.
+
+Libraries add more by declaring schemas (§7.2); this list is not closed.
+
+| Form | Purpose | Owner | Specified in |
+|---|---|---|---|
+| `project` | Project manifest; exactly one per project | `starcore` | §13.1 |
+| `library` | Library metadata, dependencies, editor features | `format` | §13.3 |
+| `schema` | Declares a form or nested block shape | `format` | §7.2 |
+| `schema_extension` | Adds keys to an existing form, including a sealed one | `format` | §7.5 |
+| `core_requirement` | Asserts something `starcore` depends on | `format` | §7.2.5 |
+| `enum` | Declares an enumerated value set | `format` | §6.2 |
+| `style` | Declares a semantic text style | `starcore` | §9.3 |
+| `global` | A mutable, saved, typed variable not owned by any object | `format` | §6.4 |
+| `const` | An immutable, unsaved named value | `format` | §6.4 |
+| `calendar` | Units and epoch for displaying and compiling times | `stdlib` | §11.6 |
+| `loc` | Localisation table for one language | `starcore` | §9.6 |
+| `class` | Declares a class | `format` | §8.1 |
+| `class_extension` | Adds properties or changes defaults on an existing class | `format` | §8.2 |
+| `backdrop` | An object present in several rooms at once | `stdlib` | §8.6 |
+| `door` | A two-sided object joining two rooms | `stdlib` | §8.6.1 |
+| `trait` | Declares an orthogonal capability bundle | `format` | §8.3 |
+| *class name* | Instantiates an object of that class | — | §7.4 |
+| `sector` | Declares a loading, simulation and pinning unit | `starcore` | §11.4 |
+| `action` | Declares a player- or NPC-performable action | `starcore` | §10, §11 |
+| `rule` | Modifies an action, or reacts to an event | `starcore` | below |
+| `turn_hook` | Registers a ruleset hook at a named turn phase | `starcore` | below |
+| `quest` | Declares a quest, its stages and completion predicates | `stdlib` | §10, §11 |
+| `dialogue` | Declares a conversation graph | `stdlib` | below |
+| `goal_def` | Declares a multi-round NPC plan | `stdlib` | below |
+| `schedule` | Declares an NPC's time-of-day routine | `stdlib` | §11.6 |
+| `bark_table` | Weighted one-line NPC utterances | `stdlib` | below |
+| `lexicon` | Word forms overriding the language pack's inferences | `stdlib` | §9.5.2 |
+| `party` | Declares a party, its members and control model | `stdlib` | §11.7 |
 
 ### C.1 `rule`
 

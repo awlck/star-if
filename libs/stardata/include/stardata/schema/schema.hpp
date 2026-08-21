@@ -39,6 +39,28 @@ enum class Combine : std::uint8_t { Override, Merge, Append, Smart };
 struct KeyDecl {
     std::string name;
     ast::TypeRef type;
+
+    // §7.2's dependent type: the name of a sibling key whose *value* is this
+    // key's type. `initial` on a `global` is the case that forced it --
+    //
+    //     key = { name = type     type = type_expr }
+    //     key = { name = initial  type_of = type }
+    //
+    // -- because §6.4 gives a global "the same types as properties, including
+    // collections", so `initial` accepts a scalar for one global and a map
+    // for the next, and no fixed `type =` covers both.
+    //
+    // THE ALTERNATIVE WAS AN ESCAPE HATCH, and it was tried: a type called
+    // `any` that accepted anything and meant "checked somewhere else". It
+    // worked for globals and left every other schema in the program able to
+    // opt out of type checking by writing one word. A dependent type says
+    // the same thing about one key without saying it about all of them.
+    //
+    // Two more callers wait in the specification: §11.1's
+    // `set = { target  prop  value }` types `value` by `prop`, and
+    // `set_global = { id  value }` types it by the global `id` names.
+    std::string type_of;
+
     bool required = false;
     Arity arity = Arity::One;
     Combine combine = Combine::Override;
@@ -133,9 +155,23 @@ struct PropDecl {
 // core trait, and splitting them would mean writing each check twice.
 struct ClassDecl {
     std::string id;
-    std::string of_class; // empty for a trait, and for `starcore.object`
+    std::string of_class; // empty for a trait, and for the root
     bool is_trait = false;
     bool sealed = false;
+
+    // §8.1.1's root: the class a declaration with no `of_class` descends from.
+    // At most one class in a program may declare it.
+    //
+    // DECLARED RATHER THAN NAMED, which is the whole point. "A single
+    // inheritance hierarchy has a root" is generic; *which* class is the root
+    // is the object model's, and the object model is `libs/starcore`'s. This
+    // flag is how the second fact reaches the first without either library
+    // naming the other's -- the same move `stage_order` makes for §8.8.3's
+    // pipeline. It replaced an `implicit_parent` parameter threaded through
+    // three functions, whose default silently reported every property on a
+    // broad slot as absent.
+    bool is_root = false;
+
     std::string owner;
     std::vector<PropDecl> properties;
 
@@ -155,15 +191,60 @@ struct ClassDecl {
     [[nodiscard]] const PropDecl* find_property(std::string_view name) const noexcept;
 };
 
-// A `class_extension` (§8.2): adds properties and defaults to a class
-// declared elsewhere, possibly in a library the author cannot edit.
+// A `global` or a `const` (§6.4). One structure for both, because the only
+// difference the format layer can see is whether the value may change --
+// everything about *reading the declaration* is identical, and §6.4 gives
+// them one id namespace precisely so that they cannot collide.
+//
+// A FORMAT FORM (§7.2.4), which is the part worth stating. The engine owns
+// what a global MEANS: it is save state, it appears in deltas and in undo
+// snapshots. But nothing about parsing `id`, `type` and `initial` is
+// interactive fiction, and the alternative -- a schema declaring the keys
+// plus a reader in the other library -- is the arrangement that let `class`
+// and `read_class` drift apart.
+//
+// It also removes a hole. `initial`'s type is the *value of the `type` key
+// beside it*, a dependent type no key declaration can express; while `global`
+// was declared elsewhere the key had to be typed `any`, which meant any
+// schema anywhere could opt out of type checking. Reading the form here means
+// there is no key to type, and the check happens against the real type.
+struct GlobalDecl {
+    std::string id;
+    ast::TypeRef type;
+    bool is_const = false;
+    std::string owner;
+    diag::Span span;      // the id's value, which is the name a reader looks for
+    diag::Span type_span; // for reporting a type that names nothing
+
+    [[nodiscard]] bool is_bool() const noexcept { return type.name == "bool"; }
+};
+
+// A `class_extension` (§8.2): adds properties and defaults to a class or a
+// trait declared elsewhere, possibly in a library the author cannot edit.
+//
+// ONE FORM FOR BOTH, with the target named by `of_class` or by `of_trait` --
+// §7.2.1's exclusive group, so writing both or neither is an error the schema
+// states rather than a rule the reader knows. The alternative considered was a
+// second form, `trait_extension`, mirroring this one key for key; two forms
+// that differ in one identifier are two places to fix every later change.
+//
+// Naming which one is not pedantry. `class` and `trait` are separate
+// namespaces (§8.3), so an id can be both, and a single `of =` would extend
+// whichever the lookup happened to try first -- silently, and differently
+// depending on load order.
 struct ExtensionDecl {
-    std::string of_class;
+    std::string target;
+    bool targets_trait = false;
     std::vector<PropDecl> properties;
     diag::Span span;
-    diag::Span of_class_span;
-    bool declares_of_class_change = false; // §8.2 forbids it; F2a reports it
+    diag::Span target_span;
+    bool declares_reparent = false; // §8.2 forbids it; F2a reports it
     diag::Span reparent_span;
+
+    // The key that named the target, for a diagnostic that has to quote it.
+    [[nodiscard]] std::string_view target_key() const noexcept {
+        return targets_trait ? "of_trait" : "of_class";
+    }
 };
 
 // A `schema_extension` (§7.5): adds keys to an existing form, including a
@@ -261,6 +342,13 @@ read_schema_extension(const ast::Statement& statement, diag::DiagnosticSink& sin
 
 [[nodiscard]] std::optional<EnumDecl> read_enum(const ast::Statement& statement,
                                                 std::string_view owner, diag::DiagnosticSink& sink);
+
+// A `global` or a `const` (§6.4). `is_const` decides which of `initial` and
+// `value` names the starting value and whether the value may change; the rest
+// is identical, which is why one reader serves both.
+[[nodiscard]] std::optional<GlobalDecl> read_global(const ast::Statement& statement, bool is_const,
+                                                    std::string_view owner,
+                                                    diag::DiagnosticSink& sink);
 
 // The `prop_def` declarations an object instantiation carries (§8.7, backlog
 // F11): properties belonging to this object and to nothing else.

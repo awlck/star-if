@@ -355,6 +355,63 @@ TEST_CASE("an inherited property is found through the class chain", "[schema][ty
     CHECK(mentions(*reported[0], "text"));
 }
 
+TEST_CASE("a property arriving through a trait is checked too", "[schema][types]") {
+    // The regression this exists for. There were two inheritance walks in
+    // this library and they disagreed: `property.cpp`'s `lineage` honoured
+    // `traits` and the root, and `types.cpp` had a second one that followed
+    // `of_class` and nothing else. So every trait property in every program
+    // instantiated without a type check -- silently, since the walk simply
+    // found no declaration and had nothing to complain about.
+    //
+    // One walk now. `lineage` is the only one, and this is the case that
+    // separates it from the one that was deleted.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("trait = { id = glowing  prop_def = { lumens = int } }\n"
+                     "class = { id = lamp  of_class = starcore.object  traits = { glowing } }\n");
+    REQUIRE(loaded.sink.error_count() == 0);
+    loaded.load_text("lamp = { id = desk_lamp  lumens = \"very\" }\n", "a game", "game.star");
+
+    const std::vector<const diag::Diagnostic*> reported = all_of(loaded, diag::Code::TypeMismatch);
+    REQUIRE(reported.size() == 1);
+    CHECK(mentions(*reported[0], "'lumens'"));
+    CHECK(mentions(*reported[0], "int"));
+}
+
+TEST_CASE("a trait property inherited by a subclass is checked too", "[schema][types]") {
+    // The same walk, one link further out: the trait is mixed into the
+    // PARENT, and the object is of the child. Both `lineage`'s steps have to
+    // work together for this one -- ancestors, and each ancestor's traits.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("trait = { id = glowing  prop_def = { lumens = int } }\n"
+                     "class = { id = lamp  of_class = starcore.object  traits = { glowing } }\n"
+                     "class = { id = desk_lamp_class  of_class = lamp }\n");
+    REQUIRE(loaded.sink.error_count() == 0);
+    loaded.load_text("desk_lamp_class = { id = anglepoise  lumens = \"very\" }\n", "a game",
+                     "game.star");
+
+    const std::vector<const diag::Diagnostic*> reported = all_of(loaded, diag::Code::TypeMismatch);
+    REQUIRE(reported.size() == 1);
+    CHECK(mentions(*reported[0], "'lumens'"));
+}
+
+TEST_CASE("a property on the declared root is checked too", "[schema][types]") {
+    // The other half of what the deleted walk missed. A class with no
+    // `of_class` descends from the root (§8.1.1), which is now a declaration
+    // -- `root = yes` on `starcore.object` -- rather than a name threaded
+    // through three signatures.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("class = { id = freestanding }\n");
+    REQUIRE(loaded.sink.error_count() == 0);
+    loaded.load_text("freestanding = { id = orphan  name = 3 }\n", "a game", "game.star");
+
+    const std::vector<const diag::Diagnostic*> reported = all_of(loaded, diag::Code::TypeMismatch);
+    REQUIRE(reported.size() == 1);
+    CHECK(mentions(*reported[0], "'name'"));
+}
+
 TEST_CASE("a key naming no property is left for F11", "[schema][types]") {
     // §7.4 lists the keys permitted inside an instantiation, and enforcing
     // that needs the object-local `prop_def` of backlog F11. Guessing here --

@@ -11,14 +11,14 @@ namespace stardata::schema {
 
 namespace {
 
-// A depth cap rather than a visited set, matching `find_declared_property`:
-// a cycle in `of_class` is a malformed hierarchy, which is the class graph's
-// to report and not this walk's to diagnose on the way past.
+// A depth cap rather than a visited set: a cycle in `of_class` is a malformed
+// hierarchy, which is the class graph's to report and not this walk's to
+// diagnose on the way past.
 constexpr int kMaxDepth = 64;
 
-// `type`, then each ancestor, in resolution order (§8.4 step 3).
-[[nodiscard]] std::vector<const ClassDecl*> lineage(const ClassDecl& type, const SchemaSet& set,
-                                                    std::string_view implicit_parent) {
+} // namespace
+
+std::vector<const ClassDecl*> lineage(const ClassDecl& type, const SchemaSet& set) {
     std::vector<const ClassDecl*> chain;
     const ClassDecl* at = &type;
     for (int depth = 0; at != nullptr && depth < kMaxDepth; ++depth) {
@@ -27,15 +27,20 @@ constexpr int kMaxDepth = 64;
             at = set.find_class(at->of_class);
             continue;
         }
-        // No `of_class`. Whether that means "root" or "child of the object
-        // model's root" is the caller's to say -- see the header.
-        if (implicit_parent.empty() || at->id == implicit_parent || at->is_trait) {
+        // No `of_class`, so §8.1.1's implicit parent applies -- unless this
+        // *is* the root, or a trait, which is outside the hierarchy (§8.3).
+        // The root is read out of the set rather than passed in, which is
+        // what let the `implicit_parent` parameter go.
+        const ClassDecl* root = set.root_class();
+        if (root == nullptr || at == root || at->is_trait) {
             break;
         }
-        at = set.find_class(implicit_parent);
+        at = root;
     }
     return chain;
 }
+
+namespace {
 
 // Whether `decl` or one of its traits declares `name`.
 [[nodiscard]] const PropDecl*
@@ -73,12 +78,11 @@ std::string_view to_string(PropertyAnswer answer) noexcept {
     return "absent";
 }
 
-bool descends_from(const ClassDecl& candidate, std::string_view ancestor, const SchemaSet& set,
-                   std::string_view implicit_parent) {
+bool descends_from(const ClassDecl& candidate, std::string_view ancestor, const SchemaSet& set) {
     if (candidate.is_trait) {
         return false; // §8.3: a trait is mixed in, not inherited from
     }
-    for (const ClassDecl* at : lineage(candidate, set, implicit_parent)) {
+    for (const ClassDecl* at : lineage(candidate, set)) {
         if (at->id == ancestor) {
             return true;
         }
@@ -86,8 +90,7 @@ bool descends_from(const ClassDecl& candidate, std::string_view ancestor, const 
     return false;
 }
 
-std::vector<std::string_view> reachable_properties(const ClassDecl& type, const SchemaSet& set,
-                                                   std::string_view implicit_parent) {
+std::vector<std::string_view> reachable_properties(const ClassDecl& type, const SchemaSet& set) {
     std::vector<std::string_view> names;
     const auto add = [&names](const std::vector<PropDecl>& properties) {
         for (const PropDecl& property : properties) {
@@ -97,7 +100,7 @@ std::vector<std::string_view> reachable_properties(const ClassDecl& type, const 
         }
     };
 
-    for (const ClassDecl* at : lineage(type, set, implicit_parent)) {
+    for (const ClassDecl* at : lineage(type, set)) {
         add(at->properties);
         for (const std::string& id : at->traits) {
             if (const ClassDecl* trait = set.find_trait(id)) {
@@ -108,12 +111,12 @@ std::vector<std::string_view> reachable_properties(const ClassDecl& type, const 
     return names;
 }
 
-PropertyLookup classify_property(std::string_view name, const ClassDecl& type, const SchemaSet& set,
-                                 std::string_view implicit_parent) {
+PropertyLookup classify_property(std::string_view name, const ClassDecl& type,
+                                 const SchemaSet& set) {
     PropertyLookup result;
 
     // Present: `T` or an ancestor or trait of `T` declares it (§8.8.2).
-    for (const ClassDecl* at : lineage(type, set, implicit_parent)) {
+    for (const ClassDecl* at : lineage(type, set)) {
         if (const PropDecl* declared = declared_here_or_by_trait(*at, name, set)) {
             result.answer = PropertyAnswer::Present;
             result.declaration = declared;
@@ -130,7 +133,7 @@ PropertyLookup classify_property(std::string_view name, const ClassDecl& type, c
         if (candidate.is_trait || candidate.id == type.id) {
             continue;
         }
-        if (!descends_from(candidate, type.id, set, implicit_parent)) {
+        if (!descends_from(candidate, type.id, set)) {
             continue;
         }
         if (declared_here_or_by_trait(candidate, name, set) != nullptr) {
@@ -142,8 +145,7 @@ PropertyLookup classify_property(std::string_view name, const ClassDecl& type, c
             continue;
         }
         const ClassDecl* of = set.find_class(local.class_id);
-        if (of != nullptr &&
-            (of->id == type.id || descends_from(*of, type.id, set, implicit_parent)) &&
+        if (of != nullptr && (of->id == type.id || descends_from(*of, type.id, set)) &&
             std::find(descendants.begin(), descendants.end(), local.class_id) ==
                 descendants.end()) {
             descendants.push_back(local.class_id);

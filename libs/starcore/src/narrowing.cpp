@@ -24,7 +24,18 @@ using stardata::schema::PropertyAnswer;
 using stardata::schema::PropertyLookup;
 using stardata::schema::SchemaSet;
 
-// The root of the object model (§8.1.1). Core's own, and so nameable here.
+// The root of the object model (§8.1.1). Core's own, and so nameable here --
+// this is the library §8.1.1 belongs to.
+//
+// It used to be passed *into* `libs/stardata` as an `implicit_parent`
+// argument, because the class walk there needed it and could not say it. The
+// walk now reads the root out of the registry, from the `root = yes` marker
+// on this same declaration, so the name crosses no boundary any more. What
+// remains here is core naming its own class, which is the arrangement the
+// layering check exists to protect rather than the one it exists to catch.
+//
+// The two must agree, and unit/starcore/narrowing_test.cpp asserts they do by
+// comparing `SchemaSet::root_class()` against `token_type`'s answer.
 constexpr std::string_view kRootClass = "starcore.object";
 
 // §8.8.1: "`location` | the acting actor's current room -- `room`". The
@@ -182,8 +193,7 @@ struct Walk {
             return; // §8.8.3 case 2: an explicit has_prop already justified it
         }
 
-        const PropertyLookup lookup =
-            stardata::schema::classify_property(property, *type, set, kRootClass);
+        const PropertyLookup lookup = stardata::schema::classify_property(property, *type, set);
         if (lookup.answer == PropertyAnswer::Present) {
             return;
         }
@@ -215,7 +225,7 @@ struct Walk {
         // useful suggestion is over the properties this slot really has
         // (backlog F6).
         const std::vector<std::string_view> reachable =
-            stardata::schema::reachable_properties(*type, set, kRootClass);
+            stardata::schema::reachable_properties(*type, set);
         stardata::schema::suggest(
             diagnostic, statement.key() ? statement.key()->span() : statement.report_span(),
             property, reachable);

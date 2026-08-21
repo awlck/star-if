@@ -45,6 +45,17 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_layering.py
 
+  # spec §7.2.4's format forms are stated twice -- as data in format.star, so
+  # that documentation and editor generation have §7.1's one source, and as
+  # C++ in the reader that parses them. Two statements of one thing drift, and
+  # this one did: `class` declared a `traits` key nothing read for nine tasks.
+  format-forms:
+    name: Format forms agree with their readers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_format_forms.py
+
   # Section numbers cited from the code are positional, so a specification
   # edit can renumber them out from under a comment or a diagnostic without
   # anything failing to compile.

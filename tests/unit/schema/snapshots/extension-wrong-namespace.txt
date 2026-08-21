@@ -1,0 +1,16 @@
+# tests/corpus/invalid/extension-wrong-namespace.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-INVALID: I can't extend 'glowing', because nothing declares it
+  --> tests/corpus/invalid/extension-wrong-namespace.star:18:5
+   |
+18 |     of_class = glowing
+   |     ^^^^^^^^
+note: a class_extension names a class declared elsewhere -- in a library, or earlier in the load order (spec §8.2, §13.2)
+note: 'glowing' is declared, but as a trait, and 'of_class' looks only among classes; 'of_trait' is the key for the other namespace (spec §8.3)
+  --> tests/corpus/invalid/extension-wrong-namespace.star:13:5
+   |
+13 |     id       = glowing
+   |     ^^
+fix-it: name it with `of_trait`
+  replace tests/corpus/invalid/extension-wrong-namespace.star:18:5 with `of_trait`

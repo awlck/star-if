@@ -34,8 +34,16 @@ using diag::Diagnostic;
     // Two the schema layer needs that §6.2's table does not list, because
     // they describe the schema language rather than the data it describes:
     // §7.2's key table types `type` as "type expression (§6.2)" and `default`
-    // as "scalar", and these are the two names that says.
-    if (name == "type_expr" || name == "scalar") {
+    // as "scalar", and those are the two names that says.
+    //
+    // `any` is the third, and it is the one §6.2 now carries a row for. It
+    // means "this value's type is decided by other data, and is checked
+    // where that data is known" -- a `global`'s `initial` against the
+    // global's own `type` (§6.4), which is a dependent type no `type =` on a
+    // key declaration can express. It is not a hole in the checking: it moves
+    // the check to the pass that can perform it, and every use of it is one
+    // this document names.
+    if (name == "type_expr" || name == "scalar" || name == "any") {
         return 0;
     }
     if (name == "ref" || name == "enum" || name == "flags" || name == "list" || name == "set" ||
@@ -83,6 +91,9 @@ using diag::Diagnostic;
     }
     if (name == "scalar") {
         return "a single value";
+    }
+    if (name == "any") {
+        return "a value of whatever type the declaration says";
     }
     if (name == "flags" || name == "set") {
         return "a list of identifiers in braces";
@@ -217,7 +228,7 @@ void report_mismatch(std::string_view what, diag::Span at, const std::string& fo
     if (name == "type_expr") {
         return identifier; // a bare type name; `list<int>` is a TypeExpr node
     }
-    if (name == "scalar") {
+    if (name == "scalar" || name == "any") {
         return true;
     }
     return false;
@@ -352,6 +363,14 @@ void check_value(std::string_view what, const ast::Value& value, const ast::Type
     // and backlog F7's; what is certain is that its result is not something
     // this pass can type.
     if (value.as_call()) {
+        return;
+    }
+
+    // `any` accepts any shape, scalar or block, because the type that
+    // decides is somewhere else -- a `global`'s declared `type` for its
+    // `initial` (§6.4). The pass that knows where calls `check_value` again
+    // with the real type, so this is a deferral rather than an exemption.
+    if (name == "any") {
         return;
     }
 
@@ -662,6 +681,7 @@ namespace {
                                            "text_or_script",
                                            "type_expr",
                                            "scalar",
+                                           "any",
                                            "ref",
                                            "enum",
                                            "flags",
@@ -674,6 +694,8 @@ namespace {
     }
     return names;
 }
+
+} // namespace
 
 // One type expression, checked for meaning rather than for use. Recurses
 // through the arguments, so `map<direction, ref<no_such_class>>` is reported
@@ -776,8 +798,6 @@ void check_type(const ast::TypeRef& type, diag::Span at, std::string_view contex
         check_type(argument, at, context, set, sink);
     }
 }
-
-} // namespace
 
 void check_declared_types(const SchemaSet& set, diag::DiagnosticSink& sink) {
     for (const Schema& schema : set.schemas()) {

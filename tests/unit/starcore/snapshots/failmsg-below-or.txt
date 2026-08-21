@@ -1,7 +1,7 @@
 # tests/corpus/invalid/failmsg-below-or.star
-# starcore's passes -- placement, property reads, failureMsg placement
-# and the text layer -- over the core-owned set, stdlib, and the
-# fixture as a library
+# starcore's passes -- placement, property reads, failureMsg
+# placement, globals and the text layer -- over the core-owned set,
+# stdlib, and the fixture as a library
 
 error: E-FAILMSG-UNREACHABLE: this message sits below an OR, which fails as a whole, so it can never be shown
   --> tests/corpus/invalid/failmsg-below-or.star:18:42

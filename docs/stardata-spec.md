@@ -449,6 +449,7 @@ Six lexical scalar kinds exist: `Identifier`, `Integer`, `Decimal`, `String`, `L
 | `condition_block` | record block | establishes a condition context (§10) |
 | `effect_block` | record block | establishes an effect context (§11) |
 | `text_or_script` | `String`, `LocKey`, `Identifier` | a message, or the name of a function producing one |
+| `any` | any value, scalar or block | for a slot whose type is decided by other data and checked where that data is known — a `global`'s `initial` against the `type` beside it (§6.4). Not an escape from checking: every use of it is one this document names, and each names the pass that performs the check |
 
 ### 6.3 Collection operators
 
@@ -501,6 +502,8 @@ const = { id = max_reactor_temp  type = int  value = 1200 }
 - Both are typed, using the same types as properties (§6.2), including collections.
 - Both MUST be declared. There is no implicit creation.
 - Ids live in a single namespace. Libraries SHOULD prefix theirs (`starscape.combat_round`), which the dotted identifier form of §3.3 supports.
+- The `initial` value of a `global`, and the `value` of a `const`, MUST be checked against the `type` declared beside it. That type is another key's value, which no schema can express, so both keys are declared `any` (§6.2) and the check happens where the two are read together.
+- A declared `global` or `const` that nothing **reads** SHOULD be a warning. A write is not a read: a flag that is set and never tested is world state nothing depends on, and is usually a condition that was renamed or one that was never written.
 
 Read in conditions with `global`, write in effects with `set_global` and `add_global`:
 
@@ -2081,6 +2084,7 @@ The proposal left the following under-determined. This specification settles the
 | A13 | `[` and `]` reserved against ever becoming block syntax (§15) | Guards the v0.2 decision to drop the ordered/unordered distinction |
 | A14 | Juxtaposition as single-argument application (§9.2.1) | Message text is what authors write most; `[the noun]` reads better than `[the(noun)]`. Stated as one general rule so there is no special-cased article syntax |
 | A15 | Capitalisation by initial letter, resolved generically (§9.2.2) | Avoids a capitalised twin for every builtin, and extends to author-defined functions for free |
+| A44 | `any` as a declared type, for a value whose type is another key's value (§6.2, §6.4) | §6.4's own examples give a global a `set` and a `map` as its initial value, which `scalar` rejects and no other type admits. The alternative was leaving `global` unable to express the examples in the section that defines it |
 | A17 | Flags are sugar over declared `bool` globals, not a separate store (§6.4.1) | As undeclared strings they are a silent-typo generator, which is exactly what the schema layer exists to prevent |
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |

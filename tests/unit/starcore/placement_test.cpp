@@ -28,6 +28,7 @@
 #include "stardata/diag/codes.hpp"
 #include "stardata/diag/render.hpp"
 
+#include "starcore/globals.hpp"
 #include "starcore/messages.hpp"
 #include "starcore/narrowing.hpp"
 #include "starcore/placement.hpp"
@@ -316,6 +317,9 @@ TEST_CASE("each invalid fixture reports the starcore codes it declares", "[starc
         starcore::check_placements(parsed.ast(), loaded.set, sink);
         starcore::check_property_reads(parsed.ast(), loaded.set, sink);
         starcore::check_failure_messages(parsed.ast(), loaded.set, sink);
+        starcore::GlobalIndex globals;
+        globals.add_file(parsed.ast(), loaded.set, sink);
+        globals.check(sink);
         // The text layer is two-phase (§13.2 lets a `$key` and the `loc`
         // that defines it sit in either order, in either file), so the
         // fixture is indexed and then the index is asked.
@@ -364,15 +368,18 @@ TEST_CASE("each fixture's starcore diagnostics match its checked-in snapshot",
         starcore::check_placements(parsed.ast(), loaded.set, sink);
         starcore::check_property_reads(parsed.ast(), loaded.set, sink);
         starcore::check_failure_messages(parsed.ast(), loaded.set, sink);
+        starcore::GlobalIndex globals;
+        globals.add_file(parsed.ast(), loaded.set, sink);
+        globals.check(sink);
         starcore::TextIndex text;
         text.add_file(parsed.ast(), sink);
         text.check(sink);
 
         std::ostringstream out;
         out << "# " << test::corpus_name(path) << '\n'
-            << "# starcore's passes -- placement, property reads, failureMsg placement\n"
-            << "# and the text layer -- over the core-owned set, stdlib, and the\n"
-            << "# fixture as a library\n\n";
+            << "# starcore's passes -- placement, property reads, failureMsg\n"
+            << "# placement, globals and the text layer -- over the core-owned set,\n"
+            << "# stdlib, and the fixture as a library\n\n";
         bool first = true;
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
             if (!first) {

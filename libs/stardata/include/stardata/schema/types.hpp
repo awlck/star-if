@@ -104,6 +104,19 @@ void check_instantiation(const ast::Block& block, const ClassDecl& decl, const S
                                                const std::vector<PropDecl>& local,
                                                const ClassDecl& decl, const SchemaSet& set);
 
+// One type expression, checked for meaning: the name is one of §6.2's or a
+// declared enum, it takes the right number of arguments, and `enum<E>`,
+// `flags<E>`, `ref<C>` and `block<S>` name something that exists.
+//
+// `at` is where to report, and `context` names the thing being typed -- "the
+// global 'alert_level'". Exposed because a type expression can be declared
+// somewhere this library does not walk: §6.4's `global` and `const` are
+// core-owned forms (§7.2.4), so the pass that reads them is
+// `libs/starcore`'s, and without this it would either leave their types
+// unchecked or grow a second copy of §6.2's table.
+void check_type(const ast::TypeRef& type, diag::Span at, std::string_view context,
+                const SchemaSet& set, diag::DiagnosticSink& sink);
+
 // Checks that every type expression in the set resolves: each name is one of
 // §6.2's, or a declared enum; each takes the right number of arguments; and
 // `enum<E>`, `flags<E>`, `ref<C>` and `block<S>` name something that exists.

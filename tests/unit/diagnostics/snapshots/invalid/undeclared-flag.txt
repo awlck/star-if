@@ -1,6 +1,7 @@
 # tests/corpus/invalid/undeclared-flag.star
-# declared E-FLAG-UNDECLARED
+# declared E-FLAG-UNDECLARED W-GLOBAL-UNUSED
 # lexer and parser report (none)
-# E-FLAG-UNDECLARED is not implemented yet
+# E-FLAG-UNDECLARED is starcore's -- asserted in unit/starcore/placement_test.cpp
+# W-GLOBAL-UNUSED is starcore's -- asserted in unit/starcore/placement_test.cpp
 
 (no diagnostics)

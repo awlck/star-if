@@ -1,6 +1,17 @@
 # tests/corpus/invalid/core-reparent.star
 # loaded as a library, on top of the core-owned set and stdlib
 
+error: E-CORE-REPARENT: a class_extension can't change what 'starcore.room' inherits from
+  --> tests/corpus/invalid/core-reparent.star:15:5
+   |
+15 |     of_class = starcore.actor
+   |     ^^^^^^^^
+note: extension adds to a class; changing its parent would silently rewrite every object of that class, including ones written by somebody else (spec §8.2)
+  --> libs/starcore/builtin/object.star:50:5
+   |
+50 |     id       = starcore.room
+   |     ^^
+
 error: E-DUP-KEY: 'of_class' is set twice in this 'class_extension'
   --> tests/corpus/invalid/core-reparent.star:15:5
    |
@@ -13,14 +24,3 @@ note: first set here
    |     ^^^^^^^^
 note: 'of_class' holds one value, so the second line would silently win over the first. A key that may repeat says `arity = many` in its schema (spec §5.3, §7.2)
 note: `+=` and `-=` are not bindings and never collide: write `of_class += ...` to add to what is already there
-
-error: E-CORE-REPARENT: a class_extension can't change what 'starcore.room' inherits from
-  --> tests/corpus/invalid/core-reparent.star:15:5
-   |
-15 |     of_class = starcore.actor
-   |     ^^^^^^^^
-note: extension adds to a class; changing its parent would silently rewrite every object of that class, including ones written by somebody else (spec §8.2)
-  --> libs/starcore/builtin/object.star:50:5
-   |
-50 |     id       = starcore.room
-   |     ^^

@@ -10,3 +10,8 @@ room = {
     id    = your_cell
     exits = { nrth = corridor }
 }
+
+# Declared so that the only thing wrong with this file is the key. An exit
+# leading to a room nobody declares is its own error, which backlog F9 now
+# reports (§6.2, §14.3).
+room = { id = corridor }

@@ -1,0 +1,20 @@
+# tests/corpus/invalid/ref-unresolved.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-REF-UNRESOLVED: an entry of 'exits' is declared ref<room>, and nothing declares the object 'your_cel'
+  --> tests/corpus/invalid/ref-unresolved.star:17:23
+   |
+17 |     exits = { north = your_cel }
+   |                       ^^^^^^^^
+note: a reference is checked against what the program actually declares, in any file and in any order -- which is what makes a renamed target a build failure rather than a link to nothing (spec §6.2, §13.2)
+fix-it: did you mean 'your_cell'?
+  replace tests/corpus/invalid/ref-unresolved.star:17:23 with `your_cell`
+
+error: E-REF-UNRESOLVED: 'of_action' is declared ref<action>, and nothing declares the action 'examnie'
+  --> tests/corpus/invalid/ref-unresolved.star:27:17
+   |
+27 |     of_action = examnie
+   |                 ^^^^^^^
+note: a reference is checked against what the program actually declares, in any file and in any order -- which is what makes a renamed target a build failure rather than a link to nothing (spec §6.2, §13.2)
+fix-it: did you mean 'examine'?
+  replace tests/corpus/invalid/ref-unresolved.star:27:17 with `examine`

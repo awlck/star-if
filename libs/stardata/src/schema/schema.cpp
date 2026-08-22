@@ -376,6 +376,15 @@ const KeyDecl* Schema::find_key(std::string_view name) const noexcept {
     return nullptr;
 }
 
+const KeyDecl* Schema::unique_key() const noexcept {
+    for (const KeyDecl& key : keys) {
+        if (!key.unique_in.empty()) {
+            return &key;
+        }
+    }
+    return nullptr;
+}
+
 bool PropMarkers::is_set(std::string_view name) const noexcept {
     for (const auto& [flag, value] : flags_) {
         if (flag == name) {

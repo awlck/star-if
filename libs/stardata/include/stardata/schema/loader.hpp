@@ -119,6 +119,28 @@ public:
         diag::Span span;
     };
 
+    // One object created by an instantiation (§7.4): a top-level statement
+    // whose key names a declared class. This is the other half of what a
+    // `ref<C>` resolves against, and backlog F9's reason for existing.
+    //
+    // NOT `ClassDecl`, and not a `Declaration` either. An object is not a
+    // declaration in §7.6's sense -- it has no schema, so no `unique_in` to
+    // be unique in, and §14.3 has no row for two objects sharing an id. What
+    // is recorded is the minimum a reference needs: the name, the class the
+    // statement's key named, and where to point.
+    struct ObjectDecl {
+        std::string id;
+        std::string class_id;
+        std::string owner;
+        diag::Span span; // the id's value, which is the name a reader looks for
+    };
+
+    // First declaration wins. §13.2 gives later sources the win on a
+    // *combination*, and two objects of the same id are a combination whose
+    // rules §5.4 states for values and nobody states for objects -- so this
+    // resolves references without pretending to settle that.
+    void declare_object(ObjectDecl decl);
+
     void add_library(LibraryManifest manifest);
     void add_requirement(CoreRequirement requirement);
     void add_local_property(LocalProperty property);
@@ -153,6 +175,11 @@ public:
     // stops, which is the right answer for a set with no object model in it.
     [[nodiscard]] const ClassDecl* root_class() const noexcept;
 
+    // §7.4's objects, by id. What `ref<C>` resolves against when `C` names a
+    // class; a `ref` to a *form* resolves through `find_declaration` instead,
+    // in the form's own `unique_in` namespace.
+    [[nodiscard]] const ObjectDecl* find_object(std::string_view id) const noexcept;
+
     [[nodiscard]] const std::vector<Schema>& schemas() const noexcept { return schemas_; }
     [[nodiscard]] const std::vector<ClassDecl>& classes() const noexcept { return classes_; }
     [[nodiscard]] const std::vector<EnumDecl>& enums() const noexcept { return enums_; }
@@ -166,6 +193,7 @@ public:
     [[nodiscard]] const std::vector<LibraryManifest>& libraries() const noexcept {
         return libraries_;
     }
+    [[nodiscard]] const std::vector<ObjectDecl>& objects() const noexcept { return objects_; }
     [[nodiscard]] const std::vector<LocalProperty>& local_properties() const noexcept {
         return local_properties_;
     }
@@ -187,6 +215,7 @@ private:
     std::vector<Declaration> declarations_;
     std::vector<CoreRequirement> requirements_;
     std::vector<LibraryManifest> libraries_;
+    std::vector<ObjectDecl> objects_;
     std::vector<LocalProperty> local_properties_;
 
     // id -> position in the vector beside it. Classes and traits share one
@@ -198,6 +227,7 @@ private:
     std::unordered_map<std::string, std::size_t> trait_index_;
     std::unordered_map<std::string, std::size_t> enum_index_;
     std::unordered_map<std::string, std::size_t> global_index_;
+    std::unordered_map<std::string, std::size_t> object_index_;
 
     // Keyed by namespace and id both, since §7.6's uniqueness rule is stated
     // per `unique_in` namespace: `const` and `global` share one, `class` and
@@ -274,9 +304,21 @@ void load_files(const std::vector<std::filesystem::path>& files, const LoadOptio
                 diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
                 diag::DiagnosticSink& sink);
 
-// The same, for one source already registered with the SourceManager --
-// which is how a caller loads something that never came from a file, and how
-// the tests load a would-be library one string at a time.
+// The same, for sources already registered with the SourceManager -- which is
+// how a caller loads something that never came from a file.
+//
+// A LOAD IS THE UNIT, not a file. Everything passed to one call is declared
+// before any of it is validated, so a reference in the first source may name
+// something the last one declares (§13.2). Two calls are two loads, in order:
+// the second sees everything the first declared and the first sees none of
+// the second, which is exactly the relationship §13.2 gives a project and the
+// library it names in `uses`.
+void load_sources(const std::vector<diag::SourceId>& sources_to_load, const LoadOptions& options,
+                  const diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
+                  diag::DiagnosticSink& sink);
+
+// One source, which is the common case and how the tests load a would-be
+// library one string at a time.
 void load_source(diag::SourceId source, const LoadOptions& options,
                  const diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
                  diag::DiagnosticSink& sink);

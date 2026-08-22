@@ -1,4 +1,4 @@
-File @0..1549
+File @0..1793
   comment @0..79 "# ======================================..."
   whitespace @79..81 "\r\n"
   comment @81..153 "#  crlf.star — line-ending round-trip ..."
@@ -33,200 +33,229 @@ File @0..1549
   whitespace @947..949 "\r\n"
   comment @949..1028 "# ======================================..."
   whitespace @1028..1032 "\r\n\r\n"
-  Statement @1032..1287
-    Key @1032..1036
-      identifier @1032..1036 "room"
-    whitespace @1036..1037 " "
-    operator @1037..1038 "="
-    whitespace @1038..1039 " "
-    Value @1039..1285
-      Block @1039..1285
-        punctuation @1039..1040 "{"
-        whitespace @1040..1042 "\r\n"
-        Statement @1042..1069
-          whitespace @1042..1046 "    "
-          Key @1046..1048
-            identifier @1046..1048 "id"
-          whitespace @1048..1053 "     "
-          operator @1053..1054 "="
-          whitespace @1054..1055 " "
-          Value @1055..1067
-            Scalar @1055..1067
-              identifier @1055..1067 "fixture_room"
-          whitespace @1067..1069 "\r\n"
-        Statement @1069..1098
-          whitespace @1069..1073 "    "
-          Key @1073..1079
-            identifier @1073..1079 "sector"
-          whitespace @1079..1080 " "
-          operator @1080..1081 "="
-          whitespace @1081..1082 " "
-          Value @1082..1096
-            Scalar @1082..1096
-              identifier @1082..1096 "fixture_sector"
-          whitespace @1096..1098 "\r\n"
-        Statement @1098..1126
-          whitespace @1098..1102 "    "
-          Key @1102..1106
-            identifier @1102..1106 "name"
-          whitespace @1106..1109 "   "
-          operator @1109..1110 "="
-          whitespace @1110..1111 " "
-          Value @1111..1124
-            Scalar @1111..1124
-              lockey @1111..1124 "$room_fixture"
-          whitespace @1124..1126 "\r\n"
-        Statement @1126..1241
-          whitespace @1126..1130 "    "
-          Key @1130..1141
-            identifier @1130..1141 "description"
-          whitespace @1141..1142 " "
-          operator @1142..1143 "="
-          whitespace @1143..1144 " "
-          Value @1144..1239
-            Scalar @1144..1239
-              string @1144..1199 "\"A small room that exists only to prove ..."
-              whitespace @1199..1219 "\r\n                  "
-              string @1219..1239 "\"survived the trip.\""
-          whitespace @1239..1241 "\r\n"
-        Statement @1241..1284
-          whitespace @1241..1245 "    "
-          Key @1245..1250
-            identifier @1245..1250 "exits"
-          whitespace @1250..1252 "  "
-          operator @1252..1253 "="
+  Statement @1032..1274
+    comment @1032..1103 "# The sector the rooms below name. Decla..."
+    whitespace @1103..1105 "\r\n"
+    comment @1105..1176 "# object is `ref<sector>` (§8.1.1), and..."
+    whitespace @1176..1178 "\r\n"
+    comment @1178..1238 "# assigned to a sector nobody declares s..."
+    whitespace @1238..1240 "\r\n"
+    Key @1240..1246
+      identifier @1240..1246 "sector"
+    whitespace @1246..1247 " "
+    operator @1247..1248 "="
+    whitespace @1248..1249 " "
+    Value @1249..1272
+      Block @1249..1272
+        punctuation @1249..1250 "{"
+        Statement @1250..1271
+          whitespace @1250..1251 " "
+          Key @1251..1253
+            identifier @1251..1253 "id"
           whitespace @1253..1254 " "
-          Value @1254..1282
-            Block @1254..1282
-              punctuation @1254..1255 "{"
-              Statement @1255..1281
-                whitespace @1255..1256 " "
-                Key @1256..1261
-                  identifier @1256..1261 "north"
-                whitespace @1261..1262 " "
-                operator @1262..1263 "="
-                whitespace @1263..1264 " "
-                Value @1264..1280
-                  Scalar @1264..1280
-                    identifier @1264..1280 "fixture_room_two"
-                whitespace @1280..1281 " "
-              punctuation @1281..1282 "}"
-          whitespace @1282..1284 "\r\n"
-        punctuation @1284..1285 "}"
-    whitespace @1285..1287 "\r\n"
-  whitespace @1287..1289 "\r\n"
-  Statement @1289..1433
-    Key @1289..1293
-      identifier @1289..1293 "room"
-    whitespace @1293..1294 " "
-    operator @1294..1295 "="
-    whitespace @1295..1296 " "
-    Value @1296..1431
-      Block @1296..1431
-        punctuation @1296..1297 "{"
-        whitespace @1297..1299 "\r\n"
-        Statement @1299..1330
-          whitespace @1299..1303 "    "
-          Key @1303..1305
-            identifier @1303..1305 "id"
-          whitespace @1305..1310 "     "
-          operator @1310..1311 "="
-          whitespace @1311..1312 " "
-          Value @1312..1328
-            Scalar @1312..1328
-              identifier @1312..1328 "fixture_room_two"
-          whitespace @1328..1330 "\r\n"
-        Statement @1330..1359
-          whitespace @1330..1334 "    "
-          Key @1334..1340
-            identifier @1334..1340 "sector"
-          whitespace @1340..1341 " "
-          operator @1341..1342 "="
-          whitespace @1342..1343 " "
-          Value @1343..1357
-            Scalar @1343..1357
-              identifier @1343..1357 "fixture_sector"
-          whitespace @1357..1359 "\r\n"
-        Statement @1359..1391
-          whitespace @1359..1363 "    "
-          Key @1363..1367
-            identifier @1363..1367 "name"
-          whitespace @1367..1370 "   "
-          operator @1370..1371 "="
-          whitespace @1371..1372 " "
-          Value @1372..1389
-            Scalar @1372..1389
-              lockey @1372..1389 "$room_fixture_two"
-          whitespace @1389..1391 "\r\n"
-        Statement @1391..1430
-          whitespace @1391..1395 "    "
-          Key @1395..1400
-            identifier @1395..1400 "exits"
-          whitespace @1400..1402 "  "
-          operator @1402..1403 "="
-          whitespace @1403..1404 " "
-          Value @1404..1428
-            Block @1404..1428
-              punctuation @1404..1405 "{"
-              Statement @1405..1427
-                whitespace @1405..1406 " "
-                Key @1406..1411
-                  identifier @1406..1411 "south"
-                whitespace @1411..1412 " "
-                operator @1412..1413 "="
-                whitespace @1413..1414 " "
-                Value @1414..1426
-                  Scalar @1414..1426
-                    identifier @1414..1426 "fixture_room"
-                whitespace @1426..1427 " "
-              punctuation @1427..1428 "}"
-          whitespace @1428..1430 "\r\n"
-        punctuation @1430..1431 "}"
-    whitespace @1431..1433 "\r\n"
-  whitespace @1433..1435 "\r\n"
-  Statement @1435..1549
-    Key @1435..1438
-      identifier @1435..1438 "loc"
-    whitespace @1438..1439 " "
-    operator @1439..1440 "="
-    whitespace @1440..1441 " "
-    Value @1441..1547
-      Block @1441..1547
-        punctuation @1441..1442 "{"
-        whitespace @1442..1444 "\r\n"
-        Statement @1444..1459
-          whitespace @1444..1448 "    "
-          Key @1448..1452
-            identifier @1448..1452 "lang"
-          whitespace @1452..1453 " "
-          operator @1453..1454 "="
-          whitespace @1454..1455 " "
-          Value @1455..1457
-            Scalar @1455..1457
-              identifier @1455..1457 "en"
-          whitespace @1457..1459 "\r\n"
-        whitespace @1459..1461 "\r\n"
-        Statement @1461..1500
-          whitespace @1461..1465 "    "
-          Key @1465..1477
-            identifier @1465..1477 "room_fixture"
-          whitespace @1477..1482 "     "
-          operator @1482..1483 "="
-          whitespace @1483..1484 " "
-          Value @1484..1498
-            Scalar @1484..1498
-              string @1484..1498 "\"Fixture Room\""
-          whitespace @1498..1500 "\r\n"
-        Statement @1500..1546
-          whitespace @1500..1504 "    "
-          Key @1504..1520
-            identifier @1504..1520 "room_fixture_two"
-          whitespace @1520..1521 " "
-          operator @1521..1522 "="
-          whitespace @1522..1523 " "
-          Value @1523..1544
-            Scalar @1523..1544
-              string @1523..1544 "\"Second Fixture Room\""
-          whitespace @1544..1546 "\r\n"
-        punctuation @1546..1547 "}"
-    whitespace @1547..1549 "\r\n"
+          operator @1254..1255 "="
+          whitespace @1255..1256 " "
+          Value @1256..1270
+            Scalar @1256..1270
+              identifier @1256..1270 "fixture_sector"
+          whitespace @1270..1271 " "
+        punctuation @1271..1272 "}"
+    whitespace @1272..1274 "\r\n"
+  whitespace @1274..1276 "\r\n"
+  Statement @1276..1531
+    Key @1276..1280
+      identifier @1276..1280 "room"
+    whitespace @1280..1281 " "
+    operator @1281..1282 "="
+    whitespace @1282..1283 " "
+    Value @1283..1529
+      Block @1283..1529
+        punctuation @1283..1284 "{"
+        whitespace @1284..1286 "\r\n"
+        Statement @1286..1313
+          whitespace @1286..1290 "    "
+          Key @1290..1292
+            identifier @1290..1292 "id"
+          whitespace @1292..1297 "     "
+          operator @1297..1298 "="
+          whitespace @1298..1299 " "
+          Value @1299..1311
+            Scalar @1299..1311
+              identifier @1299..1311 "fixture_room"
+          whitespace @1311..1313 "\r\n"
+        Statement @1313..1342
+          whitespace @1313..1317 "    "
+          Key @1317..1323
+            identifier @1317..1323 "sector"
+          whitespace @1323..1324 " "
+          operator @1324..1325 "="
+          whitespace @1325..1326 " "
+          Value @1326..1340
+            Scalar @1326..1340
+              identifier @1326..1340 "fixture_sector"
+          whitespace @1340..1342 "\r\n"
+        Statement @1342..1370
+          whitespace @1342..1346 "    "
+          Key @1346..1350
+            identifier @1346..1350 "name"
+          whitespace @1350..1353 "   "
+          operator @1353..1354 "="
+          whitespace @1354..1355 " "
+          Value @1355..1368
+            Scalar @1355..1368
+              lockey @1355..1368 "$room_fixture"
+          whitespace @1368..1370 "\r\n"
+        Statement @1370..1485
+          whitespace @1370..1374 "    "
+          Key @1374..1385
+            identifier @1374..1385 "description"
+          whitespace @1385..1386 " "
+          operator @1386..1387 "="
+          whitespace @1387..1388 " "
+          Value @1388..1483
+            Scalar @1388..1483
+              string @1388..1443 "\"A small room that exists only to prove ..."
+              whitespace @1443..1463 "\r\n                  "
+              string @1463..1483 "\"survived the trip.\""
+          whitespace @1483..1485 "\r\n"
+        Statement @1485..1528
+          whitespace @1485..1489 "    "
+          Key @1489..1494
+            identifier @1489..1494 "exits"
+          whitespace @1494..1496 "  "
+          operator @1496..1497 "="
+          whitespace @1497..1498 " "
+          Value @1498..1526
+            Block @1498..1526
+              punctuation @1498..1499 "{"
+              Statement @1499..1525
+                whitespace @1499..1500 " "
+                Key @1500..1505
+                  identifier @1500..1505 "north"
+                whitespace @1505..1506 " "
+                operator @1506..1507 "="
+                whitespace @1507..1508 " "
+                Value @1508..1524
+                  Scalar @1508..1524
+                    identifier @1508..1524 "fixture_room_two"
+                whitespace @1524..1525 " "
+              punctuation @1525..1526 "}"
+          whitespace @1526..1528 "\r\n"
+        punctuation @1528..1529 "}"
+    whitespace @1529..1531 "\r\n"
+  whitespace @1531..1533 "\r\n"
+  Statement @1533..1677
+    Key @1533..1537
+      identifier @1533..1537 "room"
+    whitespace @1537..1538 " "
+    operator @1538..1539 "="
+    whitespace @1539..1540 " "
+    Value @1540..1675
+      Block @1540..1675
+        punctuation @1540..1541 "{"
+        whitespace @1541..1543 "\r\n"
+        Statement @1543..1574
+          whitespace @1543..1547 "    "
+          Key @1547..1549
+            identifier @1547..1549 "id"
+          whitespace @1549..1554 "     "
+          operator @1554..1555 "="
+          whitespace @1555..1556 " "
+          Value @1556..1572
+            Scalar @1556..1572
+              identifier @1556..1572 "fixture_room_two"
+          whitespace @1572..1574 "\r\n"
+        Statement @1574..1603
+          whitespace @1574..1578 "    "
+          Key @1578..1584
+            identifier @1578..1584 "sector"
+          whitespace @1584..1585 " "
+          operator @1585..1586 "="
+          whitespace @1586..1587 " "
+          Value @1587..1601
+            Scalar @1587..1601
+              identifier @1587..1601 "fixture_sector"
+          whitespace @1601..1603 "\r\n"
+        Statement @1603..1635
+          whitespace @1603..1607 "    "
+          Key @1607..1611
+            identifier @1607..1611 "name"
+          whitespace @1611..1614 "   "
+          operator @1614..1615 "="
+          whitespace @1615..1616 " "
+          Value @1616..1633
+            Scalar @1616..1633
+              lockey @1616..1633 "$room_fixture_two"
+          whitespace @1633..1635 "\r\n"
+        Statement @1635..1674
+          whitespace @1635..1639 "    "
+          Key @1639..1644
+            identifier @1639..1644 "exits"
+          whitespace @1644..1646 "  "
+          operator @1646..1647 "="
+          whitespace @1647..1648 " "
+          Value @1648..1672
+            Block @1648..1672
+              punctuation @1648..1649 "{"
+              Statement @1649..1671
+                whitespace @1649..1650 " "
+                Key @1650..1655
+                  identifier @1650..1655 "south"
+                whitespace @1655..1656 " "
+                operator @1656..1657 "="
+                whitespace @1657..1658 " "
+                Value @1658..1670
+                  Scalar @1658..1670
+                    identifier @1658..1670 "fixture_room"
+                whitespace @1670..1671 " "
+              punctuation @1671..1672 "}"
+          whitespace @1672..1674 "\r\n"
+        punctuation @1674..1675 "}"
+    whitespace @1675..1677 "\r\n"
+  whitespace @1677..1679 "\r\n"
+  Statement @1679..1793
+    Key @1679..1682
+      identifier @1679..1682 "loc"
+    whitespace @1682..1683 " "
+    operator @1683..1684 "="
+    whitespace @1684..1685 " "
+    Value @1685..1791
+      Block @1685..1791
+        punctuation @1685..1686 "{"
+        whitespace @1686..1688 "\r\n"
+        Statement @1688..1703
+          whitespace @1688..1692 "    "
+          Key @1692..1696
+            identifier @1692..1696 "lang"
+          whitespace @1696..1697 " "
+          operator @1697..1698 "="
+          whitespace @1698..1699 " "
+          Value @1699..1701
+            Scalar @1699..1701
+              identifier @1699..1701 "en"
+          whitespace @1701..1703 "\r\n"
+        whitespace @1703..1705 "\r\n"
+        Statement @1705..1744
+          whitespace @1705..1709 "    "
+          Key @1709..1721
+            identifier @1709..1721 "room_fixture"
+          whitespace @1721..1726 "     "
+          operator @1726..1727 "="
+          whitespace @1727..1728 " "
+          Value @1728..1742
+            Scalar @1728..1742
+              string @1728..1742 "\"Fixture Room\""
+          whitespace @1742..1744 "\r\n"
+        Statement @1744..1790
+          whitespace @1744..1748 "    "
+          Key @1748..1764
+            identifier @1748..1764 "room_fixture_two"
+          whitespace @1764..1765 " "
+          operator @1765..1766 "="
+          whitespace @1766..1767 " "
+          Value @1767..1788
+            Scalar @1767..1788
+              string @1767..1788 "\"Second Fixture Room\""
+          whitespace @1788..1790 "\r\n"
+        punctuation @1790..1791 "}"
+    whitespace @1791..1793 "\r\n"

@@ -993,6 +993,36 @@ action = {
     successMsg = "You drink [the noun]."
 }
 
+# Three actions the rules below respond to. They were missing until backlog
+# F9 taught the schema layer to resolve `ref<action>`, and their absence was
+# exactly the bug §6.2 says the type exists to catch: ten rules in this file
+# were bound to actions nobody declared, so none of them could ever fire and
+# nothing said a word.
+action = {
+    id            = go
+    match         = { "go/walk/head [direction]"  "[direction]" }
+    duration      = default
+    effects       = { }
+    doc           = "Movement. `[direction]` resolves against the room's exits (§6.6.1)."
+}
+
+action = {
+    id            = look
+    match         = { "l/look"  "look around" }
+    duration      = 0
+    advances_turn = never
+    effects       = { }
+    doc           = "Re-describes the room. Out of world, like `inventory`."
+}
+
+action = {
+    id            = attack
+    match         = { "attack/hit/kill [something]"  "attack [something] with [something]" }
+    duration      = default
+    effects       = { }
+    doc           = "Combat. What it does is the ruleset's; the grammar line is the action."
+}
+
 # Where behaviour genuinely differs by class, that is a rule's job — not a
 # second action with a narrower grammar token.
 rule = {

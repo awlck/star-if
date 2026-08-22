@@ -182,6 +182,11 @@ TEST_CASE("several rules are normal, because rule has no unique id", "[schema][d
     // written in terms of `unique_in` simply does not reach them.
     test::LoadedSet loaded;
     loaded.load_builtin();
+    // stdlib as well as the core set, because `of_action` is `ref<action>`
+    // and backlog F9 resolves it: `take` has to be an action somebody
+    // declared, or the file has a different error in it than the one this
+    // test is about.
+    loaded.load_stdlib();
     loaded.load_text("rule = { of_action = take  priority = 1 }\n"
                      "rule = { of_action = take  priority = 2 }\n");
 

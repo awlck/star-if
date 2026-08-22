@@ -451,7 +451,7 @@ Six lexical scalar kinds exist: `Identifier`, `Integer`, `Decimal`, `String`, `L
 | `text` | `String`, `LocKey` | localisable and interpolatable (§9) |
 | `string` | `String` | raw, never localised or interpolated; for machine-facing values |
 | `identifier` | `Identifier` | a bare symbol with no reference semantics |
-| `ref<C>` | `Identifier`, `none` | a reference to an object of class `C` or a subclass; validated at compile time |
+| `ref<C>` | `Identifier`, `none` | a reference to an object of class `C` or a subclass; validated at compile time. `C` may also name a *form*, in which case the reference resolves to an instance of it, in the namespace that form's `unique_in` declares — `ref<action>` and `ref<sector>` are both written by the core-owned set |
 | `enum<E>` | `Identifier` | a value declared by `enum = { id = E … }` |
 | `flags<E>` | list block of `Identifier` | a bitset over `E`; membership tests are O(1) |
 | `list<T>` | list block, or record block if `T` is a block type | ordered, duplicates permitted |
@@ -2022,6 +2022,8 @@ Sources are loaded in this order, and later declarations win where §5.4's combi
 
 Within a single file, source order governs.
 
+**A source is loaded as a whole, not file by file.** Every declaration in one of the four groups above is registered before any of that group's contents are validated, so a reference may name something declared later in the same file, or in a file that sorts after it. The asymmetry between groups is deliberate and is the ordering above: a project may name what its libraries declared, and a library MUST NOT name what a project will.
+
 An implementation MUST NOT make load order depend on filesystem enumeration order, since that differs between platforms and would make builds irreproducible.
 
 ### 13.3 Libraries
@@ -2180,6 +2182,7 @@ The proposal left the following under-determined. This specification settles the
 | A46 | The root class is declared with `root = yes`, not assumed by name (§8.1.1) | The format layer resolved properties through a chain whose last link was a class name passed in as a parameter — and two of its own walks disagreed about whether to follow it. Declaring the root keeps the *name* core's while making the *concept* the format's, which is what let the two walks become one |
 | A47 | `class_extension` extends a trait through `of_trait`, rather than a separate `trait_extension` form (§8.2) | One identifier is all that would have differed between the two forms. An exclusive group (§7.2.1) states the "exactly one" rule in the schema, where an author can read it. A single `of =` was rejected because §8.3 gives classes and traits separate namespaces, so one id may name both and the lookup order would decide silently |
 | A48 | `type_of` — a key's type may be the value of a sibling key (§7.2, §6.4) | §6.4's own examples give a global a `set` and a `map` as its initial value, which `scalar` rejects and no fixed type admits. Naming the sibling scopes the escape to the one key that needs it, and keeps the rule in the schema where documentation and editors can see it. §11.1's `set` and `set_global` are the next two callers |
+| A49 | A `ref<C>` resolves against declared ids, and the id namespaces are separate: objects for a class target, the form's own `unique_in` namespace for a form target (§6.2, §7.4, §13.2) | §6.2 promised "validated at compile time" and nothing validated it, so any identifier satisfied any reference. Ten rules in the reference corpus were bound to actions nobody declared and could never have fired. Keeping the two namespaces apart is what stops an object called `lever` from satisfying a `ref<action>` that meant the verb |
 | A17 | Flags are sugar over declared `bool` globals, not a separate store (§6.4.1) | As undeclared strings they are a silent-typo generator, which is exactly what the schema layer exists to prevent |
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |

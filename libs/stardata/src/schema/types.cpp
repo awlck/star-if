@@ -254,6 +254,80 @@ void report_mismatch(std::string_view what, diag::Span at, const std::string& fo
 // One scalar against a scalar type. Shared by the top-level path and by
 // every entry of a collection, so a bad element reads the same as a bad
 // value.
+// §6.2's `ref<C>`, resolved (backlog F9).
+//
+// TWO NAMESPACES, because `ref<C>` takes two kinds of target and `check_type`
+// already accepts both. Where `C` is a class or a trait, the reference names
+// an **object** -- §7.4's instantiations, which is what `SchemaSet::objects()`
+// collects. Where `C` is a form, it names an **instance of that form**, found
+// in whatever namespace the form's own `unique_in` declares: the built-in set
+// writes `ref<action>` and `ref<sector>`, and those resolve against the ids
+// `action` and `sector` declare themselves unique in.
+//
+// WHAT IS NOT CHECKED HERE, and it is deliberate: whether the object found is
+// of class `C` or a subclass. That is the second half of §14.3's row, and
+// F9's list defers it -- see the backlog entry, which records why the reason
+// for deferring changed.
+void check_reference(std::string_view what, const ast::Scalar& scalar, const ast::TypeRef& type,
+                     const SchemaSet& set, diag::DiagnosticSink& sink) {
+    const std::string id(scalar.as_identifier().value_or(""));
+    // §5.5: `none` clears a reference and `inherit` declines to set one.
+    // Neither is a name, and resolving them would demand an object called
+    // "none" in every program that ever cleared a slot.
+    if (id.empty() || id == "none" || id == "inherit") {
+        return;
+    }
+
+    const std::string& target = type.args[0].name;
+    std::vector<std::string_view> candidates;
+    std::string kind;
+
+    if (set.find_class_or_trait(target) != nullptr) {
+        if (set.find_object(id) != nullptr) {
+            return;
+        }
+        kind = "object";
+        candidates.reserve(set.objects().size());
+        for (const SchemaSet::ObjectDecl& declared : set.objects()) {
+            candidates.emplace_back(declared.id);
+        }
+    } else {
+        const Schema* form = set.find(target);
+        if (form == nullptr) {
+            return; // `check_declared_types` reported the type; this would echo it
+        }
+        const KeyDecl* unique = form->unique_key();
+        if (unique == nullptr) {
+            // A form whose instances have no id -- `rule`, `prop_def`. A
+            // `ref` to one could never resolve, and saying so at every use
+            // would blame the author for the schema's mistake.
+            return;
+        }
+        if (set.find_declaration(unique->unique_in, id) != nullptr) {
+            return;
+        }
+        kind = target;
+        for (const SchemaSet::Declaration& declared : set.declarations()) {
+            if (declared.space == unique->unique_in) {
+                candidates.emplace_back(declared.id);
+            }
+        }
+    }
+
+    // "nothing declares the action 'tkae'", in the words `check_type` uses one
+    // level up for "nothing declares the enum 'mood_eunm'". Definite rather
+    // than indefinite because `kind` is a form id a library chose, and "a" or
+    // "an" in front of one is a guess this has no way to get right.
+    Diagnostic diagnostic(Code::RefUnresolved, scalar.span(),
+                          std::string(what) + " is declared " + type.to_string() +
+                              ", and nothing declares the " + kind + " '" + id + "'");
+    diagnostic.with_note("a reference is checked against what the program actually declares, in "
+                         "any file and in any order -- which is what makes a renamed target a "
+                         "build failure rather than a link to nothing (spec §6.2, §13.2)");
+    suggest(diagnostic, scalar.span(), id, candidates);
+    sink.report(std::move(diagnostic));
+}
+
 void check_scalar(std::string_view what, const ast::Scalar& scalar, const ast::TypeRef& type,
                   const SchemaSet& set, diag::DiagnosticSink& sink) {
     if (!scalar_fits(scalar, type.name)) {
@@ -274,6 +348,11 @@ void check_scalar(std::string_view what, const ast::Scalar& scalar, const ast::T
             suggest(diagnostic, scalar.span(), text, values_of(*declared));
             sink.report(std::move(diagnostic));
         }
+        return;
+    }
+
+    if (type.name == "ref" && !type.args.empty()) {
+        check_reference(what, scalar, type, set, sink);
         return;
     }
 

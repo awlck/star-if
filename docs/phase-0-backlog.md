@@ -1269,14 +1269,83 @@ form's declaration and its reader must match exactly, and that is worth saying
 somewhere a reader of the specification will find it.
 
 ### F9 · Reference resolution — **phase boundary, keep small**
-**Size:** M · **Depends on:** F4
+**Size:** M · **Depends on:** F4, F13
 
 `ref<C>` validation needs the class hierarchy, which is Phase 1's object model. Do the part that does not:
 
-- [ ] Two-pass load: collect all declared ids, then resolve.
-- [ ] Forward and cross-file references legal (spec §13.2).
-- [ ] Unresolvable id → error with a suggestion.
+- [x] Two-pass load: collect all declared ids, then resolve.
+- [x] Forward and cross-file references legal (spec §13.2).
+- [x] Unresolvable id → error with a suggestion.
 - [ ] **Deferred to Phase 1:** checking that a target's *class* satisfies `ref<C>`, trait conflicts, containment cycles. Record the gap rather than growing this task.
+
+**What §6.2 promised and nothing delivered.** "Validated at compile time" was in
+the table from the first draft, and until this task any identifier satisfied any
+`ref`. A renamed room, a typo and a working link were the same thing to the
+compiler and three different things to the player.
+
+**Two namespaces, because `ref<C>` already took two kinds of target.** Where `C`
+is a class or a trait, the reference names an **object** — §7.4's
+instantiations, which nothing collected until now. Where `C` is a form, it names
+an **instance of that form**, in whatever namespace the form's own `unique_in`
+declares: the built-in set writes `ref<action>` and `ref<sector>`. The namespace
+is read out of the schema rather than assumed from the form's id, because §7.2
+lets them differ — `const` and `global` share one and neither is named for
+itself. `Schema::unique_key()` is the single reading, used by the loader when it
+registers an instance and by the resolver when it looks one up; two readings
+that could disagree would be a reference that never resolves and no way to see
+why.
+
+**The load became four passes, and that is the first bullet.** Schemas, then
+declarations, then objects, then validation — each finishing across *every* file
+before the next begins. Objects need a pass of their own because whether a
+statement instantiates anything depends on its key naming a class, and the class
+may be declared in a file the declaration pass has not reached. `load_sources`
+is new beside `load_source`: a load is a group of files, not one file, which is
+what §13.2 means by its four ordered sources.
+
+The split fixed two order dependencies nobody had filed. A `class_extension` in
+a later file now applies before any instantiation is checked against the class;
+a `prop_def` on an object no longer depends on its class appearing earlier in
+the same file. Both used to be silent, and both have a test now.
+
+**What it found on first run: ten rules in `tour.star` bound to actions nobody
+declared.** `go`, `look` and `attack` were referenced by ten rules across the
+file and declared neither by stdlib nor by the corpus, so not one of those rules
+could ever have fired. This is exactly §6.2's stated reason for the type, and
+the reference corpus had been demonstrating the bug rather than the rule.
+`lf.star` and `crlf.star` had the same fault one step smaller: both rooms name a
+`fixture_sector` that nothing declared.
+
+**Recorded, not fixed:**
+
+- **`[OPEN]` The class half of §14.3's row is still open, but not for the
+  reason this entry was written with.** "Needs the class hierarchy, which is
+  Phase 1's object model" stopped being true at F13, which put the hierarchy and
+  `descends_from` in `libs/stardata`. What remains is narrower: `descends_from`
+  follows `of_class` and, by §8.3, traits are not a hierarchy — so `ref<sometrait>`
+  needs the object's class's *trait* list walked, which is a different lookup
+  from the one that exists. The corpus has no trait-targeted `ref` today (five
+  class targets, one form target, no trait targets), so the work is small and
+  the gap is real. Do it with the containment-cycle check, which needs the same
+  walk.
+- **`[OPEN]` Two objects sharing an id is unspecified.** An object has no schema
+  and therefore no `unique_in`, §7.6's rule is stated per namespace, and §14.3
+  has no row for it. The registry keeps the first and reports nothing, which
+  resolves references without pretending to settle the question. §13.2's "later
+  declarations win where §5.4's combination rules give a winner" is about values
+  in blocks and does not obviously reach whole objects.
+- **`[OPEN]` `tour.star` produces 66 schema-layer diagnostics, and no test looks
+  at it.** Found by a probe while sizing this task, and pre-existing — the ten
+  reference errors above were on top of it. The corpus tests cover
+  `tests/corpus/invalid/` only; the valid corpus is loaded by the starcore
+  passes, which check their own sink and never assert the schema layer's is
+  clean. The bulk is `E-UNKNOWN-KEY` ×48, and much of it looks like forms whose
+  schemas are thinner than the corpus that uses them — `sector` declares three
+  keys and `tour.star` writes seven, `action` has no `verb`. That is H5's exit
+  criterion ("`tour.star` parses with zero diagnostics") and it is further away
+  than the ticked boxes suggest. **A test asserting the valid corpus is clean
+  through the schema layer should land before H5, so the number can only go
+  down.**
 
 ---
 

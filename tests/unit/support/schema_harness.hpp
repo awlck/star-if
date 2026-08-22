@@ -89,6 +89,22 @@ public:
         return id;
     }
 
+    // Several strings loaded as ONE library, which is not the same as several
+    // calls to `load_text`. Everything here is declared before any of it is
+    // validated, so a reference in the first may name something the last
+    // declares -- §13.2's rule for the files of one source, and the case a
+    // loader that resolved as it read gets wrong.
+    void load_texts(std::vector<std::pair<std::string, std::string>> files,
+                    std::string owner = "a library", bool is_core = false) {
+        std::vector<diag::SourceId> ids;
+        ids.reserve(files.size());
+        for (auto& [name, text] : files) {
+            ids.push_back(sources.add_file(std::move(name), std::move(text)));
+        }
+        schema::load_sources(ids, schema::LoadOptions{std::move(owner), is_core, {}}, sources,
+                             cache, set, sink);
+    }
+
     [[nodiscard]] bool reported(diag::Code code) const {
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
             if (diagnostic.code() == code) {

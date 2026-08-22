@@ -107,17 +107,25 @@ const SchemaSet::ObjectDecl* SchemaSet::find_object(std::string_view id) const n
     return it == object_index_.end() ? nullptr : &objects_[it->second];
 }
 
-void SchemaSet::declare_object(ObjectDecl decl) {
-    // No `offer`, and so no §7.6 gate. An object has no schema and therefore
-    // no `unique_in`, and the rule §7.6 states is stated per namespace -- so
-    // sending an object through it would mean inventing a namespace and a
-    // diagnostic the specification does not have. First one wins, and the
-    // question of what a second one means is recorded rather than answered.
-    if (object_index_.contains(decl.id)) {
-        return;
+bool SchemaSet::declare_object(ObjectDecl decl, const std::optional<Replaces>& replaces,
+                               diag::DiagnosticSink& sink) {
+    // The space is `object` for every class, not one space per class. §6.6's
+    // paths and §11.1's effects name an object by id alone and never say what
+    // class they expect, so a `room` and a `thing` called `airlock` would be
+    // two things one word resolves to -- which is the ambiguity §6.6 opens by
+    // refusing.
+    const Outcome outcome = offer(
+        Declaration{"object", decl.id, decl.owner, /*sealed=*/false, decl.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
+        return false;
+    }
+    if (const auto it = object_index_.find(decl.id); it != object_index_.end()) {
+        objects_[it->second] = std::move(decl);
+        return true;
     }
     object_index_.emplace(decl.id, objects_.size());
     objects_.push_back(std::move(decl));
+    return true;
 }
 
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
@@ -945,7 +953,8 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
 // literally -- there is nothing to type-check, since the whole content of an
 // object id is that a `ref<C>` somewhere else says the same word.
 void note_object(const ast::Statement& statement, const std::string& key,
-                 const LoadOptions& options, SchemaSet& set) {
+                 const std::optional<Replaces>& replaces, const LoadOptions& options,
+                 SchemaSet& set, diag::DiagnosticSink& sink) {
     if (set.find_class(key) == nullptr) {
         return; // a form, a trait mixed in by name, or nothing the set knows
     }
@@ -964,7 +973,8 @@ void note_object(const ast::Statement& statement, const std::string& key,
     // The id's VALUE, so that a diagnostic citing the object underlines its
     // name rather than the two characters of the key.
     set.declare_object(
-        SchemaSet::ObjectDecl{std::string(*text), key, options.owner, id_value->span()});
+        SchemaSet::ObjectDecl{std::string(*text), key, options.owner, id_value->span()}, replaces,
+        sink);
 }
 
 void note_local_properties(const ast::Statement& statement, const std::string& key,
@@ -1112,7 +1122,7 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
             if (!key || key->empty()) {
                 continue;
             }
-            note_object(statement, *key, options, set);
+            note_object(statement, *key, read_replaces(statement), options, set, sink);
             note_local_properties(statement, *key, set);
         }
     }

@@ -123,11 +123,10 @@ public:
     // whose key names a declared class. This is the other half of what a
     // `ref<C>` resolves against, and backlog F9's reason for existing.
     //
-    // NOT `ClassDecl`, and not a `Declaration` either. An object is not a
-    // declaration in §7.6's sense -- it has no schema, so no `unique_in` to
-    // be unique in, and §14.3 has no row for two objects sharing an id. What
-    // is recorded is the minimum a reference needs: the name, the class the
-    // statement's key named, and where to point.
+    // What is recorded is the minimum a reference needs: the name, the class
+    // the statement's key named, and where to point. The object's *shape* is
+    // not here and could not be -- §8.4 assembles it on the fly from the
+    // `prop_def` blocks of its class, its traits and itself.
     struct ObjectDecl {
         std::string id;
         std::string class_id;
@@ -135,11 +134,18 @@ public:
         diag::Span span; // the id's value, which is the name a reader looks for
     };
 
-    // First declaration wins. §13.2 gives later sources the win on a
-    // *combination*, and two objects of the same id are a combination whose
-    // rules §5.4 states for values and nobody states for objects -- so this
-    // resolves references without pretending to settle that.
-    void declare_object(ObjectDecl decl);
+    // §7.4's objects share ONE id namespace, and it is implied rather than
+    // declared: no `schema` describes an instantiation, so there is no
+    // `unique_in` key to read it out of. The alternative is nonsense --
+    // `ref<C>` resolves an id to an object, and two objects answering to one
+    // id leave that resolution undefined for every reference in the program.
+    //
+    // So an object goes through `offer` like everything else, in the space
+    // `object`, and gets §7.6 with it: a duplicate is an error citing both
+    // declarations, and a mod that means to supersede a library's room says
+    // `@replaces(that_library)` and is believed.
+    bool declare_object(ObjectDecl decl, const std::optional<Replaces>& replaces,
+                        diag::DiagnosticSink& sink);
 
     void add_library(LibraryManifest manifest);
     void add_requirement(CoreRequirement requirement);

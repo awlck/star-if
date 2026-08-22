@@ -941,6 +941,12 @@ The class name is on the left and the object's id inside. This is deliberate and
 
 The keys permitted inside an instantiation block are those of the class's property set (§8), plus the universal keys `id`, `traits`, `in`, `on`, `part_of`, and `sector`.
 
+**Object ids share one namespace, across every class.** This namespace is *implied*: no `schema` describes an instantiation, so there is no `unique_in` key (§7.2) to declare it. It exists regardless, because the alternative is not a looser rule but an incoherent one — `ref<C>` resolves an id to an object (§6.2), and §6.6's paths and §11.1's effects name an object by id alone without saying what class they expect, so two objects answering to one id leave every reference to it undefined. One namespace for all classes, not one per class, follows from the same fact: the id is all a reference carries.
+
+Two objects sharing an id are therefore §7.6's duplicate, with §7.6's escape: a mod meaning to supersede a game's object writes `@replaces(that_source)` and is believed.
+
+An instantiation has no schema of its own, and does not need one — its shape is assembled by §8.4 from the `prop_def` blocks of its class, its traits, and itself.
+
 ### 7.5 `schema_extension`
 
 A library adding a key to an existing form needs a mechanism, and §7.2.2 previously pointed at a manifest field that is not one. `schema_extension` mirrors `class_extension` (§8.2) and reads the same way:
@@ -2097,6 +2103,7 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | `includes` with both `key` and `value` (§6.5.1) | error, suggesting the path form or `map_get` |
 | Two or more keys of one `exclusive_group` in a block (§7.2.1) | error, naming the group's members |
 | Two declarations sharing a `unique_in` value, without `@replaces` (§7.6) | error, citing both spans |
+| Two object instantiations sharing an id, without `@replaces` (§7.4, §7.6) | error, citing both spans |
 | `@replaces` naming a source that declared no such thing (§7.6) | error, with a suggestion |
 | `@replaces` on a sealed declaration (§7.2.2, §7.6) | error |
 | `schema_extension` redeclaring an existing key with a different declaration (§7.5) | error |
@@ -2183,6 +2190,7 @@ The proposal left the following under-determined. This specification settles the
 | A47 | `class_extension` extends a trait through `of_trait`, rather than a separate `trait_extension` form (§8.2) | One identifier is all that would have differed between the two forms. An exclusive group (§7.2.1) states the "exactly one" rule in the schema, where an author can read it. A single `of =` was rejected because §8.3 gives classes and traits separate namespaces, so one id may name both and the lookup order would decide silently |
 | A48 | `type_of` — a key's type may be the value of a sibling key (§7.2, §6.4) | §6.4's own examples give a global a `set` and a `map` as its initial value, which `scalar` rejects and no fixed type admits. Naming the sibling scopes the escape to the one key that needs it, and keeps the rule in the schema where documentation and editors can see it. §11.1's `set` and `set_global` are the next two callers |
 | A49 | A `ref<C>` resolves against declared ids, and the id namespaces are separate: objects for a class target, the form's own `unique_in` namespace for a form target (§6.2, §7.4, §13.2) | §6.2 promised "validated at compile time" and nothing validated it, so any identifier satisfied any reference. Ten rules in the reference corpus were bound to actions nobody declared and could never have fired. Keeping the two namespaces apart is what stops an object called `lever` from satisfying a `ref<action>` that meant the verb |
+| A50 | Object ids are one implied namespace, shared by every class (§7.4) | There is no schema behind an instantiation and so no `unique_in` to declare the namespace, which is a fact about the notation and not an argument that objects may collide. A reference carries an id and nothing else, so two objects answering to one id make every `ref`, path and effect naming it undefined. Declared explicitly in §7.4 rather than left to be inferred, because the thing that would normally state it does not exist |
 | A17 | Flags are sugar over declared `bool` globals, not a separate store (§6.4.1) | As undeclared strings they are a silent-typo generator, which is exactly what the schema layer exists to prevent |
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |

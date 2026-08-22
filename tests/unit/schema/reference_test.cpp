@@ -175,6 +175,63 @@ TEST_CASE("a ref to a form instance resolves in that form's namespace", "[schema
     CHECK(reported->fix_its().front().replacement == "polish");
 }
 
+TEST_CASE("two objects may not share an id", "[schema][reference]") {
+    // ONE namespace across every class, not one per class. §6.6's paths and
+    // §11.1's effects name an object by id alone and never say what class
+    // they expect, so a `room` and a `thing` both called `airlock` would be
+    // two things one word resolves to.
+    //
+    // The namespace is implied: no schema describes an instantiation, so
+    // there is no `unique_in` to read it out of. It exists anyway, because
+    // `ref<C>` resolving to two objects is not a resolution.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("room  = { id = airlock }\n"
+                     "thing = { id = airlock }\n");
+
+    const diag::Diagnostic* reported = first_of(loaded, diag::Code::SchemaDuplicate);
+    REQUIRE(reported != nullptr);
+    CHECK(mentions(*reported, "'airlock'"));
+    // Both spans, so the author sees the pair rather than hunting for it.
+    REQUIRE_FALSE(reported->notes().empty());
+    CHECK(reported->notes().front().span.has_value());
+
+    // The loser is not stored, so a reference resolves to exactly one thing.
+    REQUIRE(loaded.set.find_object("airlock") != nullptr);
+    CHECK(loaded.set.find_object("airlock")->class_id == "room");
+}
+
+TEST_CASE("a mod may supersede an object with @replaces", "[schema][reference]") {
+    // §7.6's escape, which objects get for free by going through the same
+    // gate as everything else: a mod that means to replace the game's lantern
+    // says whose it was, and is believed.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("thing = { id = lantern }\n", "mygame", "game.star");
+    loaded.load_text("room = @replaces(mygame) { id = lantern }\n", "amod", "mod.star");
+
+    CHECK(loaded.sink.error_count() == 0);
+    REQUIRE(loaded.set.find_object("lantern") != nullptr);
+    CHECK(loaded.set.find_object("lantern")->class_id == "room");
+    CHECK(loaded.set.find_object("lantern")->owner == "amod");
+}
+
+TEST_CASE("an object and a form instance may share an id", "[schema][reference]") {
+    // The other half of the namespace rule. `object` is its own space, so an
+    // object called `lever` and a sector called `lever` do not collide -- and
+    // §7.6 says as much about every other pair of spaces.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("thing  = { id = lever }\n"
+                     "sector = { id = lever }\n");
+
+    CHECK_FALSE(loaded.reported(diag::Code::SchemaDuplicate));
+    CHECK(loaded.sink.error_count() == 0);
+}
+
 TEST_CASE("an object and a form instance are separate namespaces", "[schema][reference]") {
     // An action called `lever` and an object called `lever` are two different
     // things, and a `ref` to one must not be satisfied by the other. Nothing

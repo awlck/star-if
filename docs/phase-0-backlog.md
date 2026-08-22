@@ -1328,12 +1328,26 @@ the reference corpus had been demonstrating the bug rather than the rule.
   class targets, one form target, no trait targets), so the work is small and
   the gap is real. Do it with the containment-cycle check, which needs the same
   walk.
-- **`[OPEN]` Two objects sharing an id is unspecified.** An object has no schema
-  and therefore no `unique_in`, §7.6's rule is stated per namespace, and §14.3
-  has no row for it. The registry keeps the first and reports nothing, which
-  resolves references without pretending to settle the question. §13.2's "later
-  declarations win where §5.4's combination rules give a winner" is about values
-  in blocks and does not obviously reach whole objects.
+- **Object ids are one implied namespace** (§7.4, decision A50). Raised as open
+  and closed on review, correctly: "an object has no `unique_in`" is a fact
+  about the notation, not an argument that objects may collide. A reference
+  carries an id and nothing else — `ref<C>` (§6.2), §6.6's paths, §11.1's
+  effects — so two objects answering to one id make every reference to it
+  undefined, and one namespace across all classes follows from the same fact.
+  Objects now go through `offer` like every other declaration, which gives them
+  §7.6's duplicate error citing both spans *and* §7.6's escape: a mod meaning to
+  supersede a game's object writes `@replaces(that_source)` and is believed.
+  Stated in §7.4 rather than left to be inferred, because the thing that would
+  normally state it does not exist.
+
+  **`[OPEN]` A virtual schema for the instantiation form** was floated and not
+  taken. It would give §7.4's universal keys (`id`, `traits`, `in`, `on`,
+  `part_of`, `sector`) a declared home, which is F11's open permitted-key
+  question and a real gap. It should NOT gain `of_class` as an alternative
+  spelling for the class-on-the-left-hand-side: §7.4 says that arrangement
+  "MUST NOT be reversed" and gives three reasons, and a second spelling would
+  make the schema layer's dispatch key optional. Worth doing for the universal
+  keys alone, with F11.
 - **`[OPEN]` `tour.star` produces 66 schema-layer diagnostics, and no test looks
   at it.** Found by a probe while sizing this task, and pre-existing — the ten
   reference errors above were on top of it. The corpus tests cover

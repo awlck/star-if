@@ -17,3 +17,8 @@ rule = {
     of_action  = take
     successMsg = @since "You take it."
 }
+
+# Declared so that the only thing wrong with this file is the one thing it
+# is about: a rule bound to an action nobody declares is its own error,
+# and backlog F9 now reports it (§6.2, §14.3).
+action = { id = examine  match = { "examine [something]" } }

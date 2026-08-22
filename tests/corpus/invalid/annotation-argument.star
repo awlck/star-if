@@ -17,3 +17,9 @@ rule = @platform(gtk) {
     of_action  = examine
     successMsg = @after "(no tooltip here)"
 }
+
+# Declared so that the only thing wrong with this file is the one thing it
+# is about: a rule bound to an action nobody declares is its own error,
+# and backlog F9 now reports it (§6.2, §14.3).
+action = { id = go       match = { "go [direction]" } }
+action = { id = examine  match = { "examine [something]" } }

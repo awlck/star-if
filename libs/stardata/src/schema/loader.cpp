@@ -102,6 +102,32 @@ const GlobalDecl* SchemaSet::find_global(std::string_view id) const noexcept {
     return it == global_index_.end() ? nullptr : &globals_[it->second];
 }
 
+const SchemaSet::ObjectDecl* SchemaSet::find_object(std::string_view id) const noexcept {
+    const auto it = object_index_.find(std::string(id));
+    return it == object_index_.end() ? nullptr : &objects_[it->second];
+}
+
+bool SchemaSet::declare_object(ObjectDecl decl, const std::optional<Replaces>& replaces,
+                               diag::DiagnosticSink& sink) {
+    // The space is `object` for every class, not one space per class. §6.6's
+    // paths and §11.1's effects name an object by id alone and never say what
+    // class they expect, so a `room` and a `thing` called `airlock` would be
+    // two things one word resolves to -- which is the ambiguity §6.6 opens by
+    // refusing.
+    const Outcome outcome = offer(
+        Declaration{"object", decl.id, decl.owner, /*sealed=*/false, decl.span}, replaces, sink);
+    if (outcome == Outcome::Rejected) {
+        return false;
+    }
+    if (const auto it = object_index_.find(decl.id); it != object_index_.end()) {
+        objects_[it->second] = std::move(decl);
+        return true;
+    }
+    object_index_.emplace(decl.id, objects_.size());
+    objects_.push_back(std::move(decl));
+    return true;
+}
+
 const ClassDecl* SchemaSet::find_class(std::string_view id) const noexcept {
     const std::optional<std::size_t> index = class_index(id, /*is_trait=*/false);
     return index ? &classes_[*index] : nullptr;
@@ -624,6 +650,26 @@ void check_exclusive_groups(const ast::Block& block, const Schema& schema,
 
 } // namespace
 
+const ClassDecl* read_object_class(const ast::Statement& statement, std::string_view key,
+                                   const SchemaSet& set) {
+    if (key != kObjectForm) {
+        // The short spelling: the key IS the class. A trait is mixed in by
+        // name and never instantiated (§7.4), so `find_class` and not
+        // `find_class_or_trait`.
+        return set.find_class(key);
+    }
+    // The long spelling. A missing or unknown `of_class` is already reported
+    // by the schema -- `required = yes` gives E-KEY-MISSING and `ref<class>`
+    // gives E-REF-UNRESOLVED with a suggestion -- so this returns null and
+    // says nothing rather than blaming the author twice.
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    const std::optional<ast::Value> named = block ? block->value_of("of_class") : std::nullopt;
+    const std::optional<ast::Scalar> scalar = named ? named->as_scalar() : std::nullopt;
+    const std::optional<std::string_view> id = scalar ? scalar->as_identifier() : std::nullopt;
+    return id ? set.find_class(*id) : nullptr;
+}
+
 void validate_block(const ast::Block& block, const Schema& schema, const SchemaSet* set,
                     diag::DiagnosticSink& sink) {
     const std::vector<ast::Statement> statements = block.statements();
@@ -817,13 +863,10 @@ void fold_declaration(const ast::Statement& statement, const std::string& key,
 void note_generic_declaration(const ast::Statement& statement, const Schema& schema,
                               const std::optional<Replaces>& replaces, const LoadOptions& options,
                               SchemaSet& set, diag::DiagnosticSink& sink) {
-    const KeyDecl* unique = nullptr;
-    for (const KeyDecl& key : schema.keys) {
-        if (!key.unique_in.empty()) {
-            unique = &key;
-            break;
-        }
-    }
+    // The same key `ref<F>` resolves through, asked for the same way. Two
+    // readings of `unique_in` that could disagree would be a reference that
+    // never resolves and no way to see why.
+    const KeyDecl* unique = schema.unique_key();
     if (unique == nullptr) {
         return;
     }
@@ -852,7 +895,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
                      diag::DiagnosticSink& sink) {
     const Schema* schema = set.find(key);
     if (schema == nullptr) {
-        if (set.find_class(key) != nullptr) {
+        if (read_object_class(statement, key, set) != nullptr) {
             // §7.4: a statement whose key names a *class* instantiates one.
             // A trait is mixed in through `traits = { ... }` and never
             // created, so a top-level statement naming one is not an
@@ -866,7 +909,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
             // at all is backlog F11's.
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-                check_instantiation(*block, *set.find_class(key), set, sink);
+                check_instantiation(*block, *read_object_class(statement, key, set), set, sink);
             }
             // The object's own `prop_def` names are recorded by `fold_all`,
             // which has the non-const set.
@@ -910,8 +953,21 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
     }
 
     const std::optional<ast::Value> value = statement.value();
-    if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-        validate_block(*block, *schema, &set, sink);
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        return;
+    }
+    validate_block(*block, *schema, &set, sink);
+
+    // §7.4's long spelling. `object` has a schema and takes the branch above
+    // like any form -- which checks `id`, `of_class`, `traits` and `prop_def`
+    // and, being `open`, lets every other key through. Those others are the
+    // class's properties, so the same check the short spelling gets runs here
+    // too, against the class `of_class` names.
+    if (key == kObjectForm) {
+        if (const ClassDecl* type = read_object_class(statement, key, set)) {
+            check_instantiation(*block, *type, set, sink);
+        }
     }
 }
 
@@ -922,9 +978,48 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
 // set by const reference -- it validates, it does not populate. The cost is
 // reading the `prop_def` blocks twice, on the small minority of statements
 // that are instantiations carrying one.
+// The object an instantiation creates (§7.4, backlog F9), read out of either
+// spelling.
+//
+// `id` is one of §7.4's universal keys rather than a property, so no class
+// declares it and `check_instantiation` steps over it. It is read here
+// literally -- there is nothing to type-check, since the whole content of an
+// object id is that a `ref<C>` somewhere else says the same word.
+[[nodiscard]] std::optional<SchemaSet::ObjectDecl>
+read_object(const ast::Statement& statement, const ClassDecl& type, const LoadOptions& options) {
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        return std::nullopt;
+    }
+    const std::optional<ast::Statement> id = block->find("id");
+    const std::optional<ast::Value> id_value = id ? id->value() : std::nullopt;
+    const std::optional<ast::Scalar> scalar = id_value ? id_value->as_scalar() : std::nullopt;
+    const std::optional<std::string_view> text = scalar ? scalar->as_identifier() : std::nullopt;
+    if (!text || text->empty()) {
+        return std::nullopt; // no id: nothing can refer to it, and §7.2 says so
+    }
+    // The id's VALUE, so that a diagnostic citing the object underlines its
+    // name rather than the two characters of the key.
+    return SchemaSet::ObjectDecl{std::string(*text), type.id, options.owner, id_value->span()};
+}
+
+void note_object(const ast::Statement& statement, const std::string& key,
+                 const std::optional<Replaces>& replaces, const LoadOptions& options,
+                 SchemaSet& set, diag::DiagnosticSink& sink) {
+    const ClassDecl* type = read_object_class(statement, key, set);
+    if (type == nullptr) {
+        return; // a form, a trait mixed in by name, or nothing the set knows
+    }
+    if (std::optional<SchemaSet::ObjectDecl> decl = read_object(statement, *type, options)) {
+        set.declare_object(*std::move(decl), replaces, sink);
+    }
+}
+
 void note_local_properties(const ast::Statement& statement, const std::string& key,
                            SchemaSet& set) {
-    if (set.find_class(key) == nullptr) {
+    const ClassDecl* type = read_object_class(statement, key, set);
+    if (type == nullptr) {
         return; // not an instantiation
     }
     const std::optional<ast::Value> value = statement.value();
@@ -937,7 +1032,7 @@ void note_local_properties(const ast::Statement& statement, const std::string& k
     // double every diagnostic in the corpus.
     diag::DiagnosticSink quiet;
     for (const PropDecl& property : read_local_prop_defs(*block, set.find("prop_marker"), quiet)) {
-        set.add_local_property(SchemaSet::LocalProperty{property.name, key, property.span});
+        set.add_local_property(SchemaSet::LocalProperty{property.name, type->id, property.span});
     }
 }
 
@@ -984,7 +1079,17 @@ void collect_library_manifest(const ast::Statement& statement, const std::string
     set.add_library(std::move(manifest));
 }
 
-// The two passes, over files already parsed.
+// The passes, over files already parsed.
+//
+// THE ORDER IS THE POINT, and §13.2 is why: a form declared in one file and
+// used in another has to work whichever sorts first, and so does a class, and
+// so does an object. Each pass therefore finishes across *every* file before
+// the next begins. Backlog F9 is what forced the declare/check split -- a
+// `ref<C>` cannot be resolved while objects are still arriving -- but the same
+// split fixes two order dependencies that were already there: a
+// `class_extension` in a later file now applies before any instantiation is
+// checked against the class, and a `prop_def` on an object no longer depends
+// on its class having been declared further up the same file.
 void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options, SchemaSet& set,
               diag::DiagnosticSink& sink) {
     // Pass zero: annotations (§3.8, §5.4.1, backlog F5). Registry-free, and
@@ -1017,7 +1122,9 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
         }
     }
 
-    // Pass two: everything else, now that every form is known.
+    // Pass two: every declaration, now that every form is known. Nothing is
+    // validated here -- a declaration this pass reads may name a class three
+    // files further on.
     for (const LoadedFile& file : loaded) {
         const ast::File view = ast::File::from(cst::SyntaxNode::root(file.green), file.id);
         for (const ast::Statement& statement : view.statements()) {
@@ -1026,9 +1133,6 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
                 continue;
             }
             const std::optional<Replaces> replaces = read_replaces(statement);
-            check_top_level(statement, *key, set, sink);
-            note_local_properties(statement, *key, set);
-
             if (is_structural_form(*key)) {
                 fold_declaration(statement, *key, replaces, options, set, sink);
                 continue;
@@ -1037,10 +1141,48 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
             // or an instantiation. §7.6's uniqueness rule applies to the
             // first and not the second, since only a form has a schema to
             // read `unique_in` out of.
-            if (const Schema* schema = set.find(*key)) {
+            // `object` is skipped: it has a schema, and a `unique_in` on its
+            // `id`, but an instantiation is registered by pass three along
+            // with the short spelling. Letting the generic path have it too
+            // would offer the same declaration twice and report it as its own
+            // duplicate.
+            if (const Schema* schema = set.find(*key); schema != nullptr && *key != kObjectForm) {
                 note_generic_declaration(statement, *schema, replaces, options, set, sink);
             }
             collect_library_manifest(statement, *key, options, set);
+        }
+    }
+
+    // Pass three: objects (§7.4). Separate from pass two because it is the
+    // one thing that cannot be done in it -- whether a statement instantiates
+    // anything is decided by whether its key names a class, and the class may
+    // be declared in a file that pass two has not reached yet.
+    //
+    // This is backlog F9's first bullet, "collect all declared ids, then
+    // resolve", and the collecting half of it.
+    for (const LoadedFile& file : loaded) {
+        const ast::File view = ast::File::from(cst::SyntaxNode::root(file.green), file.id);
+        for (const ast::Statement& statement : view.statements()) {
+            const std::optional<std::string> key = statement.key_name();
+            if (!key || key->empty()) {
+                continue;
+            }
+            note_object(statement, *key, read_replaces(statement), options, set, sink);
+            note_local_properties(statement, *key, set);
+        }
+    }
+
+    // Pass four: validation, against a set that is now complete. Every
+    // diagnostic about what an author wrote -- rather than about what a
+    // declaration means -- is reported from here.
+    for (const LoadedFile& file : loaded) {
+        const ast::File view = ast::File::from(cst::SyntaxNode::root(file.green), file.id);
+        for (const ast::Statement& statement : view.statements()) {
+            const std::optional<std::string> key = statement.key_name();
+            if (!key || key->empty() || *key == "schema") {
+                continue;
+            }
+            check_top_level(statement, *key, set, sink);
         }
     }
 }
@@ -1061,12 +1203,21 @@ void load_files(const std::vector<std::filesystem::path>& files, const LoadOptio
     fold_all(loaded, options, set, sink);
 }
 
+void load_sources(const std::vector<diag::SourceId>& sources_to_load, const LoadOptions& options,
+                  const diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
+                  diag::DiagnosticSink& sink) {
+    std::vector<LoadedFile> loaded;
+    loaded.reserve(sources_to_load.size());
+    for (const diag::SourceId source : sources_to_load) {
+        loaded.push_back(LoadedFile{source, cst::parse(sources, source, cache, sink)});
+    }
+    fold_all(loaded, options, set, sink);
+}
+
 void load_source(diag::SourceId source, const LoadOptions& options,
                  const diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
                  diag::DiagnosticSink& sink) {
-    std::vector<LoadedFile> loaded;
-    loaded.push_back(LoadedFile{source, cst::parse(sources, source, cache, sink)});
-    fold_all(loaded, options, set, sink);
+    load_sources({source}, options, sources, cache, set, sink);
 }
 
 std::vector<std::filesystem::path> load_directory(const std::filesystem::path& directory,

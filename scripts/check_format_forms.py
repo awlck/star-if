@@ -62,8 +62,12 @@ LOADER_CPP = REPO / "libs" / "stardata" / "src" / "schema" / "loader.cpp"
 # `read_x(` or `collect_x(`, up to the next `}` at column 0. Bounding it that
 # way matters -- a function that ran to the next signature would swallow
 # everything between two readers and credit it to the first.
+# The return type may be wrapped onto its own line by clang-format, leaving
+# the name at column 0 with nothing before it -- so the part before the name
+# is optional. Matching one reader less is how this check stops meaning
+# anything, and `read_object` was exactly that case.
 READER_RE = re.compile(
-    r"^(?:\[\[nodiscard\]\]\s*)?[A-Za-z_][^\n=;]*?\b((?:read|collect)_[a-z_]+)\(", re.M
+    r"^(?:\[\[nodiscard\]\]\s*)?(?:[A-Za-z_][^\n=;]*?\b)?((?:read|collect)_[a-z_]+)\(", re.M
 )
 
 # Reading one key out of a block, in each of the spellings the readers use.
@@ -83,8 +87,12 @@ BRANCH_RE = re.compile(
 FORM_RE = re.compile(r'key == "([A-Za-z_]+)"')
 CALL_RE = re.compile(r"\b((?:read|collect)_[a-z_]+)\(")
 
-# The nested and helper readers, which no dispatch names because no top-level
-# statement is one. Each is listed with the forms whose keys it may read.
+# The readers no `fold_declaration` branch names. Most are nested -- no
+# top-level statement is a `key` or a `prop_marker` -- and two are not:
+# `read_object` and `read_object_class` serve §7.4's instantiations, which are
+# read in pass three rather than in `fold_declaration`, because whether a
+# statement instantiates anything depends on a class that pass two may not
+# have reached yet. Each is listed with the forms whose keys it may read.
 #
 # `read_prop_defs` is the awkward one on purpose: it reads the `prop_def` key
 # off whichever block owns it, and then each entry against `prop_marker`. It
@@ -97,6 +105,10 @@ HELPERS = {
     "read_local_prop_defs": {"prop_def", "prop_marker"},
     "read_markers": {"prop_marker"},
     "collect_library_manifest": {"library"},
+    # §7.4's two spellings. `read_object_class` reads `of_class` off the long
+    # one; `read_object` reads `id` off either.
+    "read_object": {"object"},
+    "read_object_class": {"object"},
     # §7.6's `@replaces(lib)` is an annotation, not a key of anything.
     "read_replaces": set(),
     # Not a reader of Stardata at all: it reads a file off the disk.

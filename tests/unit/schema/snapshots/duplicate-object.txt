@@ -1,0 +1,14 @@
+# tests/corpus/invalid/duplicate-object.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-SCHEMA-DUPLICATE: 'airlock' is declared twice
+  --> tests/corpus/invalid/duplicate-object.star:13:16
+   |
+13 | thing = { id = airlock }
+   |                ^^^^^^^
+note: first declared here, by a library
+  --> tests/corpus/invalid/duplicate-object.star:12:16
+   |
+12 | room  = { id = airlock }
+   |                ^^^^^^^
+note: if the second one is meant to supersede the first, say so: `@replaces(a library)` (spec §7.6)

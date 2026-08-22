@@ -171,6 +171,24 @@ TEST_CASE("the conflict is caught where an author writes it", "[starcore][placem
     CHECK(mentions(sink, "same two slots"));
 }
 
+TEST_CASE("the conflict is caught in the long object spelling too", "[starcore][placement]") {
+    // §7.4's two spellings are the same declaration, so every pass that walks
+    // instantiations has to see both. This one asks the format layer rather
+    // than testing `find_class` itself, which is what keeps the knowledge that
+    // there ARE two spellings in `libs/stardata` where §7.2.4 puts `object`.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+
+    test::Parsed parsed("object = { id = confused_key  of_class = thing\n"
+                        "           in = ornate_box  holder = mess_table }\n");
+    diag::DiagnosticSink sink;
+    starcore::check_placements(parsed.ast(), loaded.set, sink);
+
+    REQUIRE(sink.diagnostics().size() == 1);
+    CHECK(sink.diagnostics().front().code() == diag::Code::PlacementConflict);
+}
+
 TEST_CASE("the sugar is expanded in the view and never in the tree", "[starcore][placement]") {
     // Backlog F2c's third bullet, and §14.2's requirement. `in = box` has to
     // still say `in = box` after a parse and a write -- the expansion is a

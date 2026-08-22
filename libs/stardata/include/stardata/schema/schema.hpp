@@ -109,6 +109,17 @@ struct Schema {
     diag::Span span;
 
     [[nodiscard]] const KeyDecl* find_key(std::string_view name) const noexcept;
+
+    // The key that carries this form's `unique_in` namespace (§7.2), or null
+    // for a form whose instances have no id -- `rule` and `prop_def` are
+    // both anonymous, and §7.6's uniqueness rule has nothing to say about
+    // either.
+    //
+    // Two callers, and they must agree: the loader registers an instance
+    // under this namespace, and `ref<F>` resolves into it. A form declaring
+    // more than one is taken at its first, since §7.2 gives an instance one
+    // id and one namespace.
+    [[nodiscard]] const KeyDecl* unique_key() const noexcept;
 };
 
 // What a property tells the engine about itself (§7.2.3, backlog F2b).

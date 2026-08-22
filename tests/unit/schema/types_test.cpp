@@ -157,13 +157,21 @@ TEST_CASE("a duration is a number of ticks, or the word 'default'", "[schema][ty
     CHECK(rejects("duration", "quickly"));
 }
 
-TEST_CASE("a ref accepts an identifier and 'none'", "[schema][types]") {
-    // Resolving the identifier to an actual object is backlog F9. What is
-    // checkable here is the spelling, and that the class named by the type
-    // exists -- which the declared-type check covers.
-    CHECK(accepts("ref<starcore.object>", "the_lantern"));
+TEST_CASE("a ref accepts 'none', and an identifier that names an object", "[schema][types]") {
+    // §6.2's "Accepts: Identifier, none", and §5.5 for why `none` is not a
+    // name to resolve: it clears the reference. `inherit` declines to set
+    // one, and is the same case.
+    //
+    // The bare identifier is where backlog F9 changed the answer. It used to
+    // be accepted on its spelling alone, which meant a reference to an object
+    // that had been renamed -- or never existed -- looked exactly like a
+    // correct one.
     CHECK(accepts("ref<starcore.object>", "none"));
+    CHECK(accepts("ref<starcore.object>", "inherit"));
     CHECK(rejects("ref<starcore.object>", "\"the_lantern\""));
+
+    const Typed unknown("ref<starcore.object>", "the_lantern");
+    CHECK(unknown.rejected_as(diag::Code::RefUnresolved));
 }
 
 // --- collections -------------------------------------------------------
@@ -206,7 +214,12 @@ TEST_CASE("a map keyed by an enum checks its keys", "[schema][types]") {
     loaded.load_builtin();
     loaded.load_stdlib();
     const std::size_t before = loaded.sink.diagnostics().size();
-    loaded.load_text("room = { id = your_cell  exits = { north = corridor  nrth = closet } }\n");
+    // Both rooms declared, so the only complaint left is about the key. The
+    // map's values are `ref<room>` and backlog F9 resolves those, which is
+    // its own error and not this one.
+    loaded.load_text("room = { id = corridor }\n"
+                     "room = { id = closet }\n"
+                     "room = { id = your_cell  exits = { north = corridor  nrth = closet } }\n");
 
     const std::vector<const diag::Diagnostic*> reported = all_of(loaded, diag::Code::TypeMismatch);
     REQUIRE(reported.size() == 1);

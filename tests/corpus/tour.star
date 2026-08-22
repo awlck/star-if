@@ -619,6 +619,18 @@ container = {
     capacity = 3
 }
 
+# The long form of an OBJECT (spec §7.4). `object = { of_class = thing … }`
+# and `thing = { … }` are the same declaration and produce identical data; the
+# short spelling is what an author writes, the long one is what a generator or
+# an editor writing a file back can emit uniformly, without having to know
+# which word goes on the left.
+object = {
+    id       = spare_fuse
+    of_class = thing
+    name     = "a spare fuse"
+    in       = storage
+}
+
 # The long form of placement. `in = ornate_box` is sugar for exactly these two
 # `starcore.object` properties (spec §8.5, §8.1.1); both spellings are legal
 # and produce identical data, but writing both in one block is an error.
@@ -991,6 +1003,36 @@ action = {
         remove_from_play = { obj = noun }
     }
     successMsg = "You drink [the noun]."
+}
+
+# Three actions the rules below respond to. They were missing until backlog
+# F9 taught the schema layer to resolve `ref<action>`, and their absence was
+# exactly the bug §6.2 says the type exists to catch: ten rules in this file
+# were bound to actions nobody declared, so none of them could ever fire and
+# nothing said a word.
+action = {
+    id            = go
+    match         = { "go/walk/head [direction]"  "[direction]" }
+    duration      = default
+    effects       = { }
+    doc           = "Movement. `[direction]` resolves against the room's exits (§6.6.1)."
+}
+
+action = {
+    id            = look
+    match         = { "l/look"  "look around" }
+    duration      = 0
+    advances_turn = never
+    effects       = { }
+    doc           = "Re-describes the room. Out of world, like `inventory`."
+}
+
+action = {
+    id            = attack
+    match         = { "attack/hit/kill [something]"  "attack [something] with [something]" }
+    duration      = default
+    effects       = { }
+    doc           = "Combat. What it does is the ruleset's; the grammar line is the action."
 }
 
 # Where behaviour genuinely differs by class, that is a rule's job — not a

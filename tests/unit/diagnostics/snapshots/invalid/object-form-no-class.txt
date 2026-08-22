@@ -1,0 +1,7 @@
+# tests/corpus/invalid/object-form-no-class.star
+# declared E-KEY-MISSING E-REF-UNRESOLVED
+# lexer and parser report (none)
+# E-KEY-MISSING is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+# E-REF-UNRESOLVED is the schema layer's -- asserted in unit/schema/corpus_test.cpp
+
+(no diagnostics)

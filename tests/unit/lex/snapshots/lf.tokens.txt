@@ -1,4 +1,4 @@
-# tokens: 58, trivia: 91 (whitespace elided)
+# tokens: 65, trivia: 104 (whitespace elided)
 0+79 comment # ==============================================...
 80+68 comment #  lf.star — line-ending round-trip fixture (s...
 149+79 comment # ==============================================...
@@ -16,61 +16,71 @@
 789+71 comment #  file's job today is just to exist as an LF fi...
 861+65 comment #  corrupt, and to keep validating under tests/c...
 927+79 comment # ==============================================...
-1008+4 identifier room
-1013+1 operator =
-1015+1 punctuation {
-1021+2 identifier id
-1028+1 operator =
-1030+12 identifier fixture_room
-1047+6 identifier sector
-1054+1 operator =
-1056+14 identifier fixture_sector
-1075+4 identifier name
-1082+1 operator =
-1084+13 lockey $room_fixture
-1102+11 identifier description
-1114+1 operator =
-1116+55 string "A small room that exists only to prove a line e...
-1190+20 string "survived the trip."
-1215+5 identifier exits
-1222+1 operator =
-1224+1 punctuation {
-1226+5 identifier north
-1232+1 operator =
-1234+16 identifier fixture_room_two
-1251+1 punctuation }
-1253+1 punctuation }
-1256+4 identifier room
-1261+1 operator =
-1263+1 punctuation {
-1269+2 identifier id
-1276+1 operator =
-1278+16 identifier fixture_room_two
-1299+6 identifier sector
-1306+1 operator =
-1308+14 identifier fixture_sector
-1327+4 identifier name
-1334+1 operator =
-1336+17 lockey $room_fixture_two
-1358+5 identifier exits
-1365+1 operator =
-1367+1 punctuation {
-1369+5 identifier south
-1375+1 operator =
-1377+12 identifier fixture_room
-1390+1 punctuation }
-1392+1 punctuation }
-1395+3 identifier loc
-1399+1 operator =
-1401+1 punctuation {
-1407+4 identifier lang
-1412+1 operator =
-1414+2 identifier en
-1422+12 identifier room_fixture
-1439+1 operator =
-1441+14 string "Fixture Room"
-1460+16 identifier room_fixture_two
-1477+1 operator =
-1479+21 string "Second Fixture Room"
-1501+1 punctuation }
-1503+0 eof 
+1008+71 comment # The sector the rooms below name. Declared here...
+1080+71 comment # object is `ref<sector>` (§8.1.1), and backlog...
+1152+60 comment # assigned to a sector nobody declares streams w...
+1213+6 identifier sector
+1220+1 operator =
+1222+1 punctuation {
+1224+2 identifier id
+1227+1 operator =
+1229+14 identifier fixture_sector
+1244+1 punctuation }
+1247+4 identifier room
+1252+1 operator =
+1254+1 punctuation {
+1260+2 identifier id
+1267+1 operator =
+1269+12 identifier fixture_room
+1286+6 identifier sector
+1293+1 operator =
+1295+14 identifier fixture_sector
+1314+4 identifier name
+1321+1 operator =
+1323+13 lockey $room_fixture
+1341+11 identifier description
+1353+1 operator =
+1355+55 string "A small room that exists only to prove a line e...
+1429+20 string "survived the trip."
+1454+5 identifier exits
+1461+1 operator =
+1463+1 punctuation {
+1465+5 identifier north
+1471+1 operator =
+1473+16 identifier fixture_room_two
+1490+1 punctuation }
+1492+1 punctuation }
+1495+4 identifier room
+1500+1 operator =
+1502+1 punctuation {
+1508+2 identifier id
+1515+1 operator =
+1517+16 identifier fixture_room_two
+1538+6 identifier sector
+1545+1 operator =
+1547+14 identifier fixture_sector
+1566+4 identifier name
+1573+1 operator =
+1575+17 lockey $room_fixture_two
+1597+5 identifier exits
+1604+1 operator =
+1606+1 punctuation {
+1608+5 identifier south
+1614+1 operator =
+1616+12 identifier fixture_room
+1629+1 punctuation }
+1631+1 punctuation }
+1634+3 identifier loc
+1638+1 operator =
+1640+1 punctuation {
+1646+4 identifier lang
+1651+1 operator =
+1653+2 identifier en
+1661+12 identifier room_fixture
+1678+1 operator =
+1680+14 string "Fixture Room"
+1699+16 identifier room_fixture_two
+1716+1 operator =
+1718+21 string "Second Fixture Room"
+1740+1 punctuation }
+1742+0 eof 

@@ -60,6 +60,7 @@ add_executable(stardata_unit_tests
     schema/suggest_test.cpp
     schema/local_prop_test.cpp
     schema/types_test.cpp
+    schema/reference_test.cpp
     text/template_test.cpp
     lex/token_test.cpp
     lex/lexer_test.cpp

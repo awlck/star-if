@@ -451,7 +451,7 @@ Six lexical scalar kinds exist: `Identifier`, `Integer`, `Decimal`, `String`, `L
 | `text` | `String`, `LocKey` | localisable and interpolatable (§9) |
 | `string` | `String` | raw, never localised or interpolated; for machine-facing values |
 | `identifier` | `Identifier` | a bare symbol with no reference semantics |
-| `ref<C>` | `Identifier`, `none` | a reference to an object of class `C` or a subclass; validated at compile time |
+| `ref<C>` | `Identifier`, `none` | a reference to an object of class `C` or a subclass; validated at compile time. `C` may also name a *form*, in which case the reference resolves to an instance of it, in the namespace that form's `unique_in` declares — `ref<action>` and `ref<sector>` are both written by the core-owned set |
 | `enum<E>` | `Identifier` | a value declared by `enum = { id = E … }` |
 | `flags<E>` | list block of `Identifier` | a bitset over `E`; membership tests are O(1) |
 | `list<T>` | list block, or record block if `T` is a block type | ordered, duplicates permitted |
@@ -939,7 +939,28 @@ room = { id = your_cell  exits = { north = corridor } }
 
 The class name is on the left and the object's id inside. This is deliberate and MUST NOT be reversed: it is what allows the schema layer to dispatch on the left-hand key, it groups a file by kind for scanning and outlining, and it makes every top-level statement uniform in shape.
 
+**There is a second spelling, and the two are semantically identical.** The `object` form names the class inside, with `of_class`:
+
+```stardata
+room   = { id = your_cell  exits = { north = corridor } }
+object = { id = your_cell  of_class = room  exits = { north = corridor } }
+```
+
+These are the same declaration. An implementation MUST produce identical data from both, and every rule stated anywhere in this document about an instantiation applies to both — the object namespace above, §8.4's property resolution, §8.5's placement sugar, §8.7's `prop_def`, and the type of every property key.
+
+The short spelling is what an author writes. The long one exists because it is *uniform*: a generator, an editor writing a file back, and a `class` whose id collides with a declared form all want one shape they can emit without deciding which word goes on the left. It does not reverse the arrangement above — the dispatch key is still constant and still on the left; it is the literal word `object`.
+
+Where a program declares a `class` whose id is `object`, the form wins, and instances of that class must use the long spelling. This follows the existing precedence — a top-level key is looked up as a form before it is looked up as a class — and needs no rule of its own.
+
+Both spellings are read into one shape *by reading*, not by rewriting: §14.2's round-trip requirement means the author's bytes survive, exactly as they do for §8.5's placement sugar.
+
 The keys permitted inside an instantiation block are those of the class's property set (§8), plus the universal keys `id`, `traits`, `in`, `on`, `part_of`, and `sector`.
+
+**Object ids share one namespace, across every class.** This namespace is *implied*: no `schema` describes an instantiation, so there is no `unique_in` key (§7.2) to declare it. It exists regardless, because the alternative is not a looser rule but an incoherent one — `ref<C>` resolves an id to an object (§6.2), and §6.6's paths and §11.1's effects name an object by id alone without saying what class they expect, so two objects answering to one id leave every reference to it undefined. One namespace for all classes, not one per class, follows from the same fact: the id is all a reference carries.
+
+Two objects sharing an id are therefore §7.6's duplicate, with §7.6's escape: a mod meaning to supersede a game's object writes `@replaces(that_source)` and is believed.
+
+An instantiation has no schema of its own, and does not need one — its shape is assembled by §8.4 from the `prop_def` blocks of its class, its traits, and itself.
 
 ### 7.5 `schema_extension`
 
@@ -2022,6 +2043,8 @@ Sources are loaded in this order, and later declarations win where §5.4's combi
 
 Within a single file, source order governs.
 
+**A source is loaded as a whole, not file by file.** Every declaration in one of the four groups above is registered before any of that group's contents are validated, so a reference may name something declared later in the same file, or in a file that sorts after it. The asymmetry between groups is deliberate and is the ordering above: a project may name what its libraries declared, and a library MUST NOT name what a project will.
+
 An implementation MUST NOT make load order depend on filesystem enumeration order, since that differs between platforms and would make builds irreproducible.
 
 ### 13.3 Libraries
@@ -2095,6 +2118,7 @@ Every diagnostic MUST carry a source span (file, byte offset, line, column) and 
 | `includes` with both `key` and `value` (§6.5.1) | error, suggesting the path form or `map_get` |
 | Two or more keys of one `exclusive_group` in a block (§7.2.1) | error, naming the group's members |
 | Two declarations sharing a `unique_in` value, without `@replaces` (§7.6) | error, citing both spans |
+| Two object instantiations sharing an id, without `@replaces` (§7.4, §7.6) | error, citing both spans |
 | `@replaces` naming a source that declared no such thing (§7.6) | error, with a suggestion |
 | `@replaces` on a sealed declaration (§7.2.2, §7.6) | error |
 | `schema_extension` redeclaring an existing key with a different declaration (§7.5) | error |
@@ -2180,6 +2204,9 @@ The proposal left the following under-determined. This specification settles the
 | A46 | The root class is declared with `root = yes`, not assumed by name (§8.1.1) | The format layer resolved properties through a chain whose last link was a class name passed in as a parameter — and two of its own walks disagreed about whether to follow it. Declaring the root keeps the *name* core's while making the *concept* the format's, which is what let the two walks become one |
 | A47 | `class_extension` extends a trait through `of_trait`, rather than a separate `trait_extension` form (§8.2) | One identifier is all that would have differed between the two forms. An exclusive group (§7.2.1) states the "exactly one" rule in the schema, where an author can read it. A single `of =` was rejected because §8.3 gives classes and traits separate namespaces, so one id may name both and the lookup order would decide silently |
 | A48 | `type_of` — a key's type may be the value of a sibling key (§7.2, §6.4) | §6.4's own examples give a global a `set` and a `map` as its initial value, which `scalar` rejects and no fixed type admits. Naming the sibling scopes the escape to the one key that needs it, and keeps the rule in the schema where documentation and editors can see it. §11.1's `set` and `set_global` are the next two callers |
+| A49 | A `ref<C>` resolves against declared ids, and the id namespaces are separate: objects for a class target, the form's own `unique_in` namespace for a form target (§6.2, §7.4, §13.2) | §6.2 promised "validated at compile time" and nothing validated it, so any identifier satisfied any reference. Ten rules in the reference corpus were bound to actions nobody declared and could never have fired. Keeping the two namespaces apart is what stops an object called `lever` from satisfying a `ref<action>` that meant the verb |
+| A50 | Object ids are one implied namespace, shared by every class (§7.4) | There is no schema behind an instantiation and so no `unique_in` to declare the namespace, which is a fact about the notation and not an argument that objects may collide. A reference carries an id and nothing else, so two objects answering to one id make every `ref`, path and effect naming it undefined. Declared explicitly in §7.4 rather than left to be inferred, because the thing that would normally state it does not exist |
+| A51 | An object may also be written `object = { of_class = C … }`, semantically identical to `C = { … }` (§7.4) | A schema for instantiations cannot be exact — the permitted keys are the class's properties, which no single schema knows — so the choice was between no declared form at all and one that is honest about being `open`. Declaring it gives §7.4's universal keys a home that documentation and editors can read, puts `of_class` under `ref<class>` so a renamed class fails the build, and brings the object reader under the drift guard. The second spelling is what makes the form real rather than decorative, and normalising the two costs one reading — the format already does one for §8.5's placement sugar |
 | A17 | Flags are sugar over declared `bool` globals, not a separate store (§6.4.1) | As undeclared strings they are a silent-typo generator, which is exactly what the schema layer exists to prevent |
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |

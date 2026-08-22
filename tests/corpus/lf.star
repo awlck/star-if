@@ -16,6 +16,11 @@
 #  corrupt, and to keep validating under tests/check_stardata.py.
 # =============================================================================
 
+# The sector the rooms below name. Declared here because `sector` on an
+# object is `ref<sector>` (§8.1.1), and backlog F9 resolves it: a room
+# assigned to a sector nobody declares streams with nothing.
+sector = { id = fixture_sector }
+
 room = {
     id     = fixture_room
     sector = fixture_sector

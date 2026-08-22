@@ -1,0 +1,19 @@
+# tests/corpus/invalid/object-form-no-class.star
+# loaded as a library, on top of the core-owned set and stdlib
+
+error: E-KEY-MISSING: this 'object' has no 'of_class'
+  --> tests/corpus/invalid/object-form-no-class.star:8:10
+  |
+8 | object = {
+  |          ^^^^^^^^^^^^^^^^^^^^^^
+note: The class being instantiated. In the short spelling this is the key on the left.
+note: 'of_class' is required on every 'object' (spec §7.2)
+
+error: E-REF-UNRESOLVED: 'of_class' is declared ref<class>, and nothing declares the class 'thign'
+  --> tests/corpus/invalid/object-form-no-class.star:17:16
+   |
+17 |     of_class = thign
+   |                ^^^^^
+note: a reference is checked against what the program actually declares, in any file and in any order -- which is what makes a renamed target a build failure rather than a link to nothing (spec §6.2, §13.2)
+fix-it: did you mean 'thing'?
+  replace tests/corpus/invalid/object-form-no-class.star:17:16 with `thing`

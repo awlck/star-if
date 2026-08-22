@@ -83,7 +83,7 @@ namespace stardata::test {
         "E-CORE-RESERVED",         "W-PROPDEF-REDUNDANT", "E-DUP-KEY",
         "E-EXCLUSIVE-GROUP",       "E-EXCLUSIVE-MISSING", "E-TYPE-MISMATCH",
         "E-UNKNOWN-ANNOTATION",    "E-ANNOT-CONFLICT",    "E-ANNOT-MISAPPLIED",
-        "E-ANNOT-ARGUMENT",        "E-TEMPLATE-BRACKETS"};
+        "E-ANNOT-ARGUMENT",        "E-TEMPLATE-BRACKETS", "E-REF-UNRESOLVED"};
     return codes;
 }
 

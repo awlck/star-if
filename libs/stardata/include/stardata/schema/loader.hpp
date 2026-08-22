@@ -119,6 +119,34 @@ public:
         diag::Span span;
     };
 
+    // One object created by an instantiation (§7.4): a top-level statement
+    // whose key names a declared class. This is the other half of what a
+    // `ref<C>` resolves against, and backlog F9's reason for existing.
+    //
+    // What is recorded is the minimum a reference needs: the name, the class
+    // the statement's key named, and where to point. The object's *shape* is
+    // not here and could not be -- §8.4 assembles it on the fly from the
+    // `prop_def` blocks of its class, its traits and itself.
+    struct ObjectDecl {
+        std::string id;
+        std::string class_id;
+        std::string owner;
+        diag::Span span; // the id's value, which is the name a reader looks for
+    };
+
+    // §7.4's objects share ONE id namespace, and it is implied rather than
+    // declared: no `schema` describes an instantiation, so there is no
+    // `unique_in` key to read it out of. The alternative is nonsense --
+    // `ref<C>` resolves an id to an object, and two objects answering to one
+    // id leave that resolution undefined for every reference in the program.
+    //
+    // So an object goes through `offer` like everything else, in the space
+    // `object`, and gets §7.6 with it: a duplicate is an error citing both
+    // declarations, and a mod that means to supersede a library's room says
+    // `@replaces(that_library)` and is believed.
+    bool declare_object(ObjectDecl decl, const std::optional<Replaces>& replaces,
+                        diag::DiagnosticSink& sink);
+
     void add_library(LibraryManifest manifest);
     void add_requirement(CoreRequirement requirement);
     void add_local_property(LocalProperty property);
@@ -153,6 +181,11 @@ public:
     // stops, which is the right answer for a set with no object model in it.
     [[nodiscard]] const ClassDecl* root_class() const noexcept;
 
+    // §7.4's objects, by id. What `ref<C>` resolves against when `C` names a
+    // class; a `ref` to a *form* resolves through `find_declaration` instead,
+    // in the form's own `unique_in` namespace.
+    [[nodiscard]] const ObjectDecl* find_object(std::string_view id) const noexcept;
+
     [[nodiscard]] const std::vector<Schema>& schemas() const noexcept { return schemas_; }
     [[nodiscard]] const std::vector<ClassDecl>& classes() const noexcept { return classes_; }
     [[nodiscard]] const std::vector<EnumDecl>& enums() const noexcept { return enums_; }
@@ -166,6 +199,7 @@ public:
     [[nodiscard]] const std::vector<LibraryManifest>& libraries() const noexcept {
         return libraries_;
     }
+    [[nodiscard]] const std::vector<ObjectDecl>& objects() const noexcept { return objects_; }
     [[nodiscard]] const std::vector<LocalProperty>& local_properties() const noexcept {
         return local_properties_;
     }
@@ -187,6 +221,7 @@ private:
     std::vector<Declaration> declarations_;
     std::vector<CoreRequirement> requirements_;
     std::vector<LibraryManifest> libraries_;
+    std::vector<ObjectDecl> objects_;
     std::vector<LocalProperty> local_properties_;
 
     // id -> position in the vector beside it. Classes and traits share one
@@ -198,12 +233,41 @@ private:
     std::unordered_map<std::string, std::size_t> trait_index_;
     std::unordered_map<std::string, std::size_t> enum_index_;
     std::unordered_map<std::string, std::size_t> global_index_;
+    std::unordered_map<std::string, std::size_t> object_index_;
 
     // Keyed by namespace and id both, since §7.6's uniqueness rule is stated
     // per `unique_in` namespace: `const` and `global` share one, `class` and
     // `trait` do not.
     std::map<std::pair<std::string, std::string>, std::size_t> declaration_index_;
 };
+
+// §7.4's TWO SPELLINGS, read as one. Returns the class a top-level statement
+// instantiates, or null when the statement is not an instantiation.
+//
+//     thing  = { id = brass_key  name = "a key" }
+//     object = { id = brass_key  of_class = thing  name = "a key" }
+//
+// The two are the same declaration and produce identical data. The short one
+// is what an author writes; the long one is uniform, which is what a
+// generator, an editor writing a file back, and a class whose id collides
+// with a declared form all want.
+//
+// Why this is one function and not four. "Is this an instantiation?" was
+// written out four times across two libraries, and a second spelling would
+// have made that four places to forget. Reading it here also keeps §7.4's
+// knowledge in the format layer, where §7.2.4 puts `object`: `libs/starcore`
+// asks the question without knowing there are two ways to ask it.
+//
+// A READING, NEVER AN EDIT. §14.2 requires that the author's bytes survive, so
+// the long spelling is expanded in the view exactly as §8.5's placement sugar
+// is -- nothing is rewritten in the tree.
+[[nodiscard]] const ClassDecl* read_object_class(const ast::Statement& statement,
+                                                 std::string_view key, const SchemaSet& set);
+
+// The `object` form's id (§7.4). Named once, because the loader, the resolver
+// and `starcore`'s passes all have to agree about the one key that is a
+// spelling rather than a class.
+inline constexpr std::string_view kObjectForm = "object";
 
 // Validates one record block against a schema: unknown keys (§7.3), required
 // keys (§7.2), arity (§5.3), exclusive groups (§7.2.1) and the declared type
@@ -274,9 +338,21 @@ void load_files(const std::vector<std::filesystem::path>& files, const LoadOptio
                 diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
                 diag::DiagnosticSink& sink);
 
-// The same, for one source already registered with the SourceManager --
-// which is how a caller loads something that never came from a file, and how
-// the tests load a would-be library one string at a time.
+// The same, for sources already registered with the SourceManager -- which is
+// how a caller loads something that never came from a file.
+//
+// A LOAD IS THE UNIT, not a file. Everything passed to one call is declared
+// before any of it is validated, so a reference in the first source may name
+// something the last one declares (§13.2). Two calls are two loads, in order:
+// the second sees everything the first declared and the first sees none of
+// the second, which is exactly the relationship §13.2 gives a project and the
+// library it names in `uses`.
+void load_sources(const std::vector<diag::SourceId>& sources_to_load, const LoadOptions& options,
+                  const diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
+                  diag::DiagnosticSink& sink);
+
+// One source, which is the common case and how the tests load a would-be
+// library one string at a time.
 void load_source(diag::SourceId source, const LoadOptions& options,
                  const diag::SourceManager& sources, cst::GreenCache& cache, SchemaSet& set,
                  diag::DiagnosticSink& sink);

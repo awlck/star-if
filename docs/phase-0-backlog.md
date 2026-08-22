@@ -1340,14 +1340,37 @@ the reference corpus had been demonstrating the bug rather than the rule.
   Stated in §7.4 rather than left to be inferred, because the thing that would
   normally state it does not exist.
 
-  **`[OPEN]` A virtual schema for the instantiation form** was floated and not
-  taken. It would give §7.4's universal keys (`id`, `traits`, `in`, `on`,
-  `part_of`, `sector`) a declared home, which is F11's open permitted-key
-  question and a real gap. It should NOT gain `of_class` as an alternative
-  spelling for the class-on-the-left-hand-side: §7.4 says that arrangement
-  "MUST NOT be reversed" and gives three reasons, and a second spelling would
-  make the schema layer's dispatch key optional. Worth doing for the universal
-  keys alone, with F11.
+  **The `object` form, and §7.4's second spelling** (decision A51). Floated on
+  review, argued against, and taken — the pushback was aimed at the wrong
+  design. `object = { of_class = thing … }` keeps a *constant* dispatch key on
+  the left; what §7.4 forbids is deciding by looking inside the block, which
+  this does not do.
+
+  The deciding argument was that a schema for instantiations cannot be exact
+  anyway: the permitted keys are the class's properties, which no single schema
+  knows, so the form is `open = yes` and that is a statement about where the
+  rest of the block is checked rather than a licence to write anything. Given
+  that the format already normalises one thing about objects when it reads them
+  — §8.5's placement sugar — a second normalisation is affordable, and Phase 1
+  will very likely want more.
+
+  What the form buys, beyond the spelling: §7.4's universal keys get a declared
+  home that documentation and editors can read (F11's open permitted-key
+  question is now half-answered); `of_class` is typed `ref<class>`, so a renamed
+  class fails the build with a suggestion rather than producing an object of
+  nothing; and both object readers come under `check_format_forms.py`.
+
+  The dispatch is now one function, `read_object_class`, in the format layer
+  where §7.2.4 puts `object`. It had been written out four times across two
+  libraries — `check_top_level`, `note_object`, `note_local_properties` and
+  `check_placements` — and a second spelling would have made that four places to
+  forget. `libs/starcore` asks the question without knowing there are two ways
+  to ask it.
+
+  One consequence, stated in §7.4 rather than given a rule of its own: where a
+  program declares a `class` whose id is `object`, the form wins and that class
+  must be instantiated with the long spelling. This is the existing precedence
+  — a top-level key is looked up as a form before as a class — not a new one.
 - **`[OPEN]` `tour.star` produces 66 schema-layer diagnostics, and no test looks
   at it.** Found by a probe while sizing this task, and pre-existing — the ten
   reference errors above were on top of it. The corpus tests cover

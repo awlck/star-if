@@ -81,6 +81,95 @@ TEST_CASE("a trait mixed in by name does not create an object", "[schema][refere
     CHECK(loaded.set.find_object("openable") == nullptr);
 }
 
+// --- §7.4's two spellings -----------------------------------------------
+
+TEST_CASE("the two object spellings are the same declaration", "[schema][reference]") {
+    // §7.4: `thing = { … }` and `object = { of_class = thing … }` produce
+    // identical data. The short one is what an author writes; the long one is
+    // uniform, which is what a generator and an editor writing a file back
+    // want.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("room   = { id = your_cell }\n"
+                     "thing  = { id = brass_key   name = \"a brass key\"  in = your_cell }\n"
+                     "object = { id = ornate_box  of_class = thing\n"
+                     "           name = \"an ornate box\"  in = your_cell }\n");
+
+    REQUIRE(loaded.sink.error_count() == 0);
+    REQUIRE(loaded.set.find_object("brass_key") != nullptr);
+    REQUIRE(loaded.set.find_object("ornate_box") != nullptr);
+    // The class recorded is the class, not the spelling that named it.
+    CHECK(loaded.set.find_object("brass_key")->class_id == "thing");
+    CHECK(loaded.set.find_object("ornate_box")->class_id == "thing");
+}
+
+TEST_CASE("the long spelling shares the one object namespace", "[schema][reference]") {
+    // Two spellings, one namespace: writing an object both ways is writing it
+    // twice, not writing two objects.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("thing  = { id = brass_key }\n"
+                     "object = { id = brass_key  of_class = thing }\n");
+
+    CHECK(loaded.reported(diag::Code::SchemaDuplicate));
+}
+
+TEST_CASE("a property is type-checked in the long spelling too", "[schema][reference]") {
+    // The keys of an instantiation are the class's properties whichever way
+    // the class was named, so the same check runs on both.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("object = { id = brass_key  of_class = thing  name = 42 }\n");
+
+    CHECK(loaded.reported(diag::Code::TypeMismatch));
+}
+
+TEST_CASE("an object-local prop_def is read in the long spelling too", "[schema][reference]") {
+    // §8.7, and the registry entry §8.8.2's classifier depends on. Recorded
+    // against the class, not against the word on the left.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("object = { id = navcomp  of_class = thing\n"
+                     "           prop_def = { waypoints = list<identifier> } }\n");
+
+    REQUIRE(loaded.sink.error_count() == 0);
+    bool found = false;
+    for (const schema::SchemaSet::LocalProperty& local : loaded.set.local_properties()) {
+        found = found || (local.name == "waypoints" && local.class_id == "thing");
+    }
+    CHECK(found);
+}
+
+TEST_CASE("the long spelling needs a class that exists", "[schema][reference]") {
+    // `of_class` is `ref<class>`, so F9's own machinery checks it and offers
+    // the near miss. Nothing else in the loader has to know.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("object = { id = brass_key  of_class = thign }\n");
+
+    const diag::Diagnostic* reported = first_of(loaded, diag::Code::RefUnresolved);
+    REQUIRE(reported != nullptr);
+    REQUIRE_FALSE(reported->fix_its().empty());
+    CHECK(reported->fix_its().front().replacement == "thing");
+}
+
+TEST_CASE("the long spelling needs an of_class at all", "[schema][reference]") {
+    // `required = yes` on the schema, so the generic check says it. The point
+    // of declaring the form is that rules like this one are stated once, as
+    // data, rather than as another branch in the loader.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    loaded.load_text("object = { id = brass_key }\n");
+
+    CHECK(loaded.reported(diag::Code::KeyMissing));
+}
+
 // --- §13.2, in any order and any file -----------------------------------
 
 TEST_CASE("a reference may be written before its target", "[schema][reference]") {

@@ -241,6 +241,34 @@ private:
     std::map<std::pair<std::string, std::string>, std::size_t> declaration_index_;
 };
 
+// §7.4's TWO SPELLINGS, read as one. Returns the class a top-level statement
+// instantiates, or null when the statement is not an instantiation.
+//
+//     thing  = { id = brass_key  name = "a key" }
+//     object = { id = brass_key  of_class = thing  name = "a key" }
+//
+// The two are the same declaration and produce identical data. The short one
+// is what an author writes; the long one is uniform, which is what a
+// generator, an editor writing a file back, and a class whose id collides
+// with a declared form all want.
+//
+// Why this is one function and not four. "Is this an instantiation?" was
+// written out four times across two libraries, and a second spelling would
+// have made that four places to forget. Reading it here also keeps §7.4's
+// knowledge in the format layer, where §7.2.4 puts `object`: `libs/starcore`
+// asks the question without knowing there are two ways to ask it.
+//
+// A READING, NEVER AN EDIT. §14.2 requires that the author's bytes survive, so
+// the long spelling is expanded in the view exactly as §8.5's placement sugar
+// is -- nothing is rewritten in the tree.
+[[nodiscard]] const ClassDecl* read_object_class(const ast::Statement& statement,
+                                                 std::string_view key, const SchemaSet& set);
+
+// The `object` form's id (§7.4). Named once, because the loader, the resolver
+// and `starcore`'s passes all have to agree about the one key that is a
+// spelling rather than a class.
+inline constexpr std::string_view kObjectForm = "object";
+
 // Validates one record block against a schema: unknown keys (§7.3), required
 // keys (§7.2), arity (§5.3), exclusive groups (§7.2.1) and the declared type
 // of every value (§6.2).

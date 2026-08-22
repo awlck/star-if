@@ -68,6 +68,32 @@ schema = {
 }
 
 schema = {
+    id        = object
+    top_level = yes
+    sealed    = yes
+    # §8.1 again: any key other than the ones below is a PROPERTY of the class
+    # being instantiated, and which properties exist is the class's business.
+    # `open` is what says "the rest of this block is checked against the class,
+    # not against this schema" — it is not a licence to write anything, and
+    # §7.4's permitted-key rule is what will make that precise (backlog F11).
+    open      = yes
+    doc       = "An object, spelled longhand. `object = { of_class = thing … }` and `thing = { … }` are the same declaration (§7.4)."
+
+    key = { name = id        type = identifier       required = yes  unique_in = object
+            doc  = "The name this object is referred to by. One namespace for every class (§7.4)." }
+    # `ref<class>` and not `identifier`, so a renamed class becomes a build
+    # failure with a suggestion rather than an object of nothing. §7.2.4 makes
+    # `class` a format form with `unique_in = class`, which is the namespace
+    # this resolves in — the same machinery `ref<action>` uses.
+    key = { name = of_class  type = ref<class>       required = yes
+            doc  = "The class being instantiated. In the short spelling this is the key on the left." }
+    key = { name = prop_def  type = block<prop_def>  arity = many  combine = merge
+            doc  = "Properties belonging to this object and to nothing else (§8.7)." }
+    key = { name = traits    type = list<identifier>
+            doc  = "Traits mixed into this object alone." }
+}
+
+schema = {
     id        = class_extension
     top_level = yes
     sealed    = yes

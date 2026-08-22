@@ -119,10 +119,12 @@ void check_placements(const stardata::ast::File& file, const stardata::schema::S
         if (!key || key->empty()) {
             continue;
         }
-        // §7.4: a top-level statement whose key names a class instantiates
-        // one. Only an object has a placement, so only an instantiation is
-        // asked about it.
-        if (set.find_class(*key) == nullptr) {
+        // §7.4: a top-level statement instantiates a class, in either of the
+        // two spellings. Only an object has a placement, so only an
+        // instantiation is asked about it -- and asking the format layer
+        // rather than testing `find_class` here is what keeps this pass from
+        // needing to know there are two spellings at all.
+        if (stardata::schema::read_object_class(statement, *key, set) == nullptr) {
             continue;
         }
         const std::optional<Value> value = statement.value();

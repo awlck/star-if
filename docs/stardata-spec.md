@@ -939,6 +939,21 @@ room = { id = your_cell  exits = { north = corridor } }
 
 The class name is on the left and the object's id inside. This is deliberate and MUST NOT be reversed: it is what allows the schema layer to dispatch on the left-hand key, it groups a file by kind for scanning and outlining, and it makes every top-level statement uniform in shape.
 
+**There is a second spelling, and the two are semantically identical.** The `object` form names the class inside, with `of_class`:
+
+```stardata
+room   = { id = your_cell  exits = { north = corridor } }
+object = { id = your_cell  of_class = room  exits = { north = corridor } }
+```
+
+These are the same declaration. An implementation MUST produce identical data from both, and every rule stated anywhere in this document about an instantiation applies to both — the object namespace above, §8.4's property resolution, §8.5's placement sugar, §8.7's `prop_def`, and the type of every property key.
+
+The short spelling is what an author writes. The long one exists because it is *uniform*: a generator, an editor writing a file back, and a `class` whose id collides with a declared form all want one shape they can emit without deciding which word goes on the left. It does not reverse the arrangement above — the dispatch key is still constant and still on the left; it is the literal word `object`.
+
+Where a program declares a `class` whose id is `object`, the form wins, and instances of that class must use the long spelling. This follows the existing precedence — a top-level key is looked up as a form before it is looked up as a class — and needs no rule of its own.
+
+Both spellings are read into one shape *by reading*, not by rewriting: §14.2's round-trip requirement means the author's bytes survive, exactly as they do for §8.5's placement sugar.
+
 The keys permitted inside an instantiation block are those of the class's property set (§8), plus the universal keys `id`, `traits`, `in`, `on`, `part_of`, and `sector`.
 
 **Object ids share one namespace, across every class.** This namespace is *implied*: no `schema` describes an instantiation, so there is no `unique_in` key (§7.2) to declare it. It exists regardless, because the alternative is not a looser rule but an incoherent one — `ref<C>` resolves an id to an object (§6.2), and §6.6's paths and §11.1's effects name an object by id alone without saying what class they expect, so two objects answering to one id leave every reference to it undefined. One namespace for all classes, not one per class, follows from the same fact: the id is all a reference carries.
@@ -2191,6 +2206,7 @@ The proposal left the following under-determined. This specification settles the
 | A48 | `type_of` — a key's type may be the value of a sibling key (§7.2, §6.4) | §6.4's own examples give a global a `set` and a `map` as its initial value, which `scalar` rejects and no fixed type admits. Naming the sibling scopes the escape to the one key that needs it, and keeps the rule in the schema where documentation and editors can see it. §11.1's `set` and `set_global` are the next two callers |
 | A49 | A `ref<C>` resolves against declared ids, and the id namespaces are separate: objects for a class target, the form's own `unique_in` namespace for a form target (§6.2, §7.4, §13.2) | §6.2 promised "validated at compile time" and nothing validated it, so any identifier satisfied any reference. Ten rules in the reference corpus were bound to actions nobody declared and could never have fired. Keeping the two namespaces apart is what stops an object called `lever` from satisfying a `ref<action>` that meant the verb |
 | A50 | Object ids are one implied namespace, shared by every class (§7.4) | There is no schema behind an instantiation and so no `unique_in` to declare the namespace, which is a fact about the notation and not an argument that objects may collide. A reference carries an id and nothing else, so two objects answering to one id make every `ref`, path and effect naming it undefined. Declared explicitly in §7.4 rather than left to be inferred, because the thing that would normally state it does not exist |
+| A51 | An object may also be written `object = { of_class = C … }`, semantically identical to `C = { … }` (§7.4) | A schema for instantiations cannot be exact — the permitted keys are the class's properties, which no single schema knows — so the choice was between no declared form at all and one that is honest about being `open`. Declaring it gives §7.4's universal keys a home that documentation and editors can read, puts `of_class` under `ref<class>` so a renamed class fails the build, and brings the object reader under the drift guard. The second spelling is what makes the form real rather than decorative, and normalising the two costs one reading — the format already does one for §8.5's placement sugar |
 | A17 | Flags are sugar over declared `bool` globals, not a separate store (§6.4.1) | As undeclared strings they are a silent-typo generator, which is exactly what the schema layer exists to prevent |
 | A18 | Object-local `prop_def` still requires a declaration (§8.7) | One line buys typo detection, a type, an editor widget and a stable save key; the alternative reintroduces untyped looseness |
 | A19 | Property access is statically checked with narrowing, plus an explicit runtime escape (§8.8.3) | Runtime-only moves authoring errors into play; static-only cannot reach scripts or honest subclass-varying cases |

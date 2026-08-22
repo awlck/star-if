@@ -619,6 +619,18 @@ container = {
     capacity = 3
 }
 
+# The long form of an OBJECT (spec §7.4). `object = { of_class = thing … }`
+# and `thing = { … }` are the same declaration and produce identical data; the
+# short spelling is what an author writes, the long one is what a generator or
+# an editor writing a file back can emit uniformly, without having to know
+# which word goes on the left.
+object = {
+    id       = spare_fuse
+    of_class = thing
+    name     = "a spare fuse"
+    in       = storage
+}
+
 # The long form of placement. `in = ornate_box` is sugar for exactly these two
 # `starcore.object` properties (spec §8.5, §8.1.1); both spellings are legal
 # and produce identical data, but writing both in one block is an error.

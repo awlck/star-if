@@ -650,6 +650,26 @@ void check_exclusive_groups(const ast::Block& block, const Schema& schema,
 
 } // namespace
 
+const ClassDecl* read_object_class(const ast::Statement& statement, std::string_view key,
+                                   const SchemaSet& set) {
+    if (key != kObjectForm) {
+        // The short spelling: the key IS the class. A trait is mixed in by
+        // name and never instantiated (§7.4), so `find_class` and not
+        // `find_class_or_trait`.
+        return set.find_class(key);
+    }
+    // The long spelling. A missing or unknown `of_class` is already reported
+    // by the schema -- `required = yes` gives E-KEY-MISSING and `ref<class>`
+    // gives E-REF-UNRESOLVED with a suggestion -- so this returns null and
+    // says nothing rather than blaming the author twice.
+    const std::optional<ast::Value> value = statement.value();
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    const std::optional<ast::Value> named = block ? block->value_of("of_class") : std::nullopt;
+    const std::optional<ast::Scalar> scalar = named ? named->as_scalar() : std::nullopt;
+    const std::optional<std::string_view> id = scalar ? scalar->as_identifier() : std::nullopt;
+    return id ? set.find_class(*id) : nullptr;
+}
+
 void validate_block(const ast::Block& block, const Schema& schema, const SchemaSet* set,
                     diag::DiagnosticSink& sink) {
     const std::vector<ast::Statement> statements = block.statements();
@@ -875,7 +895,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
                      diag::DiagnosticSink& sink) {
     const Schema* schema = set.find(key);
     if (schema == nullptr) {
-        if (set.find_class(key) != nullptr) {
+        if (read_object_class(statement, key, set) != nullptr) {
             // §7.4: a statement whose key names a *class* instantiates one.
             // A trait is mixed in through `traits = { ... }` and never
             // created, so a top-level statement naming one is not an
@@ -889,7 +909,7 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
             // at all is backlog F11's.
             const std::optional<ast::Value> value = statement.value();
             if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-                check_instantiation(*block, *set.find_class(key), set, sink);
+                check_instantiation(*block, *read_object_class(statement, key, set), set, sink);
             }
             // The object's own `prop_def` names are recorded by `fold_all`,
             // which has the non-const set.
@@ -933,8 +953,21 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
     }
 
     const std::optional<ast::Value> value = statement.value();
-    if (const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt) {
-        validate_block(*block, *schema, &set, sink);
+    const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
+    if (!block) {
+        return;
+    }
+    validate_block(*block, *schema, &set, sink);
+
+    // §7.4's long spelling. `object` has a schema and takes the branch above
+    // like any form -- which checks `id`, `of_class`, `traits` and `prop_def`
+    // and, being `open`, lets every other key through. Those others are the
+    // class's properties, so the same check the short spelling gets runs here
+    // too, against the class `of_class` names.
+    if (key == kObjectForm) {
+        if (const ClassDecl* type = read_object_class(statement, key, set)) {
+            check_instantiation(*block, *type, set, sink);
+        }
     }
 }
 
@@ -945,41 +978,48 @@ void check_top_level(const ast::Statement& statement, const std::string& key, co
 // set by const reference -- it validates, it does not populate. The cost is
 // reading the `prop_def` blocks twice, on the small minority of statements
 // that are instantiations carrying one.
-// The object an instantiation creates (§7.4, backlog F9): a top-level
-// statement whose key names a declared class.
+// The object an instantiation creates (§7.4, backlog F9), read out of either
+// spelling.
 //
 // `id` is one of §7.4's universal keys rather than a property, so no class
 // declares it and `check_instantiation` steps over it. It is read here
 // literally -- there is nothing to type-check, since the whole content of an
 // object id is that a `ref<C>` somewhere else says the same word.
-void note_object(const ast::Statement& statement, const std::string& key,
-                 const std::optional<Replaces>& replaces, const LoadOptions& options,
-                 SchemaSet& set, diag::DiagnosticSink& sink) {
-    if (set.find_class(key) == nullptr) {
-        return; // a form, a trait mixed in by name, or nothing the set knows
-    }
+[[nodiscard]] std::optional<SchemaSet::ObjectDecl>
+read_object(const ast::Statement& statement, const ClassDecl& type, const LoadOptions& options) {
     const std::optional<ast::Value> value = statement.value();
     const std::optional<ast::Block> block = value ? value->as_block() : std::nullopt;
     if (!block) {
-        return;
+        return std::nullopt;
     }
     const std::optional<ast::Statement> id = block->find("id");
     const std::optional<ast::Value> id_value = id ? id->value() : std::nullopt;
     const std::optional<ast::Scalar> scalar = id_value ? id_value->as_scalar() : std::nullopt;
     const std::optional<std::string_view> text = scalar ? scalar->as_identifier() : std::nullopt;
     if (!text || text->empty()) {
-        return; // an object with no id: nothing can refer to it, and §7.2 says so
+        return std::nullopt; // no id: nothing can refer to it, and §7.2 says so
     }
     // The id's VALUE, so that a diagnostic citing the object underlines its
     // name rather than the two characters of the key.
-    set.declare_object(
-        SchemaSet::ObjectDecl{std::string(*text), key, options.owner, id_value->span()}, replaces,
-        sink);
+    return SchemaSet::ObjectDecl{std::string(*text), type.id, options.owner, id_value->span()};
+}
+
+void note_object(const ast::Statement& statement, const std::string& key,
+                 const std::optional<Replaces>& replaces, const LoadOptions& options,
+                 SchemaSet& set, diag::DiagnosticSink& sink) {
+    const ClassDecl* type = read_object_class(statement, key, set);
+    if (type == nullptr) {
+        return; // a form, a trait mixed in by name, or nothing the set knows
+    }
+    if (std::optional<SchemaSet::ObjectDecl> decl = read_object(statement, *type, options)) {
+        set.declare_object(*std::move(decl), replaces, sink);
+    }
 }
 
 void note_local_properties(const ast::Statement& statement, const std::string& key,
                            SchemaSet& set) {
-    if (set.find_class(key) == nullptr) {
+    const ClassDecl* type = read_object_class(statement, key, set);
+    if (type == nullptr) {
         return; // not an instantiation
     }
     const std::optional<ast::Value> value = statement.value();
@@ -992,7 +1032,7 @@ void note_local_properties(const ast::Statement& statement, const std::string& k
     // double every diagnostic in the corpus.
     diag::DiagnosticSink quiet;
     for (const PropDecl& property : read_local_prop_defs(*block, set.find("prop_marker"), quiet)) {
-        set.add_local_property(SchemaSet::LocalProperty{property.name, key, property.span});
+        set.add_local_property(SchemaSet::LocalProperty{property.name, type->id, property.span});
     }
 }
 
@@ -1101,7 +1141,12 @@ void fold_all(const std::vector<LoadedFile>& loaded, const LoadOptions& options,
             // or an instantiation. §7.6's uniqueness rule applies to the
             // first and not the second, since only a form has a schema to
             // read `unique_in` out of.
-            if (const Schema* schema = set.find(*key)) {
+            // `object` is skipped: it has a schema, and a `unique_in` on its
+            // `id`, but an instantiation is registered by pass three along
+            // with the short spelling. Letting the generic path have it too
+            // would offer the same declaration twice and report it as its own
+            // duplicate.
+            if (const Schema* schema = set.find(*key); schema != nullptr && *key != kObjectForm) {
                 note_generic_declaration(statement, *schema, replaces, options, set, sink);
             }
             collect_library_manifest(statement, *key, options, set);

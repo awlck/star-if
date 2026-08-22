@@ -94,11 +94,11 @@ public:
     // validated, so a reference in the first may name something the last
     // declares -- §13.2's rule for the files of one source, and the case a
     // loader that resolved as it read gets wrong.
-    void load_texts(std::vector<std::pair<std::string, std::string>> files,
+    void load_texts(std::vector<std::pair<std::string, std::string>> texts,
                     std::string owner = "a library", bool is_core = false) {
         std::vector<diag::SourceId> ids;
-        ids.reserve(files.size());
-        for (auto& [name, text] : files) {
+        ids.reserve(texts.size());
+        for (auto& [name, text] : texts) {
             ids.push_back(sources.add_file(std::move(name), std::move(text)));
         }
         schema::load_sources(ids, schema::LoadOptions{std::move(owner), is_core, {}}, sources,

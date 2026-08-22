@@ -17,6 +17,12 @@ function(starif_set_warnings target)
         # GCC and Clang already default to UTF-8 for both charsets.
         target_compile_options(${target} PRIVATE /W4 /WX /utf-8)
     else()
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Werror)
+        # `-Wshadow` is not in -Wall or -Wextra, and MSVC's /W4 warns on the
+        # same thing (C4458) with /WX making it an error. Without it here, a
+        # shadowed member compiles clean on two of the three platforms and
+        # fails the Windows legs -- which is a CI round trip to learn
+        # something the local build could have said in a second. It costs
+        # nothing: the tree is clean under it.
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wshadow -Werror)
     endif()
 endfunction()

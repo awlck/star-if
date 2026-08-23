@@ -29,6 +29,7 @@
 #include "stardata/diag/render.hpp"
 
 #include "starcore/globals.hpp"
+#include "starcore/instance_properties.hpp"
 #include "starcore/messages.hpp"
 #include "starcore/narrowing.hpp"
 #include "starcore/placement.hpp"
@@ -340,6 +341,7 @@ TEST_CASE("each invalid fixture reports the starcore codes it declares", "[starc
         const ast::File ast = ast::File::from(cst::SyntaxNode::root(green), id);
         diag::DiagnosticSink sink;
         starcore::check_placements(ast, loaded.set, sink);
+        starcore::check_instance_properties(ast, loaded.set, sink);
         starcore::check_property_reads(ast, loaded.set, sink);
         starcore::check_failure_messages(ast, loaded.set, sink);
         starcore::GlobalIndex globals;
@@ -398,6 +400,7 @@ TEST_CASE("each fixture's starcore diagnostics match its checked-in snapshot",
         const ast::File ast = ast::File::from(cst::SyntaxNode::root(green), id);
         diag::DiagnosticSink sink;
         starcore::check_placements(ast, loaded.set, sink);
+        starcore::check_instance_properties(ast, loaded.set, sink);
         starcore::check_property_reads(ast, loaded.set, sink);
         starcore::check_failure_messages(ast, loaded.set, sink);
         starcore::GlobalIndex globals;
@@ -409,9 +412,9 @@ TEST_CASE("each fixture's starcore diagnostics match its checked-in snapshot",
 
         std::ostringstream out;
         out << "# " << test::corpus_name(path) << '\n'
-            << "# starcore's passes -- placement, property reads, failureMsg\n"
-            << "# placement, globals and the text layer -- over the core-owned set,\n"
-            << "# stdlib, and the fixture as a library\n\n";
+            << "# starcore's passes -- placement, permitted keys, property reads,\n"
+            << "# failureMsg placement, globals and the text layer -- over the\n"
+            << "# core-owned set, stdlib, and the fixture as a library\n\n";
         bool first = true;
         for (const diag::Diagnostic& diagnostic : sink.diagnostics()) {
             if (!first) {

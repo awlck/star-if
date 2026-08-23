@@ -119,6 +119,8 @@ std::string_view code_string(Code code) noexcept {
         return "E-PROPDEF-TYPE-MISMATCH";
     case Code::PropDefRedundant:
         return "W-PROPDEF-REDUNDANT";
+    case Code::PropUnknown:
+        return "E-PROP-UNKNOWN";
     case Code::NamesSubset:
         return "W-NAMES-SUBSET";
     case Code::GlobalUnused:

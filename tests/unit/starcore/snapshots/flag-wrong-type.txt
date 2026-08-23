@@ -1,7 +1,7 @@
 # tests/corpus/invalid/flag-wrong-type.star
-# starcore's passes -- placement, property reads, failureMsg
-# placement, globals and the text layer -- over the core-owned set,
-# stdlib, and the fixture as a library
+# starcore's passes -- placement, permitted keys, property reads,
+# failureMsg placement, globals and the text layer -- over the
+# core-owned set, stdlib, and the fixture as a library
 
 error: E-FLAG-NOT-BOOL: 'alert_level' is declared int, and the flag sugar only reads and writes `bool`
   --> tests/corpus/invalid/flag-wrong-type.star:10:30

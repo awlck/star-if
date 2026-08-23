@@ -119,6 +119,7 @@ CODES = {
     "E-ANNOT-ARGUMENT":     "§3.8 an annotation's arguments are not what it takes",
     "E-PROP-ABSENT":        "§8.8.2 a property read that is definitely absent for the slot's type",
     "E-PROP-MAYBE-ABSENT":  "§8.8.3 a property read that is possibly absent and not narrowed",
+    "E-PROP-UNKNOWN":       "§7.4 an instantiation key naming neither a property nor a universal key",
 }
 
 # Codes this script structurally cannot produce, and the fixtures that
@@ -169,6 +170,7 @@ NEEDS_SCHEMA_LAYER = {
     "E-ANNOT-ARGUMENT",
     "E-PROP-ABSENT",
     "E-PROP-MAYBE-ABSENT",
+    "E-PROP-UNKNOWN",
 }
 
 # A file may suppress a diagnostic for its whole length with a pragma:
@@ -757,7 +759,13 @@ def check_file(path):
         fired = {d.code for d in diags}
         diags = [d for d in diags if d.code not in allowed]
         for code, line in sorted(allowed.items(), key=lambda kv: kv[1]):
-            if code not in fired:
+            # A pragma allowing a schema-layer code can never look "used"
+            # here -- this script structurally cannot produce one (see
+            # NEEDS_SCHEMA_LAYER) -- so flagging it unused would be reporting
+            # this checker's own blind spot as an author's mistake. The C++
+            # suite is the one that can tell a real unused suppression apart
+            # from a needed one for these.
+            if code not in fired and code not in NEEDS_SCHEMA_LAYER:
                 diags.append(Diag("W-PRAGMA-UNUSED", path, line, code))
     return toks, top, diags
 

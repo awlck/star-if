@@ -1,0 +1,13 @@
+# tests/corpus/invalid/instance-prop-unknown.star
+# starcore's passes -- placement, permitted keys, property reads,
+# failureMsg placement, globals and the text layer -- over the
+# core-owned set, stdlib, and the fixture as a library
+
+error: E-PROP-UNKNOWN: 'times_reboofed' is not a property of 'console'
+  --> tests/corpus/invalid/instance-prop-unknown.star:16:5
+   |
+16 |     times_reboofed = 3
+   |     ^^^^^^^^^^^^^^
+note: an instantiation's keys are the class's properties, plus `id`, `traits`, and one of §8.5's placement keywords -- a key naming none of those is a typo, not a one-off property (spec §7.4, §8.7)
+fix-it: did you mean 'times_rebooted'?
+  replace tests/corpus/invalid/instance-prop-unknown.star:16:5 with `times_rebooted`

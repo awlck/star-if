@@ -36,9 +36,10 @@ class = {
     doc      = "A place the player can be in."
 
     prop_def = {
-        dark       = bool
-        exits      = map<direction, ref<room>>
-        first_seen = bool
+        dark        = bool
+        exits       = map<direction, ref<room>>
+        first_seen  = bool
+        description = text
     }
     dark = no
 }

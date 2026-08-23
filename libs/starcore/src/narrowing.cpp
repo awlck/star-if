@@ -131,7 +131,7 @@ using Narrowing = std::map<std::string, std::string>;
 [[nodiscard]] Span first_segment_span(const Expr& path) {
     const Span& head = path.name_span;
     return Span{head.source, head.end() + 1,
-               static_cast<std::uint32_t>(path.segments.front().size())};
+                static_cast<std::uint32_t>(path.segments.front().size())};
 }
 
 struct Walk {
@@ -315,7 +315,7 @@ struct Walk {
     void walk_expr(const Expr& value, const Narrowing& narrowed) {
         if (value.kind == Expr::Kind::Path && !value.segments.empty()) {
             report_read(value.name, value.segments.front(), value.span, first_segment_span(value),
-                       /*offer_has_prop_fixit=*/false, narrowed);
+                        /*offer_has_prop_fixit=*/false, narrowed);
         }
         for (const Expr& argument : value.args) {
             walk_expr(argument, narrowed);

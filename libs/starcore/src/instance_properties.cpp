@@ -80,7 +80,8 @@ void check_block(const Block& block, const ClassDecl& type, const SchemaSet& set
                              "`traits`, and one of §8.5's placement keywords -- a key naming "
                              "none of those is a typo, not a one-off property (spec §7.4, §8.7)");
 
-        std::vector<std::string_view> candidates = stardata::schema::reachable_properties(type, set);
+        std::vector<std::string_view> candidates =
+            stardata::schema::reachable_properties(type, set);
         for (const PropDecl& own : local) {
             if (std::find(candidates.begin(), candidates.end(), own.name) == candidates.end()) {
                 candidates.emplace_back(own.name);

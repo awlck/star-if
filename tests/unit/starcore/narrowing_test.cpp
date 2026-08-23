@@ -284,7 +284,7 @@ TEST_CASE("narrowing does not escape an OR or a NOT", "[starcore][narrowing]") {
 // and has no message text to rewrite into.
 
 TEST_CASE("a definitely-absent read inside a message is an error",
-         "[starcore][narrowing][template]") {
+          "[starcore][narrowing][template]") {
     const Analysed world("rule = {\n"
                          "    of_action  = inspect\n"
                          "    successMsg = \"It has a [noun.shineyness] look.\"\n"
@@ -293,7 +293,7 @@ TEST_CASE("a definitely-absent read inside a message is an error",
 }
 
 TEST_CASE("a possibly-absent read inside a message has no has_prop fix-it",
-         "[starcore][narrowing][template]") {
+          "[starcore][narrowing][template]") {
     const Analysed world("rule = {\n"
                          "    of_action  = inspect\n"
                          "    successMsg = \"Its polish reads [noun.polish].\"\n"
@@ -307,7 +307,7 @@ TEST_CASE("a possibly-absent read inside a message has no has_prop fix-it",
 }
 
 TEST_CASE("a definitely-present read inside a message is silent",
-         "[starcore][narrowing][template]") {
+          "[starcore][narrowing][template]") {
     const Analysed world("action = {\n"
                          "    id         = buff\n"
                          "    match      = { \"buff [class:fancy_gadget]\" }\n"
@@ -317,7 +317,7 @@ TEST_CASE("a definitely-present read inside a message is silent",
 }
 
 TEST_CASE("narrowing from an earlier stage flows into a message",
-         "[starcore][narrowing][template]") {
+          "[starcore][narrowing][template]") {
     // The point of the whole feature: `when` narrows two stages before
     // `successMsg` runs, and §8.8.3 has that narrowing survive both hops.
     const Analysed world("rule = {\n"
@@ -329,7 +329,7 @@ TEST_CASE("narrowing from an earlier stage flows into a message",
 }
 
 TEST_CASE("a path nested inside a call's arguments is still checked",
-         "[starcore][narrowing][template]") {
+          "[starcore][narrowing][template]") {
     // §9.2's `Call` and `Apply` don't hide a read from this pass -- the
     // argument is an `Expr`, not opaque text, and this pass walks it.
     const Analysed world("rule = {\n"
@@ -340,7 +340,7 @@ TEST_CASE("a path nested inside a call's arguments is still checked",
 }
 
 TEST_CASE("the fix-it over a message read replaces only the property, not the slot",
-         "[starcore][narrowing][template]") {
+          "[starcore][narrowing][template]") {
     // Backlog F6's own rule, carried over: the fix-it span is not the
     // diagnostic's span. `noun.polush` misspells `polish`; the correction
     // must replace `polush` alone; replacing the whole path would delete
@@ -370,8 +370,7 @@ TEST_CASE("the fix-it over a message read replaces only the property, not the sl
     CHECK(full_text.substr(fix.span.offset, fix.span.length) == "polush");
 }
 
-TEST_CASE("a message's bracket mistake is not reported twice",
-         "[starcore][narrowing][template]") {
+TEST_CASE("a message's bracket mistake is not reported twice", "[starcore][narrowing][template]") {
     // E-TEMPLATE-BRACKETS is the type checker's (schema/types.cpp), raised
     // when it validates `successMsg`'s declared type. This pass re-parses
     // the same value with a quiet sink to walk its expressions, and must not

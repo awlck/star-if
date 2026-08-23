@@ -86,13 +86,14 @@ private:
 // --- the ordinary case: real properties are left alone ------------------
 
 TEST_CASE("an object's own, inherited and trait-borne properties are all accepted",
-         "[starcore][instance_properties]") {
-    const Checked world("fancy_gadget = { id = one  serial = \"A1\"  polish = 3  integrity = 9 }\n");
+          "[starcore][instance_properties]") {
+    const Checked world(
+        "fancy_gadget = { id = one  serial = \"A1\"  polish = 3  integrity = 9 }\n");
     CHECK(world.count() == 0);
 }
 
 TEST_CASE("an object-local prop_def is accepted, and suggested for a nearby typo",
-         "[starcore][instance_properties]") {
+          "[starcore][instance_properties]") {
     const Checked exact(
         "gadget = { id = odd_one  prop_def = { rune_count = int }  rune_count = 3 }\n");
     CHECK(exact.count() == 0);
@@ -113,7 +114,8 @@ TEST_CASE("an object-local prop_def is accepted, and suggested for a nearby typo
 
 // --- the typo case: F11's own worked example -----------------------------
 
-TEST_CASE("a key naming no property is an error with a suggestion", "[starcore][instance_properties]") {
+TEST_CASE("a key naming no property is an error with a suggestion",
+          "[starcore][instance_properties]") {
     const Checked world("gadget = { id = one  serail = \"A1\" }\n");
     REQUIRE(world.reported(diag::Code::PropUnknown));
     const diag::Diagnostic* diagnostic = nullptr;
@@ -143,7 +145,7 @@ TEST_CASE("a name resembling nothing gets no suggestion", "[starcore][instance_p
 // --- the universal keys: none of them is a property, all are accepted ----
 
 TEST_CASE("id, traits and prop_def are accepted with no property of that name",
-         "[starcore][instance_properties]") {
+          "[starcore][instance_properties]") {
     const Checked world("fancy_gadget = {\n"
                         "    id       = one\n"
                         "    traits   = { fragile }\n"
@@ -157,7 +159,7 @@ TEST_CASE("id, traits and prop_def are accepted with no property of that name",
 }
 
 TEST_CASE("every placement keyword is accepted, sugar and long form alike",
-         "[starcore][instance_properties]") {
+          "[starcore][instance_properties]") {
     for (const char* keyword : {"in", "on", "under", "behind", "carried", "worn", "part_of"}) {
         INFO("keyword: " << keyword);
         const Checked sugar(std::string("gadget = { id = one  ") + keyword + " = somewhere }\n");
@@ -173,7 +175,7 @@ TEST_CASE("every placement keyword is accepted, sugar and long form alike",
 }
 
 TEST_CASE("the long `object` spelling is checked the same way, and of_class is not a property",
-         "[starcore][instance_properties]") {
+          "[starcore][instance_properties]") {
     const Checked clean("object = { id = one  of_class = gadget  serial = \"A1\" }\n");
     CHECK(clean.count() == 0);
 
@@ -184,7 +186,7 @@ TEST_CASE("the long `object` spelling is checked the same way, and of_class is n
 // --- the corpus: the rule fires on nothing correct ------------------------
 
 TEST_CASE("stdlib and the corpus both keep the permitted-key rule",
-         "[starcore][instance_properties][corpus]") {
+          "[starcore][instance_properties][corpus]") {
     // Loaded, not merely parsed. Unlike placement, this pass asks the
     // registry what a class declares -- and tour.star's own §6.1 adds
     // `strength`, `presence` and friends to `person` with a `class_extension`

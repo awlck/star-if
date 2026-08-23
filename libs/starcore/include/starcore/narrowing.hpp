@@ -80,6 +80,14 @@ struct Slot {
 // `is` and `has_prop` flows forward through the stages; it does not escape an
 // `OR` or a `NOT`.
 //
+// A STAGE MAY BE TEXT RATHER THAN CONDITIONS. `successMsg` and `failureMsg`
+// are stages too, and §8.8.3's own worked example lives in one:
+// `successMsg = "It is rated for [noun.damage] damage."`. Every
+// `Expr::Kind::Path` a stage's template contains is classified the same way
+// a condition key is, using whatever the stages before it narrowed -- except
+// the `has_prop` fix-it, which is condition-block syntax and has no message
+// text to rewrite into.
+//
 // A separate pass over the tree, like `check_placements`, for the same
 // reason: `stardata` loads and validates, then whoever owns the vocabulary
 // walks the result.

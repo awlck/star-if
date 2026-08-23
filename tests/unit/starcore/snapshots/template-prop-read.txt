@@ -1,0 +1,19 @@
+# tests/corpus/invalid/template-prop-read.star
+# starcore's passes -- placement, permitted keys, property reads,
+# failureMsg placement, globals and the text layer -- over the
+# core-owned set, stdlib, and the fixture as a library
+
+error: E-PROP-ABSENT: nothing that could be 'noun' here has a 'shineyness'
+  --> tests/corpus/invalid/template-prop-read.star:18:29
+   |
+18 |     successMsg = "It has a [noun.shineyness] look."
+   |                             ^^^^^^^^^^^^^^^
+note: 'noun' is statically a 'starcore.object' (spec §8.8.1)
+
+error: E-PROP-MAYBE-ABSENT: 'noun' is a 'starcore.object' here, and only some of those have 'damage'
+  --> tests/corpus/invalid/template-prop-read.star:28:30
+   |
+28 |     successMsg = "Rated for [noun.damage] damage."
+   |                              ^^^^^^^^^^^
+note: weapon declare it (spec §8.8.2)
+note: narrow the slot earlier in this conjunction, or in a stage before it -- `of_class`, `has_trait` and `is` all do, and a restriction that narrows also gives the player a real message (spec §8.8.3)

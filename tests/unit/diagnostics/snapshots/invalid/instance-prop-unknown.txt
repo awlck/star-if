@@ -1,0 +1,6 @@
+# tests/corpus/invalid/instance-prop-unknown.star
+# declared E-PROP-UNKNOWN
+# lexer and parser report (none)
+# E-PROP-UNKNOWN is starcore's -- asserted in unit/starcore/placement_test.cpp
+
+(no diagnostics)

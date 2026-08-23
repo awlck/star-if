@@ -37,6 +37,21 @@
 #  unused-key warning is suppressed for this file only.
 # check: allow W-LOC-UNUSED
 #
+#  §9.1's `ornate_box` and the drinkable items of §9.2 mix a trait in at the
+#  OBJECT rather than the class (`traits = { lockable }` on the instantiation
+#  itself, not on `container`) -- which §7.4 permits (`traits` is one of its
+#  universal keys) but which backlog F11's permitted-key check does not yet
+#  resolve: §8.4 step 2, "traits mixed into the object directly," is read by
+#  nothing today (see the note on `check_instantiation` in
+#  libs/stardata/include/stardata/schema/types.hpp). `lock_key` and
+#  `volume_ml` are real properties of the traits actually mixed in, not typos,
+#  and §9.1's two-sided `airlock_hatch` similarly writes `side`, which is
+#  proposal §5.7's two-sided-door facet -- Phase 2 vocabulary with no schema
+#  yet. Suppressed here rather than worked around, so the scenario keeps
+#  demonstrating both features honestly until the resolver and the door
+#  schema catch up.
+# check: allow E-PROP-UNKNOWN
+#
 # =============================================================================
 
 

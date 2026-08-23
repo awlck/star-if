@@ -1159,17 +1159,34 @@ each was silent:
   wired, every read inside a rule was skipped for want of a slot type — the pass
   was quietly analysing almost nothing.
 
-**[OPEN] Reads inside message templates are not checked.** §8.8.3's own worked
-example is `successMsg = "It is rated for [noun.damage] damage."`, and finding
-that read needs the template grammar of §9.1, which is F7's. The classifier is
-ready for it; the caller is not there yet.
+**Reads inside message templates are checked — `[OPEN]` closed.** §8.8.3's own
+worked example is `successMsg = "It is rated for [noun.damage] damage."`, and
+until now finding that read needed the template grammar of §9.1, which was
+F7's — the classifier was ready for it and the caller was not there yet.
 
-  F7 has since landed the grammar, so the blocker is gone and the remaining
-  work is small and specific: `check_property_reads` parses each stage's
-  `text`-typed values and classifies every `Expr::Kind::Path` whose head is one
-  of §10.2's slots, using the narrowing already in effect at that stage. It is
-  left out of F7 because F7's list does not name it and it is F12's rule, not
-  F7's — but it is now a task with no unknowns in it.
+F7 has since landed the grammar, and the caller is now `check_property_reads`
+itself: `successMsg` and `failureMsg` are stages exactly like `conditions` and
+`restrictions` (they are in `stage_order` already), so the main loop asks
+whether a stage's value is a condition block or a `text`/`text_or_script`
+scalar and walks whichever it is. A scalar stage is parsed as a template with
+a quiet sink — the type checker already raised E-TEMPLATE-BRACKETS for it —
+and every `Expr::Kind::Path` its fragments contain is classified the same way
+a dotted condition key is, recursing into a `Call`'s or an `Apply`'s arguments
+so `[tip(noun.damage)]` is caught as readily as `[noun.damage]`.
+
+One asymmetry, and it is deliberate: a template read gets the same
+E-PROP-ABSENT/E-PROP-MAYBE-ABSENT diagnostics and the same F6 suggestion, but
+never the `has_prop = …` fix-it, because that fix-it rewrites a *condition
+statement* and a message has none to rewrite — the prose advice above it
+("narrow earlier, or in a stage before this one") still applies unchanged.
+The other new thing this needed was a per-segment span: `Expr` records a
+path's segments as bare strings, not spans, so a suggestion that only
+replaces the mistyped segment (leaving `noun.` alone) has to derive that span
+from the fact that `text/template.cpp`'s grammar admits no whitespace between
+`.` and the identifier after it. `tests/corpus/invalid/template-prop-read.star`
+is the fixture, and `narrowing_test.cpp` reads the bytes under that fix-it
+span back out of the source to prove it, the same way F6's own suggestion-span
+test does.
 
 **[OPEN] A ruleset cannot declare a slot's static type.** §8.8.1 says `actor` is
 "`person`, or whatever the ruleset narrows it to" and gives no spelling for the

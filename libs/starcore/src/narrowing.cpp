@@ -3,11 +3,13 @@
 #include "starcore/narrowing.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <map>
 #include <optional>
 
 #include "stardata/diag/diagnostic.hpp"
 #include "stardata/schema/suggest.hpp"
+#include "stardata/text/template.hpp"
 
 #include "starcore/conditions.hpp"
 
@@ -16,13 +18,18 @@ namespace starcore {
 namespace {
 
 using stardata::ast::Block;
+using stardata::ast::Scalar;
 using stardata::ast::Statement;
 using stardata::diag::Code;
 using stardata::diag::Diagnostic;
+using stardata::diag::Span;
 using stardata::schema::ClassDecl;
 using stardata::schema::PropertyAnswer;
 using stardata::schema::PropertyLookup;
 using stardata::schema::SchemaSet;
+using stardata::text::Expr;
+using stardata::text::Fragment;
+using stardata::text::Template;
 
 // The root of the object model (§8.1.1). Core's own, and so nameable here --
 // this is the library §8.1.1 belongs to.
@@ -112,6 +119,21 @@ using Narrowing = std::map<std::string, std::string>;
     return text ? std::string(*text) : std::string();
 }
 
+// A template `Expr::Kind::Path`'s first segment has no span of its own --
+// `Expr` stores the segment strings, not their positions -- but
+// `text/template.cpp`'s Path production admits no whitespace between the
+// '.' and the identifier that follows it (its parse loop calls
+// `take_identifier` the instant it consumes '.'), so the span is derivable:
+// one byte past where the head name ends, running for the segment's own
+// length. This is what lets a suggestion here replace just the property
+// name and leave `noun.` alone, the same way one over a condition key
+// replaces just the key.
+[[nodiscard]] Span first_segment_span(const Expr& path) {
+    const Span& head = path.name_span;
+    return Span{head.source, head.end() + 1,
+                static_cast<std::uint32_t>(path.segments.front().size())};
+}
+
 struct Walk {
     const SchemaSet& set;
     const std::vector<Slot>& slots;
@@ -175,13 +197,25 @@ struct Walk {
             // classifying `exits.north` as a property name would report a
             // property nobody wrote.
             const std::size_t dot = key->find('.');
-            report_read(slot, dot == std::string::npos ? *key : key->substr(0, dot), statement,
-                        narrowed);
+            const std::string property = dot == std::string::npos ? *key : key->substr(0, dot);
+            report_read(slot, property, statement.report_span(),
+                        statement.key() ? statement.key()->span() : statement.report_span(),
+                        /*offer_has_prop_fixit=*/true, narrowed);
         }
     }
 
-    void report_read(const std::string& slot, const std::string& property,
-                     const Statement& statement, const Narrowing& narrowed) {
+    // `primary_span` is what the diagnostic points at; `name_span` is the
+    // narrower span a suggestion replaces -- for a condition key the two
+    // often coincide, and for a template read they do not (the primary span
+    // is the whole `noun.damage`, the name span is just `damage`).
+    //
+    // `offer_has_prop_fixit` is false for a template read: `has_prop = ` is
+    // condition-block syntax, and there is no statement here to rewrite into
+    // one. The prose suggestion right above it -- narrow earlier, or in a
+    // stage before this one -- still applies to a message exactly as it does
+    // to a condition, so it is not conditioned on this flag.
+    void report_read(const std::string& slot, const std::string& property, Span primary_span,
+                     Span name_span, bool offer_has_prop_fixit, const Narrowing& narrowed) {
         const ClassDecl* type = type_of(slot, narrowed, slots, set);
         if (type == nullptr) {
             return; // an unknown slot; not this pass's to report
@@ -199,7 +233,7 @@ struct Walk {
         }
 
         if (lookup.answer == PropertyAnswer::Maybe) {
-            Diagnostic diagnostic(Code::PropMaybeAbsent, statement.report_span(),
+            Diagnostic diagnostic(Code::PropMaybeAbsent, primary_span,
                                   "'" + slot + "' is a '" + type->id +
                                       "' here, and only some of those have '" + property + "'");
             diagnostic.with_note(list_of(lookup.declared_by) + " declare it (spec §8.8.2)");
@@ -207,13 +241,15 @@ struct Walk {
                                  "before it -- `of_class`, `has_trait` and `is` all do, and a "
                                  "restriction that narrows also gives the player a real message "
                                  "(spec §8.8.3)");
-            diagnostic.with_fix_it(statement.report_span(), "has_prop = " + property,
-                                   "or test it explicitly with `has_prop = " + property + "`");
+            if (offer_has_prop_fixit) {
+                diagnostic.with_fix_it(primary_span, "has_prop = " + property,
+                                       "or test it explicitly with `has_prop = " + property + "`");
+            }
             sink.report(std::move(diagnostic));
             return;
         }
 
-        Diagnostic diagnostic(Code::PropAbsent, statement.report_span(),
+        Diagnostic diagnostic(Code::PropAbsent, primary_span,
                               "nothing that could be '" + slot + "' here has a '" + property + "'");
         diagnostic.with_note("'" + slot + "' is statically a '" + type->id + "' (spec §8.8.1)");
         if (!lookup.declared_by.empty()) {
@@ -226,9 +262,7 @@ struct Walk {
         // (backlog F6).
         const std::vector<std::string_view> reachable =
             stardata::schema::reachable_properties(*type, set);
-        stardata::schema::suggest(
-            diagnostic, statement.key() ? statement.key()->span() : statement.report_span(),
-            property, reachable);
+        stardata::schema::suggest(diagnostic, name_span, property, reachable);
         sink.report(std::move(diagnostic));
     }
 
@@ -266,6 +300,46 @@ struct Walk {
             // Some other predicate that takes a block -- `carrying`,
             // `global`, `script`. Their contents are §10.4's and §10.6's, and
             // this pass has nothing to say about them.
+        }
+    }
+
+    // §9.2's expressions, checked for every `Expr::Kind::Path` they contain
+    // -- including inside a `Call`'s or an `Apply`'s arguments, since
+    // `[tip(noun.damage)]` reads `damage` exactly as plainly as
+    // `[noun.damage]` does. Only a path's first segment is the property this
+    // pass has an opinion about; the rest is §6.6's, the same rule
+    // `object_scope` applies to a dotted condition key.
+    //
+    // `narrowed` is read-only here: a template does not narrow anything, it
+    // only asks what has already been narrowed by the stages before it.
+    void walk_expr(const Expr& value, const Narrowing& narrowed) {
+        if (value.kind == Expr::Kind::Path && !value.segments.empty()) {
+            report_read(value.name, value.segments.front(), value.span, first_segment_span(value),
+                        /*offer_has_prop_fixit=*/false, narrowed);
+        }
+        for (const Expr& argument : value.args) {
+            walk_expr(argument, narrowed);
+        }
+    }
+
+    // A stage's `text`/`text_or_script` value (backlog F12's `[OPEN]`):
+    // §8.8.3's own worked example is `successMsg = "It is rated for
+    // [noun.damage] damage."`, which needed the template grammar of §9.1
+    // (backlog F7) before this could be written at all.
+    //
+    // Re-parsed with a quiet sink deliberately: the type checker already
+    // parsed this same value for E-TEMPLATE-BRACKETS (schema/types.cpp,
+    // triggered by the declared type being `text` or `text_or_script`), and
+    // reporting a bracket mistake a second time would double it in the
+    // corpus. `TextIndex::walk` (starcore/text.cpp) takes the same
+    // precaution for the same reason.
+    void check_template(const Scalar& scalar, const Narrowing& narrowed) {
+        stardata::diag::DiagnosticSink quiet;
+        const Template parsed = stardata::text::parse_template(scalar, quiet);
+        for (const Fragment& fragment : parsed.fragments) {
+            if (fragment.expr) {
+                walk_expr(*fragment.expr, narrowed);
+            }
         }
     }
 
@@ -424,15 +498,26 @@ void check_property_reads(const stardata::ast::File& file, const SchemaSet& set,
         // §8.8.3: a narrowing in one stage narrows every later one. The
         // sequence comes from the schema, so this loop is the whole of what
         // this library knows about stages -- which is that they are ordered.
+        //
+        // A stage is a condition block or a `text`/`text_or_script` value --
+        // `successMsg` and `failureMsg` are stages too (builtin/schema.star's
+        // `stage_order`), which is what lets a narrowing established in
+        // `restrictions` reach the message that reports the failure. Neither
+        // shape is assumed: whichever one `as_block`/`as_scalar` actually
+        // returns decides which walk runs.
         Narrowing narrowed;
         for (const std::string& stage : schema->stage_order) {
             const std::optional<stardata::ast::Value> stage_value = block->value_of(stage);
-            const std::optional<Block> stage_block =
-                stage_value ? stage_value->as_block() : std::nullopt;
-            if (!stage_block) {
+            if (!stage_value) {
                 continue;
             }
-            walk.conditions(*stage_block, narrowed, /*may_narrow=*/true);
+            if (const std::optional<Block> stage_block = stage_value->as_block()) {
+                walk.conditions(*stage_block, narrowed, /*may_narrow=*/true);
+                continue;
+            }
+            if (const std::optional<Scalar> scalar = stage_value->as_scalar()) {
+                walk.check_template(*scalar, narrowed);
+            }
         }
     }
 }

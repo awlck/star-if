@@ -103,6 +103,7 @@ enum class Code : std::uint8_t {
     PropMaybeAbsent,          // E-PROP-MAYBE-ABSENT     §8.8.3  property read is possibly absent, not narrowed
     PropDefTypeMismatch,      // E-PROPDEF-TYPE-MISMATCH §8.7    local prop_def redeclares with a different type
     PropDefRedundant,         // W-PROPDEF-REDUNDANT     §8.7    local prop_def redeclares with the same type
+    PropUnknown,              // E-PROP-UNKNOWN          §7.4    instantiation key names neither a property nor a universal key
     NamesSubset,              // W-NAMES-SUBSET          proposal §6.4.1  object's names are a strict subset of another's
     GlobalUnused,             // W-GLOBAL-UNUSED         §6.4    declared global/const never read
     ContainmentCycle,         // E-CONTAINMENT-CYCLE     §8.5    containment cycle

@@ -1376,6 +1376,8 @@ Narrowing does **not** survive an `OR` branch, since only one branch is known to
 
 If none of the three applies, the read is a compile error naming the property, the slot's static type, and the classes that do declare it, with a fix-it offering `has_prop`.
 
+This holds identically for a read inside a message (`successMsg`, `failureMsg`, or any other `text`-typed stage value) — `[noun.damage]` is checked exactly like the condition-key form above, using whatever the earlier stages narrowed. The one difference is the fix-it: `has_prop = …` is condition-block syntax, and a message has no statement to rewrite into one, so a template read gets the diagnostic and the "did you mean" suggestion without it.
+
 **Why not runtime-only.** Deferring the whole question to run time would move a large class of authoring error out of the build and into play, which is precisely the trade the schema layer exists to refuse. **Why not static-only.** Narrowing cannot reach into scripts, where the slot is a dynamic Lua value, and there are honest cases — a property some subclasses add — where the check genuinely belongs at run time. The layering keeps the compile-time guarantee where it is achievable and makes the runtime case visible in the source.
 
 #### 8.8.4 Runtime behaviour

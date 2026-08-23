@@ -274,6 +274,115 @@ TEST_CASE("narrowing does not escape an OR or a NOT", "[starcore][narrowing]") {
     CHECK(with_not.reported(diag::Code::PropMaybeAbsent));
 }
 
+// --- message templates (spec §9, backlog F12) ---------------------------
+//
+// §8.8.3's own worked example lives here: `successMsg = "It is rated for
+// [noun.damage] damage."`. `successMsg` and `failureMsg` are stages exactly
+// like `conditions` and `restrictions` (builtin/schema.star's `stage_order`),
+// so a read inside one is checked the same way, using the narrowing already
+// in effect -- except the `has_prop` fix-it, which is condition-block syntax
+// and has no message text to rewrite into.
+
+TEST_CASE("a definitely-absent read inside a message is an error",
+          "[starcore][narrowing][template]") {
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    successMsg = \"It has a [noun.shineyness] look.\"\n"
+                         "}\n");
+    REQUIRE(world.reported(diag::Code::PropAbsent));
+}
+
+TEST_CASE("a possibly-absent read inside a message has no has_prop fix-it",
+          "[starcore][narrowing][template]") {
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    successMsg = \"Its polish reads [noun.polish].\"\n"
+                         "}\n");
+    REQUIRE(world.reported(diag::Code::PropMaybeAbsent));
+    for (const diag::Diagnostic& diagnostic : world.sink().diagnostics()) {
+        if (diagnostic.code() == diag::Code::PropMaybeAbsent) {
+            CHECK(diagnostic.fix_its().empty());
+        }
+    }
+}
+
+TEST_CASE("a definitely-present read inside a message is silent",
+          "[starcore][narrowing][template]") {
+    const Analysed world("action = {\n"
+                         "    id         = buff\n"
+                         "    match      = { \"buff [class:fancy_gadget]\" }\n"
+                         "    successMsg = \"Its polish reads [noun.polish].\"\n"
+                         "}\n");
+    CHECK(world.count() == 0);
+}
+
+TEST_CASE("narrowing from an earlier stage flows into a message",
+          "[starcore][narrowing][template]") {
+    // The point of the whole feature: `when` narrows two stages before
+    // `successMsg` runs, and §8.8.3 has that narrowing survive both hops.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    when       = { noun = { of_class = fancy_gadget } }\n"
+                         "    successMsg = \"Its polish reads [noun.polish].\"\n"
+                         "}\n");
+    CHECK(world.count() == 0);
+}
+
+TEST_CASE("a path nested inside a call's arguments is still checked",
+          "[starcore][narrowing][template]") {
+    // §9.2's `Call` and `Apply` don't hide a read from this pass -- the
+    // argument is an `Expr`, not opaque text, and this pass walks it.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    successMsg = \"[describe(noun.shineyness)]\"\n"
+                         "}\n");
+    REQUIRE(world.reported(diag::Code::PropAbsent));
+}
+
+TEST_CASE("the fix-it over a message read replaces only the property, not the slot",
+          "[starcore][narrowing][template]") {
+    // Backlog F6's own rule, carried over: the fix-it span is not the
+    // diagnostic's span. `noun.polush` misspells `polish`; the correction
+    // must replace `polush` alone; replacing the whole path would delete
+    // `noun.` from the author's message.
+    const std::string suffix = "rule = {\n"
+                               "    of_action  = inspect\n"
+                               "    when       = { noun = { of_class = fancy_gadget } }\n"
+                               "    successMsg = \"Its polish reads [noun.polush].\"\n"
+                               "}\n";
+    const Analysed world(suffix);
+
+    const diag::Diagnostic* diagnostic = nullptr;
+    for (const diag::Diagnostic& candidate : world.sink().diagnostics()) {
+        if (candidate.code() == diag::Code::PropAbsent) {
+            diagnostic = &candidate;
+        }
+    }
+    REQUIRE(diagnostic != nullptr);
+    REQUIRE(diagnostic->fix_its().size() == 1);
+    CHECK(diagnostic->fix_its()[0].replacement == "polish");
+
+    // Read the bytes under the fix-it span back out of the fixture's own
+    // source, which is what proves the span is `polush` and not
+    // `noun.polush` -- the same check backlog F6's suggestion-span test uses.
+    const std::string full_text = std::string(kWorld) + suffix;
+    const diag::FixIt& fix = diagnostic->fix_its()[0];
+    CHECK(full_text.substr(fix.span.offset, fix.span.length) == "polush");
+}
+
+TEST_CASE("a message's bracket mistake is not reported twice", "[starcore][narrowing][template]") {
+    // E-TEMPLATE-BRACKETS is the type checker's (schema/types.cpp), raised
+    // when it validates `successMsg`'s declared type. This pass re-parses
+    // the same value with a quiet sink to walk its expressions, and must not
+    // raise the same code a second time -- `Analysed` never runs the type
+    // checker at all, so any report here could only be this pass leaking it.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    successMsg = \"unbalanced [noun\"\n"
+                         "}\n");
+    CHECK_FALSE(world.reported(diag::Code::TemplateBrackets));
+}
+
 // --- the layering, asserted ---------------------------------------------
 
 TEST_CASE("the stage sequence comes from the schema, not from the code",

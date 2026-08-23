@@ -39,9 +39,15 @@ class = {
         # being contained by any of them. A door is the reason this exists.
         present_in  = set<ref<starcore.room>>
 
-        # What the parser matches and the templates print.
-        name        = text
-        synonyms    = list<identifier>
+        # What the parser matches and the templates print. `disambiguation_name`
+        # is proposal §6.4.1's authored answer to two objects sharing every
+        # name: optional, and checked only by the (unimplemented)
+        # W-NAMES-SUBSET warning that steers an author toward setting it -- but
+        # an author cannot set what no property declares, so it travels with
+        # `name` and `synonyms` rather than waiting for that warning to land.
+        name                = text
+        synonyms            = list<identifier>
+        disambiguation_name = text
     }
 }
 

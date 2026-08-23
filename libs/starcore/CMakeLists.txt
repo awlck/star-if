@@ -24,6 +24,7 @@ add_library(starcore STATIC
     src/conditions.cpp
     src/messages.cpp
     src/globals.cpp
+    src/instance_properties.cpp
 )
 add_library(starcore::starcore ALIAS starcore)
 

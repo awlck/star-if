@@ -531,12 +531,22 @@ its original, or an editor-made copy that silently drifts from what the
 library ships — and it is not this phase's to answer.
 
 **[OPEN]** `rule` has no `unique_in` (§7.2, F2d above), which is what exempts
-several rules on one trait or action from counting as duplicates of each
+several rules on one action or trait from counting as duplicates of each
 other — and the same absence means a rule a library declares has no id a
-later declaration could name to replace or remove specifically. Superseding
-the action or trait a rule is attached to replaces every rule that comes with
-it, wanted or not; there is no way to reach into somebody else's declaration
-and take out, or alter, one rule alone.
+later declaration could name to replace or remove specifically. A rule
+attaches to an action (or an event) by `of_action` / `of_event`, never to the
+trait it happens to be *written inside* — a trait's `rule` key (§8.3) is only
+a convenient place to declare one that fires for objects carrying that
+trait; the compile-time dispatch index (proposal §7.3) collects every rule in
+the loaded program by the action or event it names, regardless of which
+declaration nested it. Which makes this worse than under-replacing, not
+better: superseding the action's own declaration with `@replaces` only
+discards the rules nested directly inside *that* declaration. A rule
+contributed by some trait's declaration, naming the same action by id, is
+untouched — it keeps firing against whatever the action now is, since
+nothing about `@replaces` knows the two are related beyond the id string.
+There is no way to reach into that other declaration and take out, or alter,
+the one rule that no longer belongs.
 
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2

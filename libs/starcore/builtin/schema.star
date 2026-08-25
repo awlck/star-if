@@ -116,6 +116,7 @@ schema = {
     key = { name = advances_turn type = enum<advances_turn_enum>  default = on_success }
     key = { name = rule          type = block<rule>         arity = many }
     key = { name = doc           type = text }
+    key = { name = verb          type = map<string, string> }
 }
 
 schema = {

@@ -515,6 +515,29 @@ should not learn. A negative fixture says which side it is on with
 `# LOAD-AS core` in its header, since the same declaration is a requirement
 when core writes it and an overstep when anything else does.
 
+**[OPEN]** `@replaces` supersedes a whole declaration, and for `action` that
+means all of it — `match`, `verb`, every rule, every message — even when only
+the grammar lines are what an author actually wants to change. There is no
+`action_extension` the way there is a `class_extension`, so widening or
+narrowing an action's vocabulary today means copying the entire declaration
+and marking the copy `@replaces(lib)`, which is exactly what `tour.star`'s
+`take` and `open` do (§10, F9's E-SCHEMA-DUPLICATE pass). A graphical editor
+could make this less costly without a new mechanism: transparently copy a
+library action's declaration the first time an author touches its `match`,
+which is the same thing they would otherwise do by hand. Whether a later
+library update should still reach that action once it has been copied is a
+real question either answer to which has a cost — a copy that stops tracking
+its original, or an editor-made copy that silently drifts from what the
+library ships — and it is not this phase's to answer.
+
+**[OPEN]** `rule` has no `unique_in` (§7.2, F2d above), which is what exempts
+several rules on one trait or action from counting as duplicates of each
+other — and the same absence means a rule a library declares has no id a
+later declaration could name to replace or remove specifically. Superseding
+the action or trait a rule is attached to replaces every rule that comes with
+it, wanted or not; there is no way to reach into somebody else's declaration
+and take out, or alter, one rule alone.
+
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2
 

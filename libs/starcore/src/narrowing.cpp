@@ -63,10 +63,12 @@ constexpr std::string_view kHasProp = "has_prop";
 
 // §10.3's combinators, from starcore/conditions.hpp so that this pass and
 // F8's `failureMsg` pass cannot come to disagree about how `COUNT_AT_LEAST`
-// is spelled. `OR` and `NOT` are barriers here: §8.8.3 says narrowing "does
-// not survive an `OR` branch, since only one branch is known to have held",
-// and that a narrowing "established inside a `NOT` does not escape it".
-// `AND` is the explicit form of the default and is transparent.
+// is spelled. `OR`, `NOT` and `COUNT_AT_LEAST` are barriers: a narrowing
+// proven inside one does not survive past it (§8.8.3). That is a fact about
+// ESCAPING -- it says nothing about whether the narrowing holds while its
+// own scope is still being evaluated, which is the distinction
+// `object_scope_one` and `conditions_one` exist to get right. `AND` is the
+// explicit form of the default and is fully transparent.
 using combinator::kAnd;
 using combinator::kCountAtLeast;
 using combinator::kNot;
@@ -82,6 +84,22 @@ using combinator::kOr;
 // What each slot is narrowed to, as the walk proceeds. Keyed by slot name;
 // absent means "still whatever the grammar token said".
 using Narrowing = std::map<std::string, std::string>;
+
+// What an explicit `has_prop` has already proven, per slot (§8.8.3 case 2):
+// the property names a read of that slot no longer needs to justify any
+// other way.
+using Proven = std::map<std::string, std::vector<std::string>>;
+
+// Everything the walk has learned by a given point, bundled together because
+// both halves answer the same question -- "true assuming the scope we are
+// currently inside actually holds" -- and both stop applying at the same
+// boundary: the barrier that contains them (§8.8.3). Threading them
+// separately would make it easy to scope one correctly at a barrier and
+// forget the other; bundling them is what stops that.
+struct Scope {
+    Narrowing narrowed;
+    Proven proven;
+};
 
 [[nodiscard]] const ClassDecl* type_of(const std::string& slot, const Narrowing& narrowed,
                                        const std::vector<Slot>& slots, const SchemaSet& set) {
@@ -139,68 +157,109 @@ struct Walk {
     const std::vector<Slot>& slots;
     stardata::diag::DiagnosticSink& sink;
 
+    // One statement inside an object scope (§10.2): a narrowing predicate,
+    // an explicit `has_prop`, a nested combinator, or a property test.
+    // Factored out of `object_scope` so `OR`/`COUNT_AT_LEAST` below can call
+    // it once per alternative, each against its own copy of `scope`.
+    void object_scope_one(const std::string& slot, const Statement& statement, Scope& scope,
+                          bool may_narrow) {
+        const std::optional<std::string> key = statement.key_name();
+        if (!key || key->empty()) {
+            return;
+        }
+
+        // A narrowing predicate. `of_class` and `is` give a class; a
+        // `has_trait` gives a trait, which §8.4 resolves properties
+        // through just as well.
+        if (*key == kOfClass || *key == kHasTrait || *key == kIs) {
+            const std::string named = identifier_value(statement);
+            if (may_narrow && !named.empty() && set.find_class_or_trait(named) != nullptr) {
+                scope.narrowed[slot] = named;
+            }
+            return;
+        }
+
+        // §8.8.3 case 2: `has_prop` is "both a runtime check and a
+        // narrowing operator". It narrows one property rather than the
+        // whole type, so it is recorded separately from the class.
+        if (*key == kHasProp) {
+            const std::string named = identifier_value(statement);
+            if (may_narrow && !named.empty()) {
+                scope.proven[slot].push_back(named);
+            }
+            return;
+        }
+
+        const std::optional<stardata::ast::Value> value = statement.value();
+        const std::optional<Block> inner = value ? value->as_block() : std::nullopt;
+
+        // `NOT` wraps ONE block, evaluated with the ordinary default-AND
+        // semantics internally -- a narrowing earlier in it reaches a read
+        // later in it exactly as any conjunction's does. §8.8.3's "a
+        // narrowing established inside a NOT does not escape it" is a fact
+        // about what the rest of the walk sees afterward, not about
+        // whether NOT's own contents are internally consistent while being
+        // evaluated -- so the copy is discarded, never merged back, but the
+        // recursive call itself narrows normally.
+        if (*key == kNot) {
+            if (inner) {
+                Scope branch = scope;
+                object_scope(slot, *inner, branch, /*may_narrow=*/true);
+            }
+            return;
+        }
+
+        // §10.3: `OR` and `COUNT_AT_LEAST` hold a LIST of independent
+        // alternatives -- "at least one/n of the enclosed statements
+        // holds" -- not one shared conjunction. Each is checked against its
+        // own copy of what held going in, and a narrowing established while
+        // checking one alternative must not leak into the next: only one
+        // of them (or `n` of them) is known to actually have held, and this
+        // pass has no way to know which.
+        if (*key == kOr || *key == kCountAtLeast) {
+            if (inner) {
+                for (const Statement& alternative : inner->statements()) {
+                    Scope branch = scope;
+                    object_scope_one(slot, alternative, branch, /*may_narrow=*/true);
+                }
+            }
+            return;
+        }
+
+        // `AND` is the explicit, transparent form of a block's own default,
+        // so it operates on `scope` directly rather than a copy that would
+        // only be merged straight back in.
+        if (*key == kAnd) {
+            if (inner) {
+                object_scope(slot, *inner, scope, may_narrow);
+            }
+            return;
+        }
+
+        if (!is_comparison(statement.op_text())) {
+            return; // a binding, or a predicate this pass has no opinion about
+        }
+        // §6.6.1: a dotted key is a PATH, and only its first segment
+        // names a property of this slot -- `location.exits.north` reads
+        // `exits` on the location and then indexes a map. Whether the
+        // rest of the path resolves is §6.6's question, not §8.8's, and
+        // classifying `exits.north` as a property name would report a
+        // property nobody wrote.
+        const std::size_t dot = key->find('.');
+        const std::string property = dot == std::string::npos ? *key : key->substr(0, dot);
+        report_read(slot, property, statement.report_span(),
+                    statement.key() ? statement.key()->span() : statement.report_span(),
+                    /*offer_has_prop_fixit=*/true, scope);
+    }
+
     // One object-scoped block (§10.2): `noun = { of_class = weapon  damage > 3 }`.
     //
-    // `narrowed` is carried in and out, because a narrowing earlier in a
+    // `scope` is carried in and out, because a narrowing earlier in a
     // conjunction applies to everything after it -- §10.1's evaluation is
     // ordered and short-circuiting, which is exactly what makes that sound.
-    void object_scope(const std::string& slot, const Block& block, Narrowing& narrowed,
-                      bool may_narrow) {
+    void object_scope(const std::string& slot, const Block& block, Scope& scope, bool may_narrow) {
         for (const Statement& statement : block.statements()) {
-            const std::optional<std::string> key = statement.key_name();
-            if (!key || key->empty()) {
-                continue;
-            }
-
-            // A narrowing predicate. `of_class` and `is` give a class; a
-            // `has_trait` gives a trait, which §8.4 resolves properties
-            // through just as well.
-            if (*key == kOfClass || *key == kHasTrait || *key == kIs) {
-                const std::string named = identifier_value(statement);
-                if (may_narrow && !named.empty() && set.find_class_or_trait(named) != nullptr) {
-                    narrowed[slot] = named;
-                }
-                continue;
-            }
-
-            // §8.8.3 case 2: `has_prop` is "both a runtime check and a
-            // narrowing operator". It narrows one property rather than the
-            // whole type, so it is recorded separately from the class.
-            if (*key == kHasProp) {
-                const std::string named = identifier_value(statement);
-                if (may_narrow && !named.empty()) {
-                    proven[slot].push_back(named);
-                }
-                continue;
-            }
-
-            // A nested combinator inside an object scope.
-            if (*key == kOr || *key == kNot || *key == kAnd || *key == kCountAtLeast) {
-                const std::optional<stardata::ast::Value> value = statement.value();
-                if (const std::optional<Block> inner = value ? value->as_block() : std::nullopt) {
-                    Narrowing branch = narrowed;
-                    object_scope(slot, *inner, branch, may_narrow && *key != kOr && *key != kNot);
-                    if (*key == kAnd) {
-                        narrowed = branch; // transparent: the default, spelled out
-                    }
-                }
-                continue;
-            }
-
-            if (!is_comparison(statement.op_text())) {
-                continue; // a binding, or a predicate this pass has no opinion about
-            }
-            // §6.6.1: a dotted key is a PATH, and only its first segment
-            // names a property of this slot -- `location.exits.north` reads
-            // `exits` on the location and then indexes a map. Whether the
-            // rest of the path resolves is §6.6's question, not §8.8's, and
-            // classifying `exits.north` as a property name would report a
-            // property nobody wrote.
-            const std::size_t dot = key->find('.');
-            const std::string property = dot == std::string::npos ? *key : key->substr(0, dot);
-            report_read(slot, property, statement.report_span(),
-                        statement.key() ? statement.key()->span() : statement.report_span(),
-                        /*offer_has_prop_fixit=*/true, narrowed);
+            object_scope_one(slot, statement, scope, may_narrow);
         }
     }
 
@@ -215,13 +274,13 @@ struct Walk {
     // stage before this one -- still applies to a message exactly as it does
     // to a condition, so it is not conditioned on this flag.
     void report_read(const std::string& slot, const std::string& property, Span primary_span,
-                     Span name_span, bool offer_has_prop_fixit, const Narrowing& narrowed) {
-        const ClassDecl* type = type_of(slot, narrowed, slots, set);
+                     Span name_span, bool offer_has_prop_fixit, const Scope& scope) {
+        const ClassDecl* type = type_of(slot, scope.narrowed, slots, set);
         if (type == nullptr) {
             return; // an unknown slot; not this pass's to report
         }
-        const auto proven_here = proven.find(slot);
-        if (proven_here != proven.end() &&
+        const auto proven_here = scope.proven.find(slot);
+        if (proven_here != scope.proven.end() &&
             std::find(proven_here->second.begin(), proven_here->second.end(), property) !=
                 proven_here->second.end()) {
             return; // §8.8.3 case 2: an explicit has_prop already justified it
@@ -266,40 +325,57 @@ struct Walk {
         sink.report(std::move(diagnostic));
     }
 
+    // One statement at the top level of a condition block: a nested
+    // combinator, or a slot naming an object scope. Factored out for the
+    // identical reason `object_scope_one` is: `OR`/`COUNT_AT_LEAST` call it
+    // once per alternative, each against its own copy of `scope`.
+    void conditions_one(const Statement& statement, Scope& scope, bool may_narrow) {
+        const std::optional<std::string> key = statement.key_name();
+        const std::optional<stardata::ast::Value> value = statement.value();
+        if (!key || key->empty() || !value) {
+            return;
+        }
+        const std::optional<Block> inner = value->as_block();
+        if (!inner) {
+            return;
+        }
+
+        // See `object_scope_one`'s identical split, for the identical
+        // reason: `NOT` wraps one block and narrowing flows through it
+        // normally; `OR` and `COUNT_AT_LEAST` hold independent
+        // alternatives, each checked against its own copy so that one
+        // cannot narrow another.
+        if (*key == kNot) {
+            Scope branch = scope;
+            conditions(*inner, branch, /*may_narrow=*/true);
+            return;
+        }
+        if (*key == kOr || *key == kCountAtLeast) {
+            for (const Statement& alternative : inner->statements()) {
+                Scope branch = scope;
+                conditions_one(alternative, branch, /*may_narrow=*/true);
+            }
+            return;
+        }
+        if (*key == kAnd) {
+            conditions(*inner, scope, may_narrow);
+            return;
+        }
+
+        const std::vector<std::string>& slot_list = slot_names();
+        if (std::find(slot_list.begin(), slot_list.end(), *key) != slot_list.end()) {
+            object_scope(*key, *inner, scope, may_narrow);
+            return;
+        }
+        // Some other predicate that takes a block -- `carrying`,
+        // `global`, `script`. Their contents are §10.4's and §10.6's, and
+        // this pass has nothing to say about them.
+    }
+
     // A condition block: statements combined with implicit AND (§10.1).
-    void conditions(const Block& block, Narrowing& narrowed, bool may_narrow) {
+    void conditions(const Block& block, Scope& scope, bool may_narrow) {
         for (const Statement& statement : block.statements()) {
-            const std::optional<std::string> key = statement.key_name();
-            const std::optional<stardata::ast::Value> value = statement.value();
-            if (!key || key->empty() || !value) {
-                continue;
-            }
-            const std::optional<Block> inner = value->as_block();
-            if (!inner) {
-                continue;
-            }
-
-            if (*key == kOr || *key == kNot || *key == kCountAtLeast) {
-                // A barrier. Whatever is learned inside stays inside: only
-                // one OR branch is known to have held, and a narrowing under
-                // a NOT is a narrowing of the case that did not happen.
-                Narrowing branch = narrowed;
-                conditions(*inner, branch, /*may_narrow=*/false);
-                continue;
-            }
-            if (*key == kAnd) {
-                conditions(*inner, narrowed, may_narrow);
-                continue;
-            }
-
-            const std::vector<std::string>& slot_list = slot_names();
-            if (std::find(slot_list.begin(), slot_list.end(), *key) != slot_list.end()) {
-                object_scope(*key, *inner, narrowed, may_narrow);
-                continue;
-            }
-            // Some other predicate that takes a block -- `carrying`,
-            // `global`, `script`. Their contents are §10.4's and §10.6's, and
-            // this pass has nothing to say about them.
+            conditions_one(statement, scope, may_narrow);
         }
     }
 
@@ -310,22 +386,21 @@ struct Walk {
     // pass has an opinion about; the rest is §6.6's, the same rule
     // `object_scope` applies to a dotted condition key.
     //
-    // `narrowed` is read-only here: a template does not narrow anything, it
+    // `scope` is read-only here: a template does not narrow anything, it
     // only asks what has already been narrowed by the stages before it.
-    void walk_expr(const Expr& value, const Narrowing& narrowed) {
+    void walk_expr(const Expr& value, const Scope& scope) {
         if (value.kind == Expr::Kind::Path && !value.segments.empty()) {
             report_read(value.name, value.segments.front(), value.span, first_segment_span(value),
-                        /*offer_has_prop_fixit=*/false, narrowed);
+                        /*offer_has_prop_fixit=*/false, scope);
         }
         for (const Expr& argument : value.args) {
-            walk_expr(argument, narrowed);
+            walk_expr(argument, scope);
         }
     }
 
-    // A stage's `text`/`text_or_script` value (backlog F12's `[OPEN]`):
-    // §8.8.3's own worked example is `successMsg = "It is rated for
-    // [noun.damage] damage."`, which needed the template grammar of §9.1
-    // (backlog F7) before this could be written at all.
+    // A stage's `text`/`text_or_script` value (backlog F12): §8.8.3's own
+    // worked example is `successMsg = "It is rated for [noun.damage]
+    // damage."`.
     //
     // Re-parsed with a quiet sink deliberately: the type checker already
     // parsed this same value for E-TEMPLATE-BRACKETS (schema/types.cpp,
@@ -333,19 +408,15 @@ struct Walk {
     // reporting a bracket mistake a second time would double it in the
     // corpus. `TextIndex::walk` (starcore/text.cpp) takes the same
     // precaution for the same reason.
-    void check_template(const Scalar& scalar, const Narrowing& narrowed) {
+    void check_template(const Scalar& scalar, const Scope& scope) {
         stardata::diag::DiagnosticSink quiet;
         const Template parsed = stardata::text::parse_template(scalar, quiet);
         for (const Fragment& fragment : parsed.fragments) {
             if (fragment.expr) {
-                walk_expr(*fragment.expr, narrowed);
+                walk_expr(*fragment.expr, scope);
             }
         }
     }
-
-    // `has_prop` narrows a property rather than a type, so it is tracked
-    // beside the class narrowing rather than inside it.
-    std::map<std::string, std::vector<std::string>> proven;
 };
 
 } // namespace
@@ -493,7 +564,7 @@ void check_property_reads(const stardata::ast::File& file, const SchemaSet& set,
                 }
             }
         }
-        Walk walk{set, slots, sink, {}};
+        Walk walk{set, slots, sink};
 
         // §8.8.3: a narrowing in one stage narrows every later one. The
         // sequence comes from the schema, so this loop is the whole of what
@@ -505,18 +576,18 @@ void check_property_reads(const stardata::ast::File& file, const SchemaSet& set,
         // `restrictions` reach the message that reports the failure. Neither
         // shape is assumed: whichever one `as_block`/`as_scalar` actually
         // returns decides which walk runs.
-        Narrowing narrowed;
+        Scope scope;
         for (const std::string& stage : schema->stage_order) {
             const std::optional<stardata::ast::Value> stage_value = block->value_of(stage);
             if (!stage_value) {
                 continue;
             }
             if (const std::optional<Block> stage_block = stage_value->as_block()) {
-                walk.conditions(*stage_block, narrowed, /*may_narrow=*/true);
+                walk.conditions(*stage_block, scope, /*may_narrow=*/true);
                 continue;
             }
             if (const std::optional<Scalar> scalar = stage_value->as_scalar()) {
-                walk.check_template(*scalar, narrowed);
+                walk.check_template(*scalar, scope);
             }
         }
     }

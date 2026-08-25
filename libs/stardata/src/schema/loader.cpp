@@ -329,8 +329,8 @@ bool SchemaSet::declare_class(ClassDecl decl, const std::optional<Replaces>& rep
 
 bool SchemaSet::declare_enum(EnumDecl decl, const std::optional<Replaces>& replaces,
                              diag::DiagnosticSink& sink) {
-    const Outcome outcome = offer(
-        Declaration{"enum", decl.id, decl.owner, /*sealed=*/false, decl.span}, replaces, sink);
+    const Outcome outcome =
+        offer(Declaration{"enum", decl.id, decl.owner, decl.sealed, decl.span}, replaces, sink);
     if (outcome == Outcome::Rejected) {
         return false;
     }

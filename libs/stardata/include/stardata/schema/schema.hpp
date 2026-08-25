@@ -298,6 +298,7 @@ struct EnumDecl {
     std::string id;
     std::vector<std::string> values;
     std::string owner;
+    bool sealed = false;
     diag::Span span;
 
     [[nodiscard]] bool has_value(std::string_view value) const noexcept;

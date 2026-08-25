@@ -13,6 +13,13 @@
 # =============================================================================
 
 
+# Deliberately NOT `sealed`, unlike `advances_turn_enum` in schema.star: these
+# seven values are vocabulary the placement code
+# (libs/starcore/src/placement.cpp) reads generically off this enum rather
+# than switching on by name (backlog F2c), so a ruleset with a different
+# spatial vocabulary may supersede it wholesale with `@replaces(starcore)`
+# and get its own keywords working as sugar with no code change — see the
+# test at the bottom of tests/unit/starcore/placement_test.cpp.
 enum = {
     id     = relation_enum
     values = { in on under behind carried worn part_of }

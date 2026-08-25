@@ -686,6 +686,8 @@ std::optional<EnumDecl> read_enum(const ast::Statement& statement, std::string_v
         decl.span = id_statement->report_span();
     }
 
+    decl.sealed = flag_of(*block, "sealed");
+
     if (const std::optional<ast::Value> values = block->value_of("values")) {
         if (const std::optional<ast::Block> list = values->as_block()) {
             for (const ast::Scalar& entry : list->values()) {

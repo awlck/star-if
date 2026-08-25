@@ -76,9 +76,17 @@ schema = {
 # Proposal §7.2: an action either consumes a round when it succeeds, always,
 # or never. `never` is what "out of world" actions are — checking your
 # inventory does not give the enemy a free swing.
+#
+# `sealed`, unlike `relation_enum` (libs/starcore/builtin/object.star): these
+# three values are not vocabulary, they are the whole of what the turn
+# sequencer knows how to do with a round. A fourth value would need a hook
+# letting a script decide whether a turn advances, which does not exist yet
+# — until it does, superseding this enum could only ever produce a value the
+# engine has no behaviour for.
 enum = {
     id     = advances_turn_enum
     values = { on_success always never }
+    sealed = yes
     doc    = "Whether an action consumes a round (proposal §7.2)."
 }
 

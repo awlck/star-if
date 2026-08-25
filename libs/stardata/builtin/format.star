@@ -149,6 +149,8 @@ schema = {
 
     key = { name = id      type = identifier        required = yes  unique_in = enum }
     key = { name = values  type = list<identifier>  required = yes }
+    key = { name = sealed  type = bool
+            doc  = "Redefinition is an error naming the owner (§7.2.2)." }
     key = { name = doc     type = text }
 }
 

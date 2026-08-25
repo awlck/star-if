@@ -526,6 +526,24 @@ void check_value(std::string_view what, const ast::Value& value, const ast::Type
         return;
     }
 
+    // `block<S>` on its own only confirmed the outer shape above -- nothing
+    // walked *into* it. That is invisible right up until S is declared
+    // `top_level = yes` too (as `rule` is, so it can also stand alone) and an
+    // author writes the nested spelling: `rule` inside a `trait`'s own `rule`
+    // key went through exactly this branch, and a typo'd key inside it was
+    // silently accepted, because `validate_block` -- the function that would
+    // have caught it -- only ever ran on a statement the top-level pass
+    // reached directly. This is what makes it reach a nested one too: S's own
+    // schema, when the registry has it, checked the same way S's top-level
+    // spelling already is (closed keys, arity, required, exclusive groups,
+    // and each key's own declared type, recursively).
+    if (name == "block" && resolved.args.size() == 1) {
+        if (const Schema* nested = set.find(resolved.args[0].name)) {
+            validate_block(*block, *nested, &set, sink);
+        }
+        return;
+    }
+
     if (name != "map" || resolved.args.size() != 2) {
         return;
     }

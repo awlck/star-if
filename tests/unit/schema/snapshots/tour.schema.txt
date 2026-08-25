@@ -2,6 +2,20 @@
 # loaded as a library, on top of the core-owned set and stdlib
 # backlog F9 / H5 -- see the note on this test in corpus_test.cpp
 
+error: E-UNKNOWN-KEY: 'narrative_person' is not a key that 'project_defaults' has
+  --> tests/corpus/tour.star:95:9
+   |
+95 |         narrative_person = second     # first | second | third
+   |         ^^^^^^^^^^^^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
+
+error: E-UNKNOWN-KEY: 'narrative_tense' is not a key that 'project_defaults' has
+  --> tests/corpus/tour.star:96:9
+   |
+96 |         narrative_tense  = present    # present | past
+   |         ^^^^^^^^^^^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
+
 error: E-UNKNOWN-KEY: nothing declares 'calendar', so I don't know what this is
   --> tests/corpus/tour.star:116:1
     |

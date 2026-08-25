@@ -247,6 +247,56 @@ TEST_CASE("a map keyed by an enum checks its keys", "[schema][types]") {
     CHECK(loaded.sink.diagnostics().size() == before + 1);
 }
 
+// --- block<S>, nested -----------------------------------------------------
+
+TEST_CASE("a block<S> value is checked against S's own schema", "[schema][types]") {
+    // Before this test, `check_value` confirmed a `block<S>`-typed value was
+    // a record block and stopped -- it never looked at what was inside.
+    // Invisible for `rule`, whose two spellings (top-level, or nested inside
+    // an `action`/`trait`'s own `rule` key, both `block<rule>`) made the
+    // nested one look checked because the *other* one was: a typo'd key
+    // inside a trait's nested rule produced zero diagnostics. `rule` is real
+    // and `top_level = yes`, so `validate_block` is exactly what the nested
+    // spelling needs too -- the same closed-key, arity, required and
+    // exclusive-group checking S's top-level form already gets.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("action = { id = examine  match = { \"examine [something]\" } }\n");
+    const std::size_t before = loaded.sink.diagnostics().size();
+    loaded.load_text("trait = {\n"
+                     "    id   = probeable\n"
+                     "    rule = {\n"
+                     "        of_action   = examine\n"
+                     "        scirpt_typo = handle_it\n"
+                     "    }\n"
+                     "}\n",
+                     "a library", "probe.star");
+
+    const std::vector<const diag::Diagnostic*> reported = all_of(loaded, diag::Code::UnknownKey);
+    REQUIRE(reported.size() == 1);
+    CHECK(mentions(*reported[0], "'scirpt_typo'"));
+    CHECK(mentions(*reported[0], "'rule'"));
+    CHECK(loaded.sink.diagnostics().size() == before + 1);
+}
+
+TEST_CASE("a correctly-shaped block<S> value nested inside another is silent", "[schema][types]") {
+    // The control for the test above: the fix must not turn every ordinary
+    // nested rule into a false positive.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text("action = { id = examine  match = { \"examine [something]\" } }\n");
+    const std::size_t before = loaded.sink.diagnostics().size();
+    loaded.load_text("trait = {\n"
+                     "    id   = probeable_ok\n"
+                     "    rule = {\n"
+                     "        of_action = examine\n"
+                     "        priority  = 5\n"
+                     "    }\n"
+                     "}\n",
+                     "a library", "probe_ok.star");
+    CHECK(loaded.sink.diagnostics().size() == before);
+}
+
 TEST_CASE("flags are a list over an enum's values", "[schema][types]") {
     CHECK(accepts("flags<relation_enum>", "{ in on }"));
     CHECK(rejects("flags<relation_enum>", "{ in sideways }"));

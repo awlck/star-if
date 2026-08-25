@@ -1256,6 +1256,26 @@ replaceable — so `actor`, `self` and `speaker` are typed at the root, and ever
 read on them needs narrowing at the point of use. `location` fares better only
 because §8.8.1's answer for it, a room, has a core-owned class.
 
+**`action` no longer has a `conditions` stage; `rule` still does.**
+`stage_order` reading from the schema (above) is what made removing one form's
+stage from `builtin/schema.star` a one-line change with nothing in
+`libs/stardata` or `libs/starcore`'s dataflow to touch. The reason: `conditions`
+is silent by §10.5 — a message there is never shown — and a `rule`'s
+`conditions` failing just means that one rule does not apply, leaving the
+action's own default behaviour or another rule to answer. An `action`'s own
+`conditions` failing had no such fallback: it silently removed the action
+itself from consideration, which is a worse silence than a `rule` gating out
+one response, and can genuinely leave a player with no idea why nothing
+happened. `restrictions` was always the right place for a check like this on
+an action; `stdlib`'s `open`/`close` moved their `has_trait = openable` checks
+there, with a `failureMsg`, rather than losing the check. **[OPEN]** A later
+phase could still want something conditions-shaped at the action level — a
+TADS3/adv3-style `verify` phase during disambiguation, deciding which of
+several matching objects an action even applies to — but that is a dispatch
+mechanism, not a silent gate, and it still owes the player a message when it
+eliminates the last candidate. Nothing here designs that; this only removes
+the stage that was standing in for it without doing the job.
+
 ### F13 · The stardata/starcore boundary, formalised — **owner: both**
 **Size:** M · **Depends on:** F10 · **Before F9**, which walks the class graph
 and should be written against the settled shape.

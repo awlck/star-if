@@ -1,4 +1,4 @@
-# tokens: 5661, trivia: 6528 (whitespace elided)
+# tokens: 5676, trivia: 6546 (whitespace elided)
 0+79 comment # ==============================================...
 80+48 comment #  tour.star — the Stardata conformance corpus
 129+79 comment # ==============================================...
@@ -6025,116 +6025,134 @@
 72706+8 identifier of_class
 72715+1 operator =
 72717+6 identifier weapon
-72728+8 identifier prop_def
-72737+1 operator =
-72739+6 annotation @merge
-72746+1 punctuation {
-72748+13 identifier serial_number
-72762+1 operator =
-72764+6 identifier string
-72771+1 punctuation }
-72773+1 punctuation }
-72776+15 identifier class_extension
-72792+1 operator =
-72794+1 punctuation {
-72800+8 identifier of_class
-72809+1 operator =
-72811+5 identifier thing
-72821+8 identifier synonyms
-72830+1 operator =
-72832+7 annotation @remove
-72840+1 punctuation {
-72842+5 identifier thing
-72848+1 punctuation }
-72850+1 punctuation }
-72853+78 comment # --- 18.6 Library metadata --------------------...
-72932+76 comment # Normally in the library's own tree; included h...
-73010+7 identifier library
-73018+1 operator =
-73020+1 punctuation {
-73026+2 identifier id
-73039+1 operator =
-73041+9 identifier starscape
-73055+7 identifier version
-73068+1 operator =
-73070+7 string "1.0.0"
-73082+12 identifier display_name
-73095+1 operator =
-73097+19 lockey $lib_starscape_name
-73121+8 identifier requires
-73134+1 operator =
-73136+1 punctuation {
-73138+6 identifier stdlib
-73145+2 operator >=
-73148+7 string "1.0.0"
-73156+1 punctuation }
-73162+19 identifier uses_editor_feature
-73182+1 operator =
-73184+1 punctuation {
-73186+3 identifier rpg
-73190+6 identifier quests
-73197+8 identifier dialogue
-73206+1 punctuation }
-73212+15 identifier provides_schema
-73232+1 operator =
-73234+1 punctuation {
-73236+10 identifier stat_block
-73247+12 identifier combat_style
-73260+10 identifier loot_table
-73271+1 punctuation }
-73273+1 punctuation }
-73276+77 comment # --- 18.7 An empty file is legal; so is an empt...
-73355+6 identifier action
-73362+1 operator =
-73364+1 punctuation {
-73370+2 identifier id
-73379+1 operator =
-73381+4 identifier wait
-73390+5 identifier match
-73399+1 operator =
-73401+1 punctuation {
-73403+8 string "z/wait"
-73412+1 punctuation }
-73418+7 identifier effects
-73427+1 operator =
-73429+1 punctuation {
-73431+1 punctuation }
-73437+10 identifier successMsg
-73448+1 operator =
-73450+14 string "Time passes."
-73465+1 punctuation }
-73468+78 comment # --- 18.8 Superseding a declaration -----------...
-73547+75 comment # No declaration may be duplicated. `@replaces` ...
-73623+75 comment # naming the SOURCE is what makes it useful: if ...
-73699+76 comment # a `wait` action, or renamed it, this becomes a...
-73776+54 comment # second declaration that silently never takes e...
-73831+1 comment #
-73833+79 comment # Replacement is total — nothing is merged fro...
-73913+47 comment # class_extension and schema_extension are for.
-73961+6 identifier action
-73968+1 operator =
-73970+9 annotation @replaces
-73979+1 punctuation (
-73980+6 identifier stdlib
-73986+1 punctuation )
-73988+1 punctuation {
-73994+2 identifier id
-74005+1 operator =
-74007+4 identifier wait
-74016+5 identifier match
-74027+1 operator =
-74029+1 punctuation {
-74031+23 string "wait for/until [text]"
-74055+1 punctuation }
-74061+7 identifier effects
-74072+1 operator =
-74074+1 punctuation {
-74076+1 punctuation }
-74082+10 identifier successMsg
-74093+1 operator =
-74095+11 string "You wait."
-74107+1 punctuation }
-74110+79 comment # ==============================================...
-74190+19 comment #  End of tour.star
-74210+79 comment # ==============================================...
-74290+0 eof 
+72728+38 comment # the default, stated explicitly here:
+72771+8 identifier prop_def
+72780+1 operator =
+72782+6 annotation @merge
+72789+1 punctuation {
+72791+13 identifier serial_number
+72805+1 operator =
+72807+6 identifier string
+72814+1 punctuation }
+72816+1 punctuation }
+72819+15 identifier class_extension
+72835+1 operator =
+72837+1 punctuation {
+72843+8 identifier of_class
+72852+1 operator =
+72854+5 identifier thing
+72864+8 identifier synonyms
+72873+1 operator =
+72875+7 annotation @remove
+72883+1 punctuation {
+72885+5 identifier thing
+72891+1 punctuation }
+72893+1 punctuation }
+72896+78 comment # --- 18.6 Library metadata --------------------...
+72975+76 comment # Normally in the library's own tree; included h...
+73053+7 identifier library
+73061+1 operator =
+73063+1 punctuation {
+73069+2 identifier id
+73082+1 operator =
+73084+9 identifier starscape
+73098+7 identifier version
+73111+1 operator =
+73113+7 string "1.0.0"
+73125+12 identifier display_name
+73138+1 operator =
+73140+19 lockey $lib_starscape_name
+73164+8 identifier requires
+73177+1 operator =
+73179+1 punctuation {
+73181+6 identifier stdlib
+73188+2 operator >=
+73191+7 string "1.0.0"
+73199+1 punctuation }
+73205+19 identifier uses_editor_feature
+73225+1 operator =
+73227+1 punctuation {
+73229+3 identifier rpg
+73233+6 identifier quests
+73240+8 identifier dialogue
+73249+1 punctuation }
+73255+15 identifier provides_schema
+73275+1 operator =
+73277+1 punctuation {
+73279+10 identifier stat_block
+73290+12 identifier combat_style
+73303+10 identifier loot_table
+73314+1 punctuation }
+73316+1 punctuation }
+73319+77 comment # --- 18.7 An empty file is legal; so is an empt...
+73398+69 comment # (Not really something we can replicate in our ...
+73469+78 comment # --- 18.8 Superseding a declaration -----------...
+73548+75 comment # No declaration may be duplicated. `@replaces` ...
+73624+75 comment # naming the SOURCE is what makes it useful: if ...
+73700+76 comment # a `wait` action, or renamed it, this becomes a...
+73777+54 comment # second declaration that silently never takes e...
+73832+1 comment #
+73834+79 comment # Replacement is total — nothing is merged fro...
+73914+47 comment # class_extension and schema_extension are for.
+73962+6 identifier action
+73969+1 operator =
+73971+9 annotation @replaces
+73980+1 punctuation (
+73981+6 identifier stdlib
+73987+1 punctuation )
+73989+1 punctuation {
+73995+2 identifier id
+74006+1 operator =
+74008+4 identifier wait
+74017+5 identifier match
+74028+1 operator =
+74030+1 punctuation {
+74032+23 string "wait for/until [text]"
+74056+1 punctuation }
+74062+7 identifier effects
+74073+1 operator =
+74075+1 punctuation {
+74077+1 punctuation }
+74083+10 identifier successMsg
+74094+1 operator =
+74096+11 string "You wait."
+74108+1 punctuation }
+74111+53 comment # Adding shipboard directions to the directions ...
+74165+4 identifier enum
+74170+1 operator =
+74172+9 annotation @replaces
+74181+1 punctuation (
+74182+6 identifier stdlib
+74188+1 punctuation )
+74190+1 punctuation {
+74196+2 identifier id
+74203+1 operator =
+74205+9 identifier direction
+74219+6 identifier values
+74226+1 operator =
+74228+1 punctuation {
+74230+5 identifier north
+74236+5 identifier south
+74242+4 identifier east
+74247+4 identifier west
+74267+9 identifier northeast
+74277+9 identifier northwest
+74287+9 identifier southeast
+74297+9 identifier southwest
+74322+2 identifier up
+74325+4 identifier down
+74330+2 identifier in
+74333+3 identifier out
+74337+4 identifier fore
+74342+3 identifier aft
+74346+4 identifier port
+74351+9 identifier starboard
+74361+1 punctuation }
+74367+3 identifier doc
+74374+1 operator =
+74376+32 string "A way out of a room (§6.6.1)."
+74409+1 punctuation }
+74412+79 comment # ==============================================...
+74492+19 comment #  End of tour.star
+74512+79 comment # ==============================================...
+74592+0 eof 

@@ -1967,7 +1967,7 @@ A value of type `script` names a Starscript (Lua 5.4) function. Nothing about th
 
 ### 12.1 Scripted rules and actions
 
-A `rule` or `action` MAY replace `conditions`, `restrictions`, `effects` and `successMsg` entirely with a single `script`:
+A `rule` or `action` MAY replace its declarative stages entirely with a single `script` — `restrictions`, `effects` and `successMsg` for either, plus `conditions` for a `rule`, which has one and an `action` does not (§7.2):
 
 ```stardata
 rule = {

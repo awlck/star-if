@@ -202,7 +202,7 @@ TEST_CASE("a definitely-present read is silent", "[starcore][narrowing]") {
     const Analysed world("action = {\n"
                          "    id    = buff\n"
                          "    match = { \"buff [class:fancy_gadget]\" }\n"
-                         "    conditions = { noun = { polish > 3 } }\n"
+                         "    restrictions = { noun = { polish > 3 } }\n"
                          "}\n");
     CHECK(world.count() == 0);
 }

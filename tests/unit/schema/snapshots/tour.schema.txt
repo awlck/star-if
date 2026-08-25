@@ -2,19 +2,6 @@
 # loaded as a library, on top of the core-owned set and stdlib
 # backlog F9 / H5 -- see the note on this test in corpus_test.cpp
 
-error: E-SCHEMA-INVALID: 'wait' doesn't come from stdlib
-  --> tests/corpus/tour.star:2036:10
-     |
-2036 | action = @replaces(stdlib) {
-     |          ^^^^^^^^^^^^^^^^^
-note: it was declared by a library, so that is the name `@replaces` wants (spec §7.6)
-  --> tests/corpus/tour.star:2022:5
-     |
-2022 |     id       = wait
-     |     ^^
-fix-it: name a library instead
-  replace tests/corpus/tour.star:2036:10 with `@replaces(a library)`
-
 error: E-UNKNOWN-KEY: nothing declares 'calendar', so I don't know what this is
   --> tests/corpus/tour.star:116:1
     |
@@ -134,55 +121,12 @@ error: E-UNKNOWN-KEY: 'offstage' is not a key that 'sector' has
     |     ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
-error: E-TYPE-MISMATCH: 'aft' is not one of direction's values
-  --> tests/corpus/tour.star:592:36
-    |
-592 |     exits  = { in = airlock_hatch  aft = wayfarer_bridge }
-    |                                    ^^^
-note: this map is keyed by direction, which is north, south, east, west, northeast, northwest, southeast, southwest, ... (spec §6.2, §6.6.1)
-  --> stdlib/stdlib/classes.star:26:5
-   |
-26 |     id     = direction
-   |     ^^
-
-error: E-TYPE-MISMATCH: 'fore' is not one of direction's values
-  --> tests/corpus/tour.star:599:16
-    |
-599 |     exits  = { fore = docking_gantry }
-    |                ^^^^
-note: this map is keyed by direction, which is north, south, east, west, northeast, northwest, southeast, southwest, ... (spec §6.2, §6.6.1)
-  --> stdlib/stdlib/classes.star:26:5
-   |
-26 |     id     = direction
-   |     ^^
-
 error: E-TYPE-MISMATCH: 'present_in' is declared set<ref<starcore.room>>, and this is a block
   --> tests/corpus/tour.star:774:18
     |
 774 |     present_in = { where = { in_sector = station_alpha }  dynamic = no }
     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: set<ref<starcore.room>> takes a list of identifiers in braces (spec §6.2)
-
-error: E-UNKNOWN-KEY: 'verb' is not a key that 'action' has
-  --> tests/corpus/tour.star:880:5
-    |
-880 |     verb = { base = "take"  third = "takes"  past = "took"
-    |     ^^^^
-note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
-
-error: E-UNKNOWN-KEY: 'verb' is not a key that 'action' has
-  --> tests/corpus/tour.star:935:5
-    |
-935 |     verb     = { base = "open"  third = "opens"  past = "opened"
-    |     ^^^^
-note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
-
-error: E-UNKNOWN-KEY: 'verb' is not a key that 'action' has
-  --> tests/corpus/tour.star:1009:5
-     |
-1009 |     verb     = { base = "drink"  third = "drinks"  past = "drank"
-     |     ^^^^
-note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the identifier 'inherit'
   --> tests/corpus/tour.star:1103:18
@@ -416,22 +360,22 @@ error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the iden
 note: effect_block takes a block in braces (spec §6.2)
 
 warning: W-PROVIDES-MISMATCH: starscape lists 'stat_block' in provides_schema, and declares no such form
-  --> tests/corpus/tour.star:2016:5
+  --> tests/corpus/tour.star:2017:5
      |
-2016 |     provides_schema     = { stat_block combat_style loot_table }
+2017 |     provides_schema     = { stat_block combat_style loot_table }
      |     ^^^^^^^^^^^^^^^
 note: `provides_schema` is a manifest, so the editor's library browser and a reader can see a library's forms in one place -- it declares nothing itself (spec §13.3)
 
 warning: W-PROVIDES-MISMATCH: starscape lists 'combat_style' in provides_schema, and declares no such form
-  --> tests/corpus/tour.star:2016:5
+  --> tests/corpus/tour.star:2017:5
      |
-2016 |     provides_schema     = { stat_block combat_style loot_table }
+2017 |     provides_schema     = { stat_block combat_style loot_table }
      |     ^^^^^^^^^^^^^^^
 note: `provides_schema` is a manifest, so the editor's library browser and a reader can see a library's forms in one place -- it declares nothing itself (spec §13.3)
 
 warning: W-PROVIDES-MISMATCH: starscape declares the form 'loot_entry', and does not list it in provides_schema
-  --> tests/corpus/tour.star:2016:5
+  --> tests/corpus/tour.star:2017:5
      |
-2016 |     provides_schema     = { stat_block combat_style loot_table }
+2017 |     provides_schema     = { stat_block combat_style loot_table }
      |     ^^^^^^^^^^^^^^^
 note: the manifest is what a reader and the editor's library browser go by, so a form missing from it is a form nobody finds (spec §13.3)

@@ -2,30 +2,18 @@
 # loaded as a library, on top of the core-owned set and stdlib
 # backlog F9 / H5 -- see the note on this test in corpus_test.cpp
 
-error: E-SCHEMA-DUPLICATE: 'lockable' is declared twice
-  --> tests/corpus/tour.star:407:5
-    |
-407 |     id = lockable
-    |     ^^
-note: first declared here, by stdlib
-  --> stdlib/stdlib/traits.star:29:5
-   |
-29 |     id  = lockable
-   |     ^^
-note: if the second one is meant to supersede the first, say so: `@replaces(stdlib)` (spec §7.6)
-
 error: E-SCHEMA-INVALID: 'wait' doesn't come from stdlib
-  --> tests/corpus/tour.star:2040:10
+  --> tests/corpus/tour.star:2036:10
      |
-2040 | action = @replaces(stdlib) {
+2036 | action = @replaces(stdlib) {
      |          ^^^^^^^^^^^^^^^^^
 note: it was declared by a library, so that is the name `@replaces` wants (spec §7.6)
-  --> tests/corpus/tour.star:2026:5
+  --> tests/corpus/tour.star:2022:5
      |
-2026 |     id       = wait
+2022 |     id       = wait
      |     ^^
 fix-it: name a library instead
-  replace tests/corpus/tour.star:2040:10 with `@replaces(a library)`
+  replace tests/corpus/tour.star:2036:10 with `@replaces(a library)`
 
 error: E-UNKNOWN-KEY: nothing declares 'calendar', so I don't know what this is
   --> tests/corpus/tour.star:116:1
@@ -42,114 +30,114 @@ error: E-UNKNOWN-KEY: nothing declares 'calendar', so I don't know what this is
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: 'display_name' is not a key that 'sector' has
-  --> tests/corpus/tour.star:482:5
+  --> tests/corpus/tour.star:478:5
     |
-482 |     display_name = $sector_station_alpha
+478 |     display_name = $sector_station_alpha
     |     ^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'neighbours' is not a key that 'sector' has
-  --> tests/corpus/tour.star:483:5
+  --> tests/corpus/tour.star:479:5
     |
-483 |     neighbours   = { docking_ring }
+479 |     neighbours   = { docking_ring }
     |     ^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'on_deactivate' is not a key that 'sector' has
-  --> tests/corpus/tour.star:484:5
+  --> tests/corpus/tour.star:480:5
     |
-484 |     on_deactivate = serialize                # serialize | freeze | discard_changes | never
+480 |     on_deactivate = serialize                # serialize | freeze | discard_changes | never
     |     ^^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'offstage' is not a key that 'sector' has
-  --> tests/corpus/tour.star:485:5
+  --> tests/corpus/tour.star:481:5
     |
-485 |     offstage = {
+481 |     offstage = {
     |     ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'display_name' is not a key that 'sector' has
-  --> tests/corpus/tour.star:493:5
+  --> tests/corpus/tour.star:489:5
     |
-493 |     display_name  = $sector_docking_ring
+489 |     display_name  = $sector_docking_ring
     |     ^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'neighbours' is not a key that 'sector' has
-  --> tests/corpus/tour.star:494:5
+  --> tests/corpus/tour.star:490:5
     |
-494 |     neighbours    = { station_alpha }
+490 |     neighbours    = { station_alpha }
     |     ^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'on_deactivate' is not a key that 'sector' has
-  --> tests/corpus/tour.star:495:5
+  --> tests/corpus/tour.star:491:5
     |
-495 |     on_deactivate = serialize
+491 |     on_deactivate = serialize
     |     ^^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'offstage' is not a key that 'sector' has
-  --> tests/corpus/tour.star:496:5
+  --> tests/corpus/tour.star:492:5
     |
-496 |     offstage      = { model = catch_up }
+492 |     offstage      = { model = catch_up }
     |     ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'display_name' is not a key that 'sector' has
-  --> tests/corpus/tour.star:504:5
+  --> tests/corpus/tour.star:500:5
     |
-504 |     display_name  = $sector_wayfarer
+500 |     display_name  = $sector_wayfarer
     |     ^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'on_deactivate' is not a key that 'sector' has
-  --> tests/corpus/tour.star:505:5
+  --> tests/corpus/tour.star:501:5
     |
-505 |     on_deactivate = never
+501 |     on_deactivate = never
     |     ^^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'offstage' is not a key that 'sector' has
-  --> tests/corpus/tour.star:506:5
+  --> tests/corpus/tour.star:502:5
     |
-506 |     offstage      = { model = continuous  script = wayfarer_systems_tick }
+502 |     offstage      = { model = continuous  script = wayfarer_systems_tick }
     |     ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'display_name' is not a key that 'sector' has
-  --> tests/corpus/tour.star:512:5
+  --> tests/corpus/tour.star:508:5
     |
-512 |     display_name  = $sector_surface
+508 |     display_name  = $sector_surface
     |     ^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'local_clock' is not a key that 'sector' has
-  --> tests/corpus/tour.star:513:5
+  --> tests/corpus/tour.star:509:5
     |
-513 |     local_clock   = { calendar = kepler_iv  offset = "+04:30" }
+509 |     local_clock   = { calendar = kepler_iv  offset = "+04:30" }
     |     ^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'on_deactivate' is not a key that 'sector' has
-  --> tests/corpus/tour.star:514:5
+  --> tests/corpus/tour.star:510:5
     |
-514 |     on_deactivate = serialize
+510 |     on_deactivate = serialize
     |     ^^^^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'offstage' is not a key that 'sector' has
-  --> tests/corpus/tour.star:515:5
+  --> tests/corpus/tour.star:511:5
     |
-515 |     offstage      = { model = simulate }     # expensive, correct, opt-in
+511 |     offstage      = { model = simulate }     # expensive, correct, opt-in
     |     ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-TYPE-MISMATCH: 'aft' is not one of direction's values
-  --> tests/corpus/tour.star:596:36
+  --> tests/corpus/tour.star:592:36
     |
-596 |     exits  = { in = airlock_hatch  aft = wayfarer_bridge }
+592 |     exits  = { in = airlock_hatch  aft = wayfarer_bridge }
     |                                    ^^^
 note: this map is keyed by direction, which is north, south, east, west, northeast, northwest, southeast, southwest, ... (spec §6.2, §6.6.1)
   --> stdlib/stdlib/classes.star:26:5
@@ -158,9 +146,9 @@ note: this map is keyed by direction, which is north, south, east, west, northea
    |     ^^
 
 error: E-TYPE-MISMATCH: 'fore' is not one of direction's values
-  --> tests/corpus/tour.star:603:16
+  --> tests/corpus/tour.star:599:16
     |
-603 |     exits  = { fore = docking_gantry }
+599 |     exits  = { fore = docking_gantry }
     |                ^^^^
 note: this map is keyed by direction, which is north, south, east, west, northeast, northwest, southeast, southwest, ... (spec §6.2, §6.6.1)
   --> stdlib/stdlib/classes.star:26:5
@@ -169,281 +157,281 @@ note: this map is keyed by direction, which is north, south, east, west, northea
    |     ^^
 
 error: E-TYPE-MISMATCH: 'present_in' is declared set<ref<starcore.room>>, and this is a block
-  --> tests/corpus/tour.star:778:18
+  --> tests/corpus/tour.star:774:18
     |
-778 |     present_in = { where = { in_sector = station_alpha }  dynamic = no }
+774 |     present_in = { where = { in_sector = station_alpha }  dynamic = no }
     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: set<ref<starcore.room>> takes a list of identifiers in braces (spec §6.2)
 
 error: E-UNKNOWN-KEY: 'verb' is not a key that 'action' has
-  --> tests/corpus/tour.star:884:5
+  --> tests/corpus/tour.star:880:5
     |
-884 |     verb = { base = "take"  third = "takes"  past = "took"
+880 |     verb = { base = "take"  third = "takes"  past = "took"
     |     ^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'verb' is not a key that 'action' has
-  --> tests/corpus/tour.star:939:5
+  --> tests/corpus/tour.star:935:5
     |
-939 |     verb     = { base = "open"  third = "opens"  past = "opened"
+935 |     verb     = { base = "open"  third = "opens"  past = "opened"
     |     ^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'verb' is not a key that 'action' has
-  --> tests/corpus/tour.star:1013:5
+  --> tests/corpus/tour.star:1009:5
      |
-1013 |     verb     = { base = "drink"  third = "drinks"  past = "drank"
+1009 |     verb     = { base = "drink"  third = "drinks"  past = "drank"
      |     ^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1107:18
+  --> tests/corpus/tour.star:1103:18
      |
-1107 |     effects    = inherit                # do not change the action's effects
+1103 |     effects    = inherit                # do not change the action's effects
      |                  ^^^^^^^
 note: effect_block takes a block in braces (spec §6.2)
 
 error: E-UNKNOWN-KEY: 'script' is not a key that 'rule' has
-  --> tests/corpus/tour.star:1326:5
+  --> tests/corpus/tour.star:1322:5
      |
-1326 |     script    = handle_cursed_take
+1322 |     script    = handle_cursed_take
      |     ^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1337:17
+  --> tests/corpus/tour.star:1333:17
      |
-1337 |     effects   = inherit
+1333 |     effects   = inherit
      |                 ^^^^^^^
 note: effect_block takes a block in braces (spec §6.2)
 
 error: E-UNKNOWN-KEY: 'phase' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1396:35
+  --> tests/corpus/tour.star:1392:35
      |
-1396 | turn_hook = { id = ss_upkeep      phase = upkeep      priority = 100
+1392 | turn_hook = { id = ss_upkeep      phase = upkeep      priority = 100
      |                                   ^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'priority' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1396:55
+  --> tests/corpus/tour.star:1392:55
      |
-1396 | turn_hook = { id = ss_upkeep      phase = upkeep      priority = 100
+1392 | turn_hook = { id = ss_upkeep      phase = upkeep      priority = 100
      |                                                       ^^^^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
+
+error: E-UNKNOWN-KEY: 'script' is not a key that 'turn_hook' has
+  --> tests/corpus/tour.star:1393:15
+     |
+1393 |               script = ss_tick_effects }
+     |               ^^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
+
+error: E-UNKNOWN-KEY: 'phase' is not a key that 'turn_hook' has
+  --> tests/corpus/tour.star:1395:35
+     |
+1395 | turn_hook = { id = ss_initiative  phase = initiative  priority = 100
+     |                                   ^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
+
+error: E-UNKNOWN-KEY: 'priority' is not a key that 'turn_hook' has
+  --> tests/corpus/tour.star:1395:55
+     |
+1395 | turn_hook = { id = ss_initiative  phase = initiative  priority = 100
+     |                                                       ^^^^^^^^
+note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
+
+error: E-UNKNOWN-KEY: 'conditions' is not a key that 'turn_hook' has
+  --> tests/corpus/tour.star:1396:15
+     |
+1396 |               conditions = { any_actor = { in_combat == yes } }
+     |               ^^^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'script' is not a key that 'turn_hook' has
   --> tests/corpus/tour.star:1397:15
      |
-1397 |               script = ss_tick_effects }
+1397 |               script = ss_roll_initiative }
      |               ^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'phase' is not a key that 'turn_hook' has
   --> tests/corpus/tour.star:1399:35
      |
-1399 | turn_hook = { id = ss_initiative  phase = initiative  priority = 100
+1399 | turn_hook = { id = ss_reaction    phase = reaction    priority = 100
      |                                   ^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'priority' is not a key that 'turn_hook' has
   --> tests/corpus/tour.star:1399:55
      |
-1399 | turn_hook = { id = ss_initiative  phase = initiative  priority = 100
+1399 | turn_hook = { id = ss_reaction    phase = reaction    priority = 100
      |                                                       ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
-error: E-UNKNOWN-KEY: 'conditions' is not a key that 'turn_hook' has
+error: E-UNKNOWN-KEY: 'script' is not a key that 'turn_hook' has
   --> tests/corpus/tour.star:1400:15
      |
-1400 |               conditions = { any_actor = { in_combat == yes } }
-     |               ^^^^^^^^^^
-note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
-
-error: E-UNKNOWN-KEY: 'script' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1401:15
-     |
-1401 |               script = ss_roll_initiative }
+1400 |               script = ss_offer_reactions }
      |               ^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'phase' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1403:35
+  --> tests/corpus/tour.star:1402:35
      |
-1403 | turn_hook = { id = ss_reaction    phase = reaction    priority = 100
+1402 | turn_hook = { id = ss_round_end   phase = round_end   priority = 100
      |                                   ^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'priority' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1403:55
+  --> tests/corpus/tour.star:1402:55
      |
-1403 | turn_hook = { id = ss_reaction    phase = reaction    priority = 100
+1402 | turn_hook = { id = ss_round_end   phase = round_end   priority = 100
      |                                                       ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'script' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1404:15
+  --> tests/corpus/tour.star:1403:15
      |
-1404 |               script = ss_offer_reactions }
+1403 |               script = ss_end_of_round }
      |               ^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'phase' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1406:35
+  --> tests/corpus/tour.star:1406:40
      |
-1406 | turn_hook = { id = ss_round_end   phase = round_end   priority = 100
-     |                                   ^^^^^
+1406 | turn_hook = { id = ss_combat_response  phase = round_start  priority = 90
+     |                                        ^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'priority' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1406:55
+  --> tests/corpus/tour.star:1406:61
      |
-1406 | turn_hook = { id = ss_round_end   phase = round_end   priority = 100
-     |                                                       ^^^^^^^^
+1406 | turn_hook = { id = ss_combat_response  phase = round_start  priority = 90
+     |                                                             ^^^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: 'script' is not a key that 'turn_hook' has
   --> tests/corpus/tour.star:1407:15
      |
-1407 |               script = ss_end_of_round }
-     |               ^^^^^^
-note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
-
-error: E-UNKNOWN-KEY: 'phase' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1410:40
-     |
-1410 | turn_hook = { id = ss_combat_response  phase = round_start  priority = 90
-     |                                        ^^^^^
-note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
-
-error: E-UNKNOWN-KEY: 'priority' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1410:61
-     |
-1410 | turn_hook = { id = ss_combat_response  phase = round_start  priority = 90
-     |                                                             ^^^^^^^^
-note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
-
-error: E-UNKNOWN-KEY: 'script' is not a key that 'turn_hook' has
-  --> tests/corpus/tour.star:1411:15
-     |
-1411 |               script = ss_dispatch_combat_response }
+1407 |               script = ss_dispatch_combat_response }
      |               ^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
 
 error: E-UNKNOWN-KEY: nothing declares 'quest', so I don't know what this is
-  --> tests/corpus/tour.star:1418:1
+  --> tests/corpus/tour.star:1414:1
      |
-1418 | quest = {
+1414 | quest = {
      | ^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'quest', so I don't know what this is
-  --> tests/corpus/tour.star:1457:1
+  --> tests/corpus/tour.star:1453:1
      |
-1457 | quest = {
+1453 | quest = {
      | ^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'dialogue', so I don't know what this is
-  --> tests/corpus/tour.star:1475:1
+  --> tests/corpus/tour.star:1471:1
      |
-1475 | dialogue = {
+1471 | dialogue = {
      | ^^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'dialogue', so I don't know what this is
-  --> tests/corpus/tour.star:1576:1
+  --> tests/corpus/tour.star:1572:1
      |
-1576 | dialogue = {
+1572 | dialogue = {
      | ^^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'goal_def', so I don't know what this is
-  --> tests/corpus/tour.star:1622:1
+  --> tests/corpus/tour.star:1618:1
      |
-1622 | goal_def = {
+1618 | goal_def = {
      | ^^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'goal_def', so I don't know what this is
-  --> tests/corpus/tour.star:1633:1
+  --> tests/corpus/tour.star:1629:1
      |
-1633 | goal_def = {
+1629 | goal_def = {
      | ^^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'schedule', so I don't know what this is
-  --> tests/corpus/tour.star:1653:1
+  --> tests/corpus/tour.star:1649:1
      |
-1653 | schedule = {
+1649 | schedule = {
      | ^^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'schedule', so I don't know what this is
-  --> tests/corpus/tour.star:1664:1
+  --> tests/corpus/tour.star:1660:1
      |
-1664 | schedule = {
+1660 | schedule = {
      | ^^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'bark_table', so I don't know what this is
-  --> tests/corpus/tour.star:1673:1
+  --> tests/corpus/tour.star:1669:1
      |
-1673 | bark_table = {
+1669 | bark_table = {
      | ^^^^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'party', so I don't know what this is
-  --> tests/corpus/tour.star:1686:1
+  --> tests/corpus/tour.star:1682:1
      |
-1686 | party = {
+1682 | party = {
      | ^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-UNKNOWN-KEY: nothing declares 'lexicon', so I don't know what this is
-  --> tests/corpus/tour.star:1713:1
+  --> tests/corpus/tour.star:1709:1
      |
-1713 | lexicon = {
+1709 | lexicon = {
      | ^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
 
 error: E-TYPE-MISMATCH: 'conditions' is declared condition_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1989:20
+  --> tests/corpus/tour.star:1985:20
      |
-1989 |     conditions   = inherit              # identical to omitting the statement
+1985 |     conditions   = inherit              # identical to omitting the statement
      |                    ^^^^^^^
 note: condition_block takes a block in braces (spec §6.2)
 
 error: E-TYPE-MISMATCH: 'restrictions' is declared condition_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1990:20
+  --> tests/corpus/tour.star:1986:20
      |
-1990 |     restrictions = inherit
+1986 |     restrictions = inherit
      |                    ^^^^^^^
 note: condition_block takes a block in braces (spec §6.2)
 
 error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1991:20
+  --> tests/corpus/tour.star:1987:20
      |
-1991 |     effects      = inherit
+1987 |     effects      = inherit
      |                    ^^^^^^^
 note: effect_block takes a block in braces (spec §6.2)
 
 warning: W-PROVIDES-MISMATCH: starscape lists 'stat_block' in provides_schema, and declares no such form
-  --> tests/corpus/tour.star:2020:5
+  --> tests/corpus/tour.star:2016:5
      |
-2020 |     provides_schema     = { stat_block combat_style loot_table }
+2016 |     provides_schema     = { stat_block combat_style loot_table }
      |     ^^^^^^^^^^^^^^^
 note: `provides_schema` is a manifest, so the editor's library browser and a reader can see a library's forms in one place -- it declares nothing itself (spec §13.3)
 
 warning: W-PROVIDES-MISMATCH: starscape lists 'combat_style' in provides_schema, and declares no such form
-  --> tests/corpus/tour.star:2020:5
+  --> tests/corpus/tour.star:2016:5
      |
-2020 |     provides_schema     = { stat_block combat_style loot_table }
+2016 |     provides_schema     = { stat_block combat_style loot_table }
      |     ^^^^^^^^^^^^^^^
 note: `provides_schema` is a manifest, so the editor's library browser and a reader can see a library's forms in one place -- it declares nothing itself (spec §13.3)
 
 warning: W-PROVIDES-MISMATCH: starscape declares the form 'loot_entry', and does not list it in provides_schema
-  --> tests/corpus/tour.star:2020:5
+  --> tests/corpus/tour.star:2016:5
      |
-2020 |     provides_schema     = { stat_block combat_style loot_table }
+2016 |     provides_schema     = { stat_block combat_style loot_table }
      |     ^^^^^^^^^^^^^^^
 note: the manifest is what a reader and the editor's library browser go by, so a form missing from it is a form nobody finds (spec §13.3)

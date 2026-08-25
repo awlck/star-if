@@ -56,7 +56,7 @@
 #  universal keys) but which backlog F11's permitted-key check does not yet
 #  resolve: §8.4 step 2, "traits mixed into the object directly," is read by
 #  nothing today (see the note on `check_instantiation` in
-#  libs/stardata/include/stardata/schema/types.hpp). `lock_key` and
+#  libs/stardata/include/stardata/schema/types.hpp). `key_item` and
 #  `volume_ml` are real properties of the traits actually mixed in, not typos,
 #  and §9.1's two-sided `airlock_hatch` similarly writes `side`, which is
 #  proposal §5.7's two-sided-door facet -- Phase 2 vocabulary with no schema
@@ -403,15 +403,11 @@ trait = @replaces(stdlib) {
     }
 }
 
-trait = {
-    id = lockable
-    prop_def = {
-        locked   = bool
-        lock_key = ref<thing>
-    }
-    locked   = no
-    lock_key = none                      # `none` is distinct from `inherit`
-}
+# `lockable` is not declared here either: it is stdlib's own
+# (stdlib/stdlib/traits.star), with no addition this file needs -- unlike
+# `openable`, so it is deleted outright rather than kept via `@replaces`.
+# stdlib's version names the key property `key_item`, not this section's
+# former `lock_key`; every instantiation below uses stdlib's name.
 
 trait = {
     id = portable
@@ -629,7 +625,7 @@ container = {
     synonyms = { box ornate }
     name     = $thing_ornate_box
     traits   = { openable lockable portable }
-    lock_key = brass_key
+    key_item = brass_key
     capacity = 3
 }
 

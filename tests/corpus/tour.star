@@ -29,6 +29,19 @@
 #  specification appears somewhere below. See §18 for the ones that have no
 #  natural home in a scenario.
 #
+#  THIS FILE LOADS ON TOP OF libs/starcore/builtin/ AND stdlib/stdlib/, as a
+#  game project does (spec §13.2) -- it did not always. Early drafts of this
+#  file predate both directories and declared their own `relation_enum`,
+#  `container`, `take`, and the rest, as a "target image" of what a game file
+#  could look like before "who declares what" was a question with an answer.
+#  Those declarations are gone now that there is a real starcore and a real
+#  stdlib to declare them: a plain re-declaration of something core or stdlib
+#  already provides is deleted rather than kept (backlog F9's
+#  E-SCHEMA-DUPLICATE), and the handful of actual, intentional overrides use
+#  `@replaces` and say in a comment what they add over the library's own
+#  version -- `take` and `open` in §10 want richer grammar than stdlib's
+#  defaults, `door` wants `fixed_in_place` on top of stdlib's, and so on.
+#
 #  Checked by: python3 tests/check_stardata.py --check-docs --self-test --strict
 #
 #  §18 declares loc entries purely to demonstrate string syntax, and §17
@@ -137,20 +150,14 @@ calendar = {
 # =============================================================================
 #  3. ENUMERATIONS                                               (spec §6.2)
 # =============================================================================
+#  `relation_enum` (§8.5) and `advances_turn_enum` (proposal §7.2) are not
+#  declared here: both are starcore's own, from libs/starcore/builtin/, and
+#  this file loads on top of the built-in set. See the note at the top of
+#  this file on tour.star's relationship to starcore and stdlib.
 
 enum = {
     id     = condition_enum
     values = { breathable toxic underwater vacuum }
-}
-
-enum = {
-    id     = relation_enum
-    values = { in on under behind carried worn part_of }
-}
-
-enum = {
-    id     = advances_turn_enum
-    values = { on_success always never }
 }
 
 enum = {
@@ -322,24 +329,9 @@ class_extension = {
 }
 
 # --- 6.2 New classes --------------------------------------------------------
-
-class = {
-    id       = container
-    of_class = thing
-    prop_def = {
-        capacity         = int
-        holding_relation = enum<relation_enum>
-    }
-    capacity         = 10
-    holding_relation = in
-}
-
-class = {
-    id       = supporter
-    of_class = thing
-    prop_def = { holding_relation = enum<relation_enum> }
-    holding_relation = on
-}
+# `container` and `supporter` are not declared here: both are stdlib's
+# (stdlib/stdlib/classes.star), with the same properties this section used to
+# redeclare, and `container` additionally carries the `openable` trait.
 
 class = {
     id       = outdoors_room
@@ -382,8 +374,12 @@ class = {
 
 # --- 6.3 Traits -------------------------------------------------------------
 # Orthogonal capability bundles. A class has one parent but many traits.
-
-trait = {
+#
+# `openable` is stdlib's own (stdlib/stdlib/traits.star), with the same
+# `prop_def` this section used to redeclare outright -- `@replaces(stdlib)`
+# supersedes it here only to attach the demonstration rule below, which
+# stdlib's own declaration does not carry.
+trait = @replaces(stdlib) {
     id = openable
     # A prop_def entry may be a bare type or a block carrying markers. The
     # engine never learns the name `open`; it learns which properties affect
@@ -467,7 +463,10 @@ class = {
     resolve  = { open = openable }
 }
 
-class = {
+# stdlib's own `door` (stdlib/stdlib/classes.star) already has `traits =
+# { openable lockable }`; `@replaces(stdlib)` supersedes it here only to add
+# `fixed_in_place`, so a door is not itself something an actor can pick up.
+class = @replaces(stdlib) {
     id       = door
     of_class = thing
     traits   = { openable lockable fixed_in_place }
@@ -863,8 +862,12 @@ room = { id = command_bridge_stub  sector = station_alpha  name = $room_bridge
 # =============================================================================
 #  10. ACTIONS                                            (spec §10, §11, §7.2)
 # =============================================================================
+# `take` and `open` supersede stdlib's own (stdlib/stdlib/actions.star) with
+# `@replaces(stdlib)`, the same mechanism §18.8 demonstrates explicitly for
+# `wait` -- this section wants the richer grammar and messages these two
+# actions exercise, not stdlib's plainer defaults.
 
-action = {
+action = @replaces(stdlib) {
     id = take
     # A list block of strings. `/` gives word-level alternatives;
     # `[something]` must resolve to an object in scope.
@@ -930,7 +933,7 @@ action = {
     successMsg = "You take [the noun] from [the second]."
 }
 
-action = {
+action = @replaces(stdlib) {
     id       = open
     match    = { "open [something]"  "uncover/unwrap [something]" }
     verb     = { base = "open"  third = "opens"  past = "opened"

@@ -515,38 +515,11 @@ should not learn. A negative fixture says which side it is on with
 `# LOAD-AS core` in its header, since the same declaration is a requirement
 when core writes it and an overstep when anything else does.
 
-**[OPEN]** `@replaces` supersedes a whole declaration, and for `action` that
-means all of it — `match`, `verb`, every rule, every message — even when only
-the grammar lines are what an author actually wants to change. There is no
-`action_extension` the way there is a `class_extension`, so widening or
-narrowing an action's vocabulary today means copying the entire declaration
-and marking the copy `@replaces(lib)`, which is exactly what `tour.star`'s
-`take` and `open` do (§10, F9's E-SCHEMA-DUPLICATE pass). A graphical editor
-could make this less costly without a new mechanism: transparently copy a
-library action's declaration the first time an author touches its `match`,
-which is the same thing they would otherwise do by hand. Whether a later
-library update should still reach that action once it has been copied is a
-real question either answer to which has a cost — a copy that stops tracking
-its original, or an editor-made copy that silently drifts from what the
-library ships — and it is not this phase's to answer.
-
-**[OPEN]** `rule` has no `unique_in` (§7.2, F2d above), which is what exempts
-several rules on one action or trait from counting as duplicates of each
-other — and the same absence means a rule a library declares has no id a
-later declaration could name to replace or remove specifically. A rule
-attaches to an action (or an event) by `of_action` / `of_event`, never to the
-trait it happens to be *written inside* — a trait's `rule` key (§8.3) is only
-a convenient place to declare one that fires for objects carrying that
-trait; the compile-time dispatch index (proposal §7.3) collects every rule in
-the loaded program by the action or event it names, regardless of which
-declaration nested it. Which makes this worse than under-replacing, not
-better: superseding the action's own declaration with `@replaces` only
-discards the rules nested directly inside *that* declaration. A rule
-contributed by some trait's declaration, naming the same action by id, is
-untouched — it keeps firing against whatever the action now is, since
-nothing about `@replaces` knows the two are related beyond the id string.
-There is no way to reach into that other declaration and take out, or alter,
-the one rule that no longer belongs.
+**[OPEN, moved]** Two gaps this section's mechanism surfaced — editing only
+an action's grammar without copying the whole declaration, and replacing or
+removing one rule a library declared without disturbing the rest — are
+beyond what Phase 0's exit criterion needs settled, and are tracked in
+`docs/future-backlog.md` instead (the second now has a proposed design).
 
 ### F3 · Schema registry and key validation
 **Size:** M · **Depends on:** F2
@@ -1268,13 +1241,10 @@ itself from consideration, which is a worse silence than a `rule` gating out
 one response, and can genuinely leave a player with no idea why nothing
 happened. `restrictions` was always the right place for a check like this on
 an action; `stdlib`'s `open`/`close` moved their `has_trait = openable` checks
-there, with a `failureMsg`, rather than losing the check. **[OPEN]** A later
-phase could still want something conditions-shaped at the action level — a
-TADS3/adv3-style `verify` phase during disambiguation, deciding which of
-several matching objects an action even applies to — but that is a dispatch
-mechanism, not a silent gate, and it still owes the player a message when it
-eliminates the last candidate. Nothing here designs that; this only removes
-the stage that was standing in for it without doing the job.
+there, with a `failureMsg`, rather than losing the check. **[OPEN, moved]**
+Whether a later phase wants something conditions-shaped back at the action
+level — a TADS3/adv3-style `verify` phase during disambiguation — is tracked
+in `docs/future-backlog.md`, since nothing here designs it.
 
 ### F13 · The stardata/starcore boundary, formalised — **owner: both**
 **Size:** M · **Depends on:** F10 · **Before F9**, which walks the class graph

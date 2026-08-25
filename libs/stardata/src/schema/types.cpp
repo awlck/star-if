@@ -442,6 +442,19 @@ void check_value(std::string_view what, const ast::Value& value, const ast::Type
         return;
     }
 
+    // §5.5: `inherit` is "exactly equivalent to omitting the statement", for
+    // any key of any type -- it lexes as an identifier, which is why it
+    // already passed for a `ref`/`enum`/`text_or_script`-typed key by
+    // accident (those accept an identifier scalar anyway) and failed for
+    // everything else, `condition_block` and `effect_block` included. One
+    // check here, before the type-specific branches below, is what makes it
+    // universal rather than a coincidence of which types happen to overlap
+    // with "identifier".
+    if (const std::optional<ast::Scalar> scalar = value.as_scalar();
+        scalar && scalar->as_identifier() == "inherit") {
+        return;
+    }
+
     if (!is_block_type(name)) {
         const std::optional<ast::Scalar> scalar = value.as_scalar();
         if (!scalar) {

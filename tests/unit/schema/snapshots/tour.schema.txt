@@ -128,26 +128,12 @@ error: E-TYPE-MISMATCH: 'present_in' is declared set<ref<starcore.room>>, and th
     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: set<ref<starcore.room>> takes a list of identifiers in braces (spec §6.2)
 
-error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1103:18
-     |
-1103 |     effects    = inherit                # do not change the action's effects
-     |                  ^^^^^^^
-note: effect_block takes a block in braces (spec §6.2)
-
 error: E-UNKNOWN-KEY: 'script' is not a key that 'rule' has
   --> tests/corpus/tour.star:1322:5
      |
 1322 |     script    = handle_cursed_take
      |     ^^^^^^
 note: a form is closed unless it says otherwise, so that a mistyped key is caught rather than quietly ignored (spec §7.3)
-
-error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1333:17
-     |
-1333 |     effects   = inherit
-     |                 ^^^^^^^
-note: effect_block takes a block in braces (spec §6.2)
 
 error: E-UNKNOWN-KEY: 'phase' is not a key that 'turn_hook' has
   --> tests/corpus/tour.star:1392:35
@@ -337,27 +323,6 @@ error: E-UNKNOWN-KEY: nothing declares 'lexicon', so I don't know what this is
 1709 | lexicon = {
      | ^^^^^^^
 note: a top-level statement names either a form declared by a schema, or a class, in which case it creates one of them (spec §7.2, §7.4)
-
-error: E-TYPE-MISMATCH: 'conditions' is declared condition_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1985:20
-     |
-1985 |     conditions   = inherit              # identical to omitting the statement
-     |                    ^^^^^^^
-note: condition_block takes a block in braces (spec §6.2)
-
-error: E-TYPE-MISMATCH: 'restrictions' is declared condition_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1986:20
-     |
-1986 |     restrictions = inherit
-     |                    ^^^^^^^
-note: condition_block takes a block in braces (spec §6.2)
-
-error: E-TYPE-MISMATCH: 'effects' is declared effect_block, and this is the identifier 'inherit'
-  --> tests/corpus/tour.star:1987:20
-     |
-1987 |     effects      = inherit
-     |                    ^^^^^^^
-note: effect_block takes a block in braces (spec §6.2)
 
 warning: W-PROVIDES-MISMATCH: starscape lists 'stat_block' in provides_schema, and declares no such form
   --> tests/corpus/tour.star:2017:5

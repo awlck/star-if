@@ -174,6 +174,25 @@ TEST_CASE("a ref accepts 'none', and an identifier that names an object", "[sche
     CHECK(unknown.rejected_as(diag::Code::RefUnresolved));
 }
 
+TEST_CASE("inherit is accepted regardless of declared type", "[schema][types]") {
+    // §5.5: "It is exactly equivalent to omitting the statement" -- for any
+    // key, not only the ones whose declared type happens to accept a bare
+    // identifier already. Before this test, `action = { effects = inherit }`
+    // was rejected: `condition_block` and `effect_block` never went through
+    // the scalar check `ref`/`enum`/`text_or_script` piggy-backed `inherit`
+    // onto by accident, so the record-block branch saw `inherit` as neither
+    // record nor list and reported a mismatch. tour.star hit exactly this on
+    // three keys (backlog F9's tour.schema.txt).
+    CHECK(accepts("bool", "inherit"));
+    CHECK(accepts("int", "inherit"));
+    CHECK(accepts("text", "inherit"));
+    CHECK(accepts("list<identifier>", "inherit"));
+    CHECK(accepts("set<identifier>", "inherit"));
+    CHECK(accepts("map<identifier, identifier>", "inherit"));
+    CHECK(accepts("condition_block", "inherit"));
+    CHECK(accepts("effect_block", "inherit"));
+}
+
 // --- collections -------------------------------------------------------
 
 TEST_CASE("a list takes a list block, and checks each entry", "[schema][types]") {

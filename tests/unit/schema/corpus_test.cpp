@@ -154,6 +154,69 @@ TEST_CASE("each fixture's schema-layer diagnostics match its checked-in snapshot
     }
 }
 
+TEST_CASE("the schema layer's diagnostics on tour.star are recorded",
+          "[schema][corpus][snapshot][F9]") {
+    // Backlog F9's last `[OPEN]`, and backlog H5's exit criterion ("tour.star
+    // parses with zero diagnostics"): tour.star is loaded by every starcore
+    // pass's own valid-corpus test (placement_test.cpp, narrowing_test.cpp,
+    // globals_test.cpp, text_test.cpp, messages_test.cpp, and F11's
+    // instance_properties_test.cpp), and each checks only its OWN sink. The
+    // schema layer's diagnostics from the load itself -- `validate_block`,
+    // `check_declared_types` and the rest, run as part of `load_text` and by
+    // the two whole-program passes below -- have never been looked at by any
+    // test. This is that look.
+    //
+    // NOT an assertion of zero. F9 found roughly sixty diagnostics here on
+    // first probe, mostly `E-UNKNOWN-KEY` from forms whose schemas are
+    // thinner than the corpus that uses them (`sector` declares three keys
+    // and tour.star writes seven; `action` has no `verb`) and from
+    // later-phase vocabulary tour.star exercises ahead of its own schema
+    // (`dialogue`, `quest`, `goal_def`, `schedule`, `party`, `bark_table`,
+    // `lexicon`, `calendar`). Deciding which of those tour.star should stop
+    // demonstrating and which should get a preliminary schema stub is a
+    // separate, deliberate pass -- not this test's job. What this test does
+    // is turn "roughly sixty, last counted by hand" into a checked-in,
+    // reviewable list that a future fix moves by literally deleting lines
+    // from it, and that a future regression cannot silently reopen.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_stdlib();
+    REQUIRE(loaded.sink.error_count() == 0);
+
+    const std::filesystem::path path = test::corpus_dir() / "tour.star";
+    const std::string contents = test::read_bytes(path);
+    const std::size_t before = loaded.sink.diagnostics().size();
+    // Loaded as a library, the same way every game project ultimately is
+    // (spec §13.2 puts the project after every library, and tour.star is
+    // this repository's stand-in for one) -- and the same way the fixtures
+    // above are, for consistency within this file.
+    loaded.load_text(contents, "a library", test::corpus_name(path));
+    schema::check_requirements(loaded.set, loaded.sink);
+    schema::check_library_manifests(loaded.set, loaded.sink);
+    schema::check_declared_types(loaded.set, loaded.sink);
+
+    std::ostringstream out;
+    out << "# " << test::corpus_name(path) << '\n'
+        << "# loaded as a library, on top of the core-owned set and stdlib\n"
+        << "# backlog F9 / H5 -- see the note on this test in corpus_test.cpp\n\n";
+
+    bool first = true;
+    for (std::size_t i = before; i < loaded.sink.diagnostics().size(); ++i) {
+        if (!first) {
+            out << '\n';
+        }
+        first = false;
+        diag::render_human(out, loaded.sink.diagnostics()[i], loaded.sources, /*use_color=*/false);
+    }
+    if (first) {
+        out << "(no diagnostics)\n";
+    }
+
+    CHECK(test::check_snapshot(std::filesystem::path(STARIF_UNIT_TEST_DIR) / "schema" /
+                                   "snapshots" / "tour.schema.txt",
+                               out.str()));
+}
+
 TEST_CASE("every schema-layer code has a fixture that provokes it", "[schema][corpus]") {
     // The other direction, and the one that actually stops the gap
     // reopening: adding a code without a fixture fails here.

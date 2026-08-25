@@ -70,3 +70,10 @@ action = {
     }
     successMsg = $closed_default
 }
+
+action = {
+    id         = wait
+    match      = { "wait/z" }
+    effects    = { }
+    successMsg = "Time passes."
+}

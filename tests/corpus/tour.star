@@ -1996,6 +1996,7 @@ rule = {
 
 class_extension = {
     of_class = weapon
+    # the default, stated explicitly here:
     prop_def = @merge { serial_number = string }
 }
 
@@ -2018,12 +2019,7 @@ library = {
 
 # --- 18.7 An empty file is legal; so is an empty block ---------------------
 
-action = {
-    id       = wait
-    match    = { "z/wait" }
-    effects  = { }
-    successMsg = "Time passes."
-}
+# (Not really something we can replicate in our single-file example.)
 
 # --- 18.8 Superseding a declaration ------------------------ (spec §7.6) ---
 # No declaration may be duplicated. `@replaces` is the deliberate form, and

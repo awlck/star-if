@@ -762,11 +762,13 @@ backdrop = {
     id         = the_sky
     name       = $thing_sky
     traits     = { scenery fixed_in_place }
-    present_in = { antecourt }
+    present_in = { rooms = { antecourt } }
 }
 
 # A query form, resolved at compile time into a concrete room set. `dynamic`
-# would defer it to scope time and must be opted into explicitly.
+# would defer it to scope time and must be opted into explicitly. `rooms` and
+# `where` are an exclusive_group (spec §7.2.1, §8.6): a `presence` block
+# takes exactly one, since the two are alternative answers to "which rooms".
 backdrop = {
     id         = reactor_hum
     name       = $thing_hum

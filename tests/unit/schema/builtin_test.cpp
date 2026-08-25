@@ -106,7 +106,7 @@ TEST_CASE("the root class carries exactly the slots of spec 8.1.1", "[schema][bu
          {std::pair<const char*, const char*>{"holder", "ref<starcore.object>"},
           {"relation", "enum<relation_enum>"},
           {"sector", "ref<sector>"},
-          {"present_in", "set<ref<starcore.room>>"},
+          {"present_in", "block<presence>"},
           {"name", "text"},
           {"synonyms", "list<identifier>"}}) {
         INFO("slot: " << name);
@@ -114,6 +114,47 @@ TEST_CASE("the root class carries exactly the slots of spec 8.1.1", "[schema][bu
         REQUIRE(property != nullptr);
         CHECK(property->type.to_string() == type);
     }
+}
+
+TEST_CASE("present_in takes an explicit room set or a where query, never both",
+          "[schema][builtin]") {
+    // §8.6: `present_in` is `block<presence>`, and `presence`'s `rooms` /
+    // `where` are an exclusive_group (§7.2.1) -- alternative answers to
+    // "which rooms", not two keys an author might reasonably set together.
+    // This is also the test that proves `check_value`'s block<S> recursion
+    // actually reaches `presence`'s own keys, not just present_in's shape.
+    test::LoadedSet loaded;
+    loaded.load_builtin();
+    loaded.load_text(
+        "class  = { id = room  of_class = starcore.room }\n"
+        "room   = { id = antecourt }\n"
+        "object = { of_class = starcore.object  id = a\n"
+        "           present_in = { rooms = { antecourt } } }\n"
+        "object = { of_class = starcore.object  id = b\n"
+        "           present_in = { where = { in_sector = alpha }  dynamic = yes } }\n");
+    CHECK_FALSE(loaded.reported(diag::Code::ExclusiveGroup));
+    CHECK_FALSE(loaded.reported(diag::Code::ExclusiveMissing));
+    CHECK_FALSE(loaded.reported(diag::Code::UnknownKey));
+
+    test::LoadedSet both;
+    both.load_builtin();
+    both.load_text("class  = { id = room  of_class = starcore.room }\n"
+                   "room   = { id = antecourt }\n"
+                   "object = { of_class = starcore.object  id = c\n"
+                   "           present_in = { rooms = { antecourt }\n"
+                   "                          where = { in_sector = alpha } } }\n");
+    CHECK(both.reported(diag::Code::ExclusiveGroup));
+
+    // The empty block is `check_value`'s universal "satisfies any of them"
+    // case (§6.5), which runs before this key's own recursion does -- so an
+    // explicitly empty `presence` is accepted rather than flagged as missing
+    // both alternatives. Documented here rather than silently assumed: an
+    // author who writes `present_in = { }` gets no presence at all, not an
+    // error, the same as omitting the key.
+    test::LoadedSet neither;
+    neither.load_builtin();
+    neither.load_text("object = { of_class = starcore.object  id = d  present_in = { } }\n");
+    CHECK_FALSE(neither.reported(diag::Code::ExclusiveMissing));
 }
 
 TEST_CASE("every core requirement the built-in set states is met", "[schema][builtin]") {

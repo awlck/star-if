@@ -99,7 +99,7 @@ core_requirement = { id = object_sector
 
 core_requirement = { id = object_present_in
                      requires = property  subject = starcore.object  member = present_in
-                     type = set<ref<starcore.room>>
+                     type = block<presence>
                      doc = "Presence, which is how a door is referable from both rooms it joins (§8.6)." }
 
 core_requirement = { id = object_name

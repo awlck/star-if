@@ -27,6 +27,30 @@ enum = {
 }
 
 
+# §8.6: either an explicit room set, or a query resolved at compile time
+# (unless `dynamic = yes`, in which case its predicate is evaluated when
+# scope is computed instead). `rooms`/`where` is an exclusive_group rather
+# than two differently-typed spellings of `present_in` itself, because a key
+# can only have one declared type (§7.2) -- the list-vs-query choice has to
+# be a choice between two KEYS of one nested shape, not two shapes for one
+# key. `dynamic` only means anything alongside `where`; nothing here enforces
+# that yet, so it is silently inert alongside `rooms` rather than rejected.
+schema = {
+    id     = presence
+    sealed = yes
+    doc    = "Either shape present_in accepts (§8.6)."
+
+    key = { name = rooms    type = set<ref<starcore.room>>  exclusive_group = source
+            required = yes
+            doc      = "An explicit list of rooms this object is present in." }
+    key = { name = where    type = condition_block          exclusive_group = source
+            required = yes
+            doc      = "A query resolving to a room set." }
+    key = { name = dynamic  type = bool  default = no
+            doc      = "Re-evaluate `where` at scope time instead of once at compile time." }
+}
+
+
 class = {
     id     = starcore.object
     root   = yes
@@ -44,7 +68,7 @@ class = {
 
         # Presence (§8.6): being referable from several rooms at once without
         # being contained by any of them. A door is the reason this exists.
-        present_in  = set<ref<starcore.room>>
+        present_in  = block<presence>
 
         # What the parser matches and the templates print. `disambiguation_name`
         # is proposal §6.4.1's authored answer to two objects sharing every

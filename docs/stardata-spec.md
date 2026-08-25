@@ -770,7 +770,7 @@ Several forms accept one of two alternative arguments and never both. Earlier dr
 |---|---|
 | `rule` | `of_action` / `of_event` (Appendix C.1) |
 | `list_remove` | `value` / `index` (§6.5) |
-| `present_in` | a list block / a `where` query (§8.6) |
+| `presence` (`present_in`'s value) | `rooms` / `where` (§8.6) |
 | `includes` | `value` / `key` (§6.5) |
 
 ```stardata
@@ -1039,7 +1039,7 @@ Every world object is a `starcore.object`, in the way that every C# or Java type
 | `holder` | `ref<starcore.object>` | the containment parent; `none` for a root |
 | `relation` | `enum<relation_enum>` | how it is held — `in`, `on`, `under`, `behind`, `carried`, `worn`, `part_of` |
 | `sector` | `ref<sector>` | residency (§8.6.2 of the proposal) |
-| `present_in` | `set<ref<starcore.room>>` | presence, for objects in several places (§8.6) |
+| `present_in` | `block<presence>` | presence, for objects in several places (§8.6) |
 | `name` | `text` | what the parser matches and the templates print |
 | `synonyms` | `list<identifier>` | additional parser names |
 
@@ -1185,17 +1185,17 @@ Containment gives an object exactly one parent. Some objects are in several plac
 backdrop = {
     id = the_sky
     traits = { scenery fixed_in_place }
-    present_in = { antecourt observation_deck }
+    present_in = { rooms = { antecourt observation_deck } }
 }
 ```
 
-`present_in` accepts either a list block of room ids, or a query:
+`present_in` is typed `block<presence>`, and `presence` accepts either an explicit room set or a query, as `rooms` / `where` — an `exclusive_group` (§7.2.1), since the two are alternative answers to one question ("which rooms") rather than two keys an author might reasonably set together:
 
 ```stardata
 present_in = { where = { in_sector = station_alpha }  dynamic = no }
 ```
 
-A query is resolved at compile time into a concrete room set unless `dynamic = yes`, in which case its predicate is evaluated when scope is computed. `dynamic` MUST be opted into explicitly, because it moves work from build time to every turn.
+A query is resolved at compile time into a concrete room set unless `dynamic = yes`, in which case its predicate is evaluated when scope is computed. `dynamic` MUST be opted into explicitly, because it moves work from build time to every turn. It has no effect alongside `rooms`.
 
 #### 8.6.1 Facets — presenting differently from each side
 

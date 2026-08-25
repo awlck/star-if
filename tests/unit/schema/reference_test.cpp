@@ -354,16 +354,17 @@ TEST_CASE("none clears a reference and inherit declines to set one", "[schema][r
 // --- inside collections ---------------------------------------------------
 
 TEST_CASE("a ref inside a collection is resolved too", "[schema][reference]") {
-    // `present_in` is `set<ref<starcore.room>>` and `exits` is
+    // `present_in`'s `rooms` key is `set<ref<starcore.room>>` and `exits` is
     // `map<direction, ref<room>>`. A reference is no less a reference for
     // being an element, and the entry is named in the message so that one bad
     // id among six is findable.
     test::LoadedSet loaded;
     loaded.load_builtin();
     loaded.load_stdlib();
-    loaded.load_text("room  = { id = your_cell  exits = { north = corridr } }\n"
-                     "room  = { id = corridor }\n"
-                     "thing = { id = cell_door  present_in = { your_cell corridr } }\n");
+    loaded.load_text(
+        "room  = { id = your_cell  exits = { north = corridr } }\n"
+        "room  = { id = corridor }\n"
+        "thing = { id = cell_door  present_in = { rooms = { your_cell corridr } } }\n");
 
     std::size_t reported = 0;
     for (const diag::Diagnostic& diagnostic : loaded.sink.diagnostics()) {

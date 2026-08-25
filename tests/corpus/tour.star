@@ -2036,6 +2036,15 @@ action = @replaces(stdlib) {
     successMsg = "You wait."
 }
 
+# Adding shipboard directions to the directions enum:
+enum = @replaces(stdlib) {
+    id     = direction
+    values = { north south east west
+               northeast northwest southeast southwest
+               up down in out fore aft port starboard }
+    doc    = "A way out of a room (§6.6.1)."
+}
+
 # =============================================================================
 #  End of tour.star
 # =============================================================================

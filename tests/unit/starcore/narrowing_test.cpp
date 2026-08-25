@@ -274,6 +274,129 @@ TEST_CASE("narrowing does not escape an OR or a NOT", "[starcore][narrowing]") {
     CHECK(with_not.reported(diag::Code::PropMaybeAbsent));
 }
 
+// --- narrowing within one barrier branch (backlog F8's `[OPEN]`) --------
+//
+// §8.8.3's "narrowing does not survive an OR branch" is a fact about
+// ESCAPING: only one branch is known to have held, so nothing learned in
+// one may be assumed outside it. It says nothing about whether a narrowing
+// holds for a read later in the SAME branch's own conjunction -- both are
+// part of evaluating whether that one branch held, so it does. The tests
+// above already cover escaping; these cover the half that was missing.
+
+TEST_CASE("narrowing established within one OR branch's own conjunction still holds",
+          "[starcore][narrowing]") {
+    // The exact shape backlog F8 found while writing its fixtures:
+    // `actor = { of_class = X  prop >= N }` as the one alternative of an
+    // OR reported the read as possibly absent, because narrowing was
+    // switched off for everything under a barrier rather than only for
+    // what tries to escape it.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    conditions = { OR = {\n"
+                         "        actor = { of_class = fancy_gadget  polish > 3 }\n"
+                         "    } }\n"
+                         "}\n");
+    CHECK(world.count() == 0);
+}
+
+TEST_CASE("narrowing in one OR alternative does not narrow a sibling alternative",
+          "[starcore][narrowing]") {
+    // §10.3: OR holds a LIST of independent alternatives -- "at least one
+    // enclosed statement holds" -- not one shared conjunction. Unlike the
+    // test above, these are two separate top-level statements under the
+    // same OR, and only one of them is known to have held, so the second
+    // may not lean on what the first established.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    conditions = { OR = {\n"
+                         "        actor = { of_class = fancy_gadget }\n"
+                         "        actor = { polish > 3 }\n"
+                         "    } }\n"
+                         "}\n");
+    REQUIRE(world.reported(diag::Code::PropMaybeAbsent));
+}
+
+TEST_CASE("narrowing established inside a NOT's own conjunction still holds within it",
+          "[starcore][narrowing]") {
+    // NOT wraps ONE block, evaluated with the ordinary default-AND
+    // semantics internally -- "does not escape it" is about what the rest
+    // of the walk sees afterward, not about NOT's own internal evaluation.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    conditions = { NOT = {\n"
+                         "        actor = { of_class = fancy_gadget  polish > 3 }\n"
+                         "    } }\n"
+                         "}\n");
+    CHECK(world.count() == 0);
+}
+
+TEST_CASE("the same holds one level down, for a combinator nested inside an object scope",
+          "[starcore][narrowing]") {
+    // `object_scope_one` carries the identical split `conditions_one` does,
+    // and needs its own proof: an OR nested INSIDE `actor = { ... }`, whose
+    // one alternative is itself an AND that narrows before it reads.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    conditions = { actor = { OR = {\n"
+                         "        AND = { of_class = fancy_gadget  polish > 3 }\n"
+                         "    } } }\n"
+                         "}\n");
+    CHECK(world.count() == 0);
+}
+
+TEST_CASE("has_prop within one OR alternative does not excuse a sibling's read",
+          "[starcore][narrowing]") {
+    // `proven` (the has_prop escape) needs the identical per-alternative
+    // isolation `narrowed` does, and for the identical reason -- it is
+    // bundled with it in `Scope` for exactly this test to catch a fix that
+    // scoped one and forgot the other.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    conditions = { OR = {\n"
+                         "        actor = { has_prop = polish  polish > 3 }\n"
+                         "        actor = { polish > 3 }\n"
+                         "    } }\n"
+                         "}\n");
+    CHECK(world.count() == 1);
+    CHECK(world.reported(diag::Code::PropMaybeAbsent));
+}
+
+TEST_CASE("has_prop proven inside a barrier does not flow forward into a later stage",
+          "[starcore][narrowing]") {
+    // §8.8.3's forward flow is real, but only for what genuinely held. A
+    // has_prop inside an OR only proves anything for the branch it is in;
+    // letting it leak into `conditions` would mean trusting a case that
+    // was never established to be the one that occurred.
+    const Analysed world("rule = {\n"
+                         "    of_action  = inspect\n"
+                         "    when       = { OR = { actor = { has_prop = polish  polish > 3 } } }\n"
+                         "    conditions = { actor = { polish > 3 } }\n"
+                         "}\n");
+    REQUIRE(world.reported(diag::Code::PropMaybeAbsent));
+}
+
+TEST_CASE("COUNT_AT_LEAST narrows within one alternative and not across alternatives",
+          "[starcore][narrowing]") {
+    const Analysed within("rule = {\n"
+                          "    of_action  = inspect\n"
+                          "    conditions = { COUNT_AT_LEAST = {\n"
+                          "        n     = 1\n"
+                          "        actor = { of_class = fancy_gadget  polish > 3 }\n"
+                          "    } }\n"
+                          "}\n");
+    CHECK(within.count() == 0);
+
+    const Analysed across("rule = {\n"
+                          "    of_action  = inspect\n"
+                          "    conditions = { COUNT_AT_LEAST = {\n"
+                          "        n     = 1\n"
+                          "        actor = { of_class = fancy_gadget }\n"
+                          "        actor = { polish > 3 }\n"
+                          "    } }\n"
+                          "}\n");
+    REQUIRE(across.reported(diag::Code::PropMaybeAbsent));
+}
+
 // --- message templates (spec §9, backlog F12) ---------------------------
 //
 // §8.8.3's own worked example lives here: `successMsg = "It is rated for

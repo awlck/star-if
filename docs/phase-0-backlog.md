@@ -924,15 +924,43 @@ through the starcore corpus tests for the first time. Both now declare the
 property and narrow the slot, which also makes the OR fixture a small
 demonstration of §8.8.3's forward flow.
 
-**[OPEN] Narrowing established inside one `OR` branch is discarded within
-that branch.** Writing `actor = { of_class = person  strength >= 14 }` inside
-an `OR` reports `strength` as possibly absent, because F12's walk turns
-narrowing off for everything under a barrier. §8.8.3 says a narrowing "does
-not survive an `OR` branch, since only one branch is known to have held",
-which is about a narrowing *escaping* the branch — within one branch's own
-conjunction the narrowing does hold, since that branch's conditions are
-evaluated together. Found while writing F8's fixtures and worked around
-there by narrowing in the stage before; it is F12's rule to fix.
+**Narrowing established inside one `OR` branch holds within that branch —
+`[OPEN]` closed.** Writing `actor = { of_class = person  strength >= 14 }`
+inside an `OR` used to report `strength` as possibly absent, because F12's
+walk turned narrowing off for everything under a barrier rather than only for
+what tries to escape it. §8.8.3 says a narrowing "does not survive an `OR`
+branch, since only one branch is known to have held", which is about a
+narrowing *escaping* the branch — within one branch's own conjunction the
+narrowing does hold, since that branch's conditions are evaluated together.
+Found while writing F8's fixtures and worked around there by narrowing in the
+stage before; `failmsg-below-or.star` still does, and still should — the fix
+adds a way to write it, not a reason to stop writing it the other way.
+
+The fix turned out to need two things the single `may_narrow` flag could not
+express on its own. First, `object_scope`'s and `conditions`'s per-statement
+bodies were factored out (`object_scope_one`, `conditions_one`) so `OR` and
+`COUNT_AT_LEAST` — which §10.3 defines as "at least one/n of the *enclosed
+statements* holds", a list of independent alternatives, not one shared
+conjunction — can walk each alternative against its own copy of what was
+known going in, rather than threading one copy through all of them the way a
+plain conjunction does. Get that part wrong and the fix trades one bug for
+its mirror image: a narrowing established in one `OR` alternative silently
+justifying a read in a sibling alternative that has no business trusting it.
+`NOT` keeps the simpler treatment — one enclosed block, narrowed normally
+inside, discarded on the way out — because §10.3 defines it as "negation of
+the enclosed block" (singular), not a list.
+
+Second, `has_prop`'s provenance (`Walk::proven`) was a permanent,
+never-reset member — correct for §8.8.3's "flows forward through the
+stages", wrong for a barrier, and invisible as a bug only because narrowing
+was switched off everywhere under a barrier anyway. Fixing `of_class` alone
+would have started leaking a `has_prop` proven inside one `OR` alternative
+into every read anywhere after it, forever. `proven` now travels bundled
+with the class narrowing in one `Scope`, copied and discarded at exactly the
+same boundaries, so a fix that remembered one and forgot the other has a
+test that fails: `has_prop within one OR alternative does not excuse a
+sibling's read` and `has_prop proven inside a barrier does not flow forward
+into a later stage`, in `narrowing_test.cpp`.
 
 **[OPEN] A ruleset cannot declare a stage's message policy.** The schema
 knows a key is a `condition_block` and nothing more, so there is no spelling

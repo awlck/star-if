@@ -1374,6 +1374,8 @@ conditions = {
 
 Narrowing does **not** survive an `OR` branch, since only one branch is known to have held. Narrowing established inside a `NOT` does not escape it.
 
+This is a rule about ESCAPING, not about whether a narrowing holds at all inside a barrier. `OR` and `COUNT_AT_LEAST` each admit multiple enclosed statements, and §10.3 evaluates each as an independent alternative — but *within* one alternative's own conjunction, a narrowing earlier in it still reaches a read later in it, exactly as it would outside any barrier, because both are part of evaluating whether that one alternative held. `actor = { of_class = person  strength >= 14 }` as a single `OR` alternative is legal for exactly this reason. What does not carry over is narrowing from one alternative to a *different* alternative of the same `OR` or `COUNT_AT_LEAST` — only one (or `n`) of them is known to have held, and nothing says which. `NOT` wraps one block rather than a list, so the whole of it is one conjunction, narrowed normally throughout; it is only the boundary *around* the `NOT` that the narrowing fails to cross.
+
 If none of the three applies, the read is a compile error naming the property, the slot's static type, and the classes that do declare it, with a fix-it offering `has_prop`.
 
 This holds identically for a read inside a message (`successMsg`, `failureMsg`, or any other `text`-typed stage value) — `[noun.damage]` is checked exactly like the condition-key form above, using whatever the earlier stages narrowed. The one difference is the fix-it: `has_prop = …` is condition-block syntax, and a message has no statement to rewrite into one, so a template read gets the diagnostic and the "did you mean" suggestion without it.

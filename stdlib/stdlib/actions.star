@@ -18,7 +18,7 @@ action = {
     doc   = "Move an object into the actor's inventory."
 
     restrictions = {
-        noun = { portable == yes  failureMsg = $take_not_portable }
+        noun = { has_prop = portable  portable == yes  failureMsg = $take_not_portable }
     }
     effects = {
         move = { target = noun  holder = actor  relation = carried }
@@ -45,8 +45,8 @@ action = {
     match = { "open [something]" }
     doc   = "Open something openable."
 
-    conditions   = { noun = { has_trait = openable } }
     restrictions = {
+        noun = { has_trait = openable  failureMsg = $not_openable }
         noun = { open == no      failureMsg = $already_open }
         noun = { locked == no    failureMsg = $its_locked }
     }
@@ -61,9 +61,9 @@ action = {
     match = { "close [something]"  "shut [something]" }
     doc   = "Close something openable."
 
-    conditions   = { noun = { has_trait = openable } }
     restrictions = {
-        noun = { open == yes  failureMsg = $already_closed }
+        noun = { has_trait = openable  failureMsg = $not_openable }
+        noun = { open == yes failureMsg = $already_closed }
     }
     effects = {
         set = { target = noun  prop = open  value = no }

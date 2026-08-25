@@ -12,8 +12,8 @@ action = {
     id    = shift_slab
     match = { "shift [something]" }
 
-    conditions = { actor = { of_class = person } }
     restrictions = {
+        actor = { of_class = person }
         OR = {
             actor    = { strength >= 14  failureMsg = "You aren't strong enough." }
             carrying = { holder = actor  obj = crowbar }

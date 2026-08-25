@@ -35,4 +35,5 @@ loc = {
     opened_default     = "[The actor] [verb(actor, open)] [the noun]."
     already_closed     = "[The noun] [is(noun)] already closed."
     closed_default     = "[The actor] [verb(actor, close)] [the noun]."
+    not_openable       = "[The noun] [is noun] not something [the actor] [verb(actor, can)] open or close."
 }

@@ -102,12 +102,11 @@ schema = {
     # which is what keeps the one genuinely novel static analysis in Phase 0
     # on the mechanism side of proposal §2.1.1. A ruleset adding a stage gets
     # narrowing through it by declaring it here.
-    stage_order = { conditions restrictions effects successMsg failureMsg }
+    stage_order = { restrictions effects successMsg failureMsg }
 
     key = { name = id            type = identifier          required = yes  unique_in = action }
     key = { name = match         type = list<string>        required = yes
             doc  = "The parser grammar lines this action answers to." }
-    key = { name = conditions    type = condition_block     combine = smart }
     key = { name = restrictions  type = condition_block     combine = smart }
     key = { name = effects       type = effect_block        combine = override }
     key = { name = successMsg    type = text_or_script      combine = override }

@@ -114,6 +114,7 @@ add_executable(starvfs_unit_tests
     starvfs/skeleton_test.cpp
     starvfs/path_test.cpp
     starvfs/future_test.cpp
+    starvfs/vfs_test.cpp
 )
 
 target_link_libraries(starvfs_unit_tests PRIVATE Catch2::Catch2WithMain starvfs::starvfs)

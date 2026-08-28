@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -15,6 +16,17 @@ namespace starvfs {
 // Opaque handle to a layer mounted in a Vfs. Meaningless outside the Vfs
 // that issued it; default-constructed is invalid. Mirrors
 // stardata::diag::SourceId.
+//
+// Carries its issuing Vfs's owner_ tag alongside the layer's index, not just
+// the index alone. Multiple simultaneously live Vfs instances are a
+// supported, expected pattern (docs/starvfs-api.md, "Multiple independent
+// stacks") -- one for the runtime's own state, others handed to scripts for
+// ancillary files -- so a LayerId obtained from one Vfs being passed to a
+// DIFFERENT Vfs's unmount()/layer_name() is a realistic mistake, not a
+// theoretical one. Without the tag that call would either silently touch
+// whatever the wrong Vfs happens to have at the same index, or fail a bounds
+// check for the wrong reason; with it, Vfs::mount/unmount/layer_name reject
+// a mismatched owner the same way they reject an invalid id.
 class LayerId {
 public:
     constexpr LayerId() noexcept = default;
@@ -22,7 +34,7 @@ public:
     [[nodiscard]] constexpr bool valid() const noexcept { return index_ != kInvalid; }
 
     friend constexpr bool operator==(LayerId lhs, LayerId rhs) noexcept {
-        return lhs.index_ == rhs.index_;
+        return lhs.owner_ == rhs.owner_ && lhs.index_ == rhs.index_;
     }
     friend constexpr bool operator!=(LayerId lhs, LayerId rhs) noexcept { return !(lhs == rhs); }
 
@@ -30,8 +42,10 @@ private:
     friend class Vfs;
     static constexpr std::uint32_t kInvalid = static_cast<std::uint32_t>(-1);
 
-    explicit constexpr LayerId(std::uint32_t index) noexcept : index_(index) {}
+    explicit constexpr LayerId(std::uint32_t owner, std::uint32_t index) noexcept
+        : owner_(owner), index_(index) {}
 
+    std::uint32_t owner_ = kInvalid; // which Vfs issued this id
     std::uint32_t index_ = kInvalid;
 };
 
@@ -51,8 +65,43 @@ private:
 // Bookkeeping (mount/unmount/layer_name) is implemented for real in this
 // change; path resolution (read/stat/exists/list/write/remove/resolve) is
 // stubbed, fully specified but not yet implemented -- backlog G4's job.
+//
+// MULTIPLE INDEPENDENT STACKS (docs/starvfs-api.md, "Multiple independent
+// stacks"). A Vfs is a plain, freely-instantiable object: no singleton, no
+// static registry, no assumption anywhere in this class that only one
+// exists. Constructing more than one is the intended way to run several
+// mount stacks side by side -- one for the runtime's own game state
+// (proposal §14.1's base/patch/mod/save stack), plus zero or more separate
+// Vfs instances a frontend hands to a running game's scripts for ancillary
+// files unrelated to that state (proposal §8.2's sandbox already scopes a
+// script to *a* VFS handle; which Vfs it gets is just "whichever object the
+// frontend constructs for it").
+//
+// A layer belongs to exactly one Vfs -- mount() takes std::unique_ptr<Layer>,
+// not a shared_ptr, and there is deliberately no way to mount the same Layer
+// object into two stacks. If two stacks need the same underlying files, the
+// frontend constructs two Layer objects pointed at the same HostIo/directory;
+// a layer is a thin wrapper, so this costs little, and it avoids one layer's
+// mutable state (a ZipLayer's index, a MemoryLayer's contents) being shared,
+// and so implicitly synchronised, across stacks that otherwise have nothing
+// to do with each other.
+//
+// Nothing here pumps more than one Vfs: each instance's pump() drains only
+// its own layers, and a frontend running several stacks calls pump() on
+// each. There is no central registry that does this centrally -- that would
+// be the one piece of shared state this design otherwise avoids entirely,
+// for a convenience the frontend's own event loop already provides for free.
 class Vfs {
 public:
+    // `name` is this stack's own diagnostic label -- "game", "mod-resources"
+    // -- distinct from any individual Layer::name(): once more than one Vfs
+    // is alive at once, a failure or log line naming only the layer doesn't
+    // say which stack it came from. Optional and empty by default; nothing
+    // here reads it except name() itself.
+    explicit Vfs(std::string name = {});
+
+    [[nodiscard]] std::string_view name() const noexcept;
+
     // Pushes onto the TOP of the stack: the most recently mounted layer
     // wins both a read and a write. Callers assemble the stack bottom-up
     // (base game, then patches, then mods, then the save layer last) to
@@ -87,6 +136,12 @@ public:
     // mod diagnostics want to say "lamp.star came from mods/lantern-fix",
     // not just "lamp.star exists". nullopt if no mounted layer has it.
     Future<std::optional<LayerId>> resolve(const Path& path);
+
+    // Empty for an id this Vfs never issued, one issued by a different Vfs
+    // (see LayerId's comment), or one that has since been unmount()ed --
+    // "no longer mounted" is deliberately indistinguishable from "never
+    // was", the same way a second unmount() call on the same id fails
+    // rather than reporting the id as already gone but once valid.
     [[nodiscard]] std::string_view layer_name(LayerId id) const;
 
     // Forwards to every mounted layer's HostIo::pump(), draining any
@@ -100,6 +155,8 @@ private:
         bool active = true; // false after unmount(); the slot stays so LayerIds stay stable
     };
 
+    std::string name_;
+    std::uint32_t owner_id_; // stamped into every LayerId this Vfs issues; see LayerId's comment
     std::vector<MountedLayer> layers_;
 };
 

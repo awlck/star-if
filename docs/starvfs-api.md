@@ -240,6 +240,58 @@ scoping mechanism to design. A narrower view for a script that should only see
 its own `res/` (say) is a thin `SubTree` wrapper over a `Vfs` and a prefix,
 which is Phase 2's problem once the Lua binding exists, not this one's.
 
+### Multiple independent stacks
+
+`Vfs` has no singleton, no static registry, and nothing anywhere in this
+library assumes only one instance exists. Constructing more than one is the
+intended way to run several mount stacks side by side: one for the runtime's
+own game state (the `proposal §14.1` stack described above), plus zero or
+more separate `Vfs` instances a frontend hands to a running game's scripts
+for ancillary files that have nothing to do with that state — a feature few
+other IF authoring systems lean on in practice, but one this design costs
+nothing extra to support, provided it is planned for rather than retrofitted.
+This falls directly out of "sandbox scoping needs nothing extra" above: a
+script's sandbox boundary is already just *some* `Vfs` handle, and which
+`Vfs` object the frontend constructs for it is no different in kind from
+scoping it to a subtree of the main one.
+
+Two things this pattern needs, both present from this change:
+
+- **A `Vfs` can name itself.** The constructor takes an optional diagnostic
+  `name` (`Vfs{"game"}`, `Vfs{"mod-resources"}`), separate from any individual
+  `Layer::name()`. Once more than one stack is alive, a failure or log line
+  naming only the layer ("mods/lantern-fix") doesn't say which stack it came
+  from; the `Vfs`'s own name does.
+- **A `LayerId` cannot be mistaken for one from a different stack.** Every
+  `LayerId` a `Vfs` issues (`mount()`) carries that `Vfs`'s own owner tag
+  alongside the layer's index, and `unmount()`/`layer_name()` check the tag
+  before touching `layers_`. Without it, a `LayerId` obtained from one `Vfs`
+  passed into a *different* `Vfs`'s `unmount()` would either silently act on
+  whatever that other stack happens to have at the same index, or fail a
+  bounds check for the wrong reason — a mistake that was merely theoretical
+  when only one `Vfs` typically existed, and a realistic one once several are
+  routinely alive at once (a debugger listing layers from more than one
+  stack, say). The tag turns a mismatched owner into the same clean rejection
+  as an invalid id, not undefined behaviour dressed up as a bounds check.
+
+**Layers are not shared across stacks.** `mount()` takes
+`std::unique_ptr<Layer>`, never a `shared_ptr` — a layer belongs to exactly
+one `Vfs`. If two stacks need the same underlying files, the frontend builds
+two `Layer` objects pointed at the same `HostIo`/directory; a layer is a thin
+wrapper, so this costs little. Sharing one `Layer` instance across stacks was
+considered and rejected: it would let one layer's mutable state (a
+`ZipLayer`'s entry index, a `MemoryLayer`'s contents) be silently shared, and
+so implicitly coupled, across stacks that are otherwise unrelated — exactly
+the kind of cross-stack entanglement this feature exists to avoid.
+
+**Pumping is per-stack, not centralised.** Each `Vfs::pump()` drains only its
+own layers; a frontend running several stacks calls `pump()` on each one it
+owns. There is deliberately no registry that iterates "every live `Vfs`" on
+the frontend's behalf — that registry would itself be the one piece of
+global, shared state this design otherwise avoids entirely, in exchange for a
+convenience the frontend's own event loop (which already knows which stacks
+it owns) provides for free.
+
 ## Two smaller calls
 
 **`Bytes` is `std::vector<std::byte>`, not `std::string`.** `.spak` payloads

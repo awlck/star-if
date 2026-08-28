@@ -2,18 +2,38 @@
 // SPDX-FileCopyrightText: 2026 Adrian Welcker
 #include "starvfs/vfs.hpp"
 
+#include <atomic>
 #include <utility>
 
 namespace starvfs {
 
+namespace {
+
+// One tag per Vfs instance, stamped into every LayerId it issues (see
+// LayerId's comment in vfs.hpp for why). Atomic because nothing rules out
+// constructing a Vfs from more than one thread; this is one fetch-add per
+// Vfs construction, not a hot path, so a relaxed increment costs nothing
+// worth measuring.
+std::atomic<std::uint32_t> g_next_owner_id{0};
+
+} // namespace
+
+Vfs::Vfs(std::string name)
+    : name_(std::move(name)), owner_id_(g_next_owner_id.fetch_add(1, std::memory_order_relaxed)) {}
+
+std::string_view Vfs::name() const noexcept {
+    return name_;
+}
+
 LayerId Vfs::mount(std::unique_ptr<Layer> layer) {
     const auto index = static_cast<std::uint32_t>(layers_.size());
     layers_.push_back(MountedLayer{std::move(layer), /*active=*/true});
-    return LayerId(index);
+    return LayerId(owner_id_, index);
 }
 
 bool Vfs::unmount(LayerId id) {
-    if (!id.valid() || id.index_ >= layers_.size() || !layers_[id.index_].active) {
+    if (!id.valid() || id.owner_ != owner_id_ || id.index_ >= layers_.size() ||
+        !layers_[id.index_].active) {
         return false;
     }
     layers_[id.index_].active = false;
@@ -21,7 +41,8 @@ bool Vfs::unmount(LayerId id) {
 }
 
 std::string_view Vfs::layer_name(LayerId id) const {
-    if (!id.valid() || id.index_ >= layers_.size()) {
+    if (!id.valid() || id.owner_ != owner_id_ || id.index_ >= layers_.size() ||
+        !layers_[id.index_].active) {
         return {};
     }
     return layers_[id.index_].layer->name();

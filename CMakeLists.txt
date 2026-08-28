@@ -44,14 +44,20 @@ option(STARIF_ENABLE_TESTS "Build the test suite" ON)
 #
 #   libs/stardata    Phase 0 (D-F)  libs/stardebug   later (author's kit)
 #   libs/starcore    Phase 0-1      libs/starforge   Phase 4
-#   libs/starvfs     Phase 0 (G)    libs/startext    Phase 1
+#                                    libs/startext    Phase 1
 #                                    libs/starlang    Phase 1
 #
 #   apps/starhelm-cli   Phase 1     apps/starbase      Phase 3 (Qt)
 #   apps/starhelm-glk   later       apps/starhelm-qt   Phase 3 (Qt)
 #   apps/starhelm-web   later       apps/starforge-cli Phase 4
+#
+# libs/starvfs (backlog workstream G) moved out of this placeholder list:
+# docs/starvfs-api.md and its stub headers give it real content ahead of
+# the layers themselves (G2-G4), per the backlog's own recommendation to
+# not defer the API's shape.
 add_subdirectory(libs/stardata)
 add_subdirectory(libs/starcore)
+add_subdirectory(libs/starvfs)
 
 if (STARIF_ENABLE_TESTS)
     enable_testing()

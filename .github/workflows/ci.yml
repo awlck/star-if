@@ -66,6 +66,19 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 scripts/check_spec_refs.py
 
+  # docs/starvfs-api.md: only NativeHostIo may touch a real filesystem API.
+  # A stray std::filesystem call elsewhere in libs/starvfs would still
+  # compile and still pass the layers' own tests, and would only surface
+  # once someone tried the WASM target the boundary exists to keep
+  # tractable -- the same "assert it, don't assume it" reasoning as
+  # no-qt-in-libs above, applied to starvfs's host boundary.
+  starvfs-host-boundary:
+    name: starvfs touches the real filesystem nowhere but NativeHostIo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/check_starvfs_host_boundary.py
+
   # backlog B4/B5: the format check.
   format-check:
     name: clang-format

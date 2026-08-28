@@ -100,7 +100,29 @@ target_link_libraries(starcore_unit_tests PRIVATE starif_test_support starcore::
 starif_set_warnings(starcore_unit_tests)
 starif_enable_sanitizers(starcore_unit_tests)
 
+# starvfs is independent of stardata (backlog workstream G's own preamble,
+# restated in libs/starvfs/CMakeLists.txt), and a third test binary is what
+# keeps that visible in the build rather than only in a comment -- the same
+# argument stardata_unit_tests/starcore_unit_tests's split already makes
+# above for the format/vocabulary boundary, applied to a third one.
+# starif_test_support PUBLIC-links stardata::stardata, so linking it here
+# would quietly undo the independence claim; likewise this binary cannot
+# reuse main.cpp above, which pulls in support/snapshot.hpp for the
+# --update-snapshots flag and drags the same dependency back in. It links
+# Catch2::Catch2WithMain instead and nothing from stardata at all.
+add_executable(starvfs_unit_tests
+    starvfs/skeleton_test.cpp
+    starvfs/path_test.cpp
+    starvfs/future_test.cpp
+)
+
+target_link_libraries(starvfs_unit_tests PRIVATE Catch2::Catch2WithMain starvfs::starvfs)
+
+starif_set_warnings(starvfs_unit_tests)
+starif_enable_sanitizers(starvfs_unit_tests)
+
 # catch_discover_tests runs each binary at build time to enumerate individual
 # TEST_CASEs into ctest, so `ctest` reports each one rather than one lump.
 catch_discover_tests(stardata_unit_tests)
 catch_discover_tests(starcore_unit_tests)
+catch_discover_tests(starvfs_unit_tests)

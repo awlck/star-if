@@ -1458,6 +1458,21 @@ the reference corpus had been demonstrating the bug rather than the rule.
 
 Independent of `stardata` — good parallel work, or a change of scene when the CST gets tiring.
 
+**API shape landed ahead of the implementation** (this document's "Rough size"
+section recommends exactly this ordering below: "Defer G entirely... The one
+thing that must not be deferred is the shape of its API"): `libs/starvfs/include/starvfs/`
+now holds fully commented headers for every type below, with `Path`,
+`Result`/`Failure`, `Future`/`Promise`, and `Layer::exists` implemented for
+real and everything else -- the three layers' I/O, the mount stack's
+resolution logic, `NativeHostIo` -- stubbed to fail with
+`Error::NotImplemented`. Boxes below stay unchecked: a stub that compiles and
+is tested is not the behaviour the box describes, only the shape it will have.
+See `docs/starvfs-api.md` for the rationale, including two decisions recorded
+there rather than here: the async API is a bespoke `Future<T>`
+(`ready()`/`then()`, no `std::future`, no threads), and G4's write-policy
+wording below has been corrected to match a decision made when the shape
+landed.
+
 ### G1 · VFS API
 **Size:** M · **Depends on:** B3
 
@@ -1465,7 +1480,7 @@ Proposal §12.5: **async-capable from day one**, even though the desktop impleme
 
 - [ ] `read(path) -> future<bytes>` with a synchronous fast path for resident layers.
 - [ ] `exists`, `list`, `stat`, `open_stream`.
-- [ ] Path normalisation; escaping the mount root is impossible (spec/proposal §8.2 sandbox requirement).
+- [ ] Path normalisation; escaping the mount root is impossible (spec/proposal §8.2 sandbox requirement). *Implemented for real (`starvfs::Path::parse`, docs/starvfs-api.md) -- the one piece of G1 not left as a stub, since normalisation is pure computation with nothing left to fill in later.*
 
 ### G2 · Directory layer
 **Size:** S · **Depends on:** G1
@@ -1484,7 +1499,7 @@ Proposal §12.5: **async-capable from day one**, even though the desktop impleme
 **Size:** M · **Depends on:** G2, G3
 
 - [ ] Ordered layers, highest-priority-first resolution (proposal §14.1).
-- [ ] Writes go to the topmost writable layer.
+- [ ] Writes go to the topmost layer; a read-only topmost layer fails the write (`Error::ReadOnlyLayer`) rather than falling through to the next writable layer underneath it -- corrected from this bullet's original "topmost *writable* layer" wording once the API's shape landed (see this section's note above and docs/starvfs-api.md, "Write policy").
 - [ ] Query which layer supplied a path — needed by the debugger and by mod diagnostics.
 
 ### G5 · VFS tests
